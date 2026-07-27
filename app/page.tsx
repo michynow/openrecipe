@@ -1,14 +1,18 @@
+import { RecipeGrid, type RecipeCardData } from "@/components/recipe-card";
 import { copy } from "@/lib/copy";
 
-// Placeholder. The real dashboard — stat widgets, Proposals, recent Recipes —
-// is OR-47 and OR-48. This exists only so no English scaffold copy survives.
+// Placeholder dashboard. Stat widgets and Proposals are OR-47 and OR-48; the
+// recent-Recipes listing below is real, it just has nothing to list until the
+// database exists (OR-9) and Recipes can be created (OR-23).
 export default function Home() {
+  const recipes: RecipeCardData[] = [];
+
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-3 px-4 py-16 sm:px-6">
-      <h1 className="font-display text-5xl uppercase tracking-tight sm:text-7xl">
-        {copy.app.name}
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
+      <h1 className="font-display text-3xl uppercase tracking-tight sm:text-4xl">
+        {copy.library.recent}
       </h1>
-      <p className="text-sm text-muted">{copy.library.empty}</p>
+      <RecipeGrid recipes={recipes} />
     </main>
   );
 }
