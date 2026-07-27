@@ -20,7 +20,23 @@ pnpm install
 pnpm dev
 ```
 
-Scripts: `dev`, `build`, `start`, `lint`, `typecheck`.
+Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `test`.
+
+## Conventions
+
+**Tests.** `node:test` with Node's native type stripping — no framework, no transpile.
+`pnpm test` runs `lib/**/*.test.ts`.
+
+**Relative imports inside `lib/` carry the `.ts` extension** (`./copy.ts`). Node strips
+types but does no extension resolution, so anything reachable from a test must be imported
+that way. Turbopack and `tsc` both accept it (`allowImportingTsExtensions`). App code
+imports through the `@/` alias without an extension, as usual.
+
+**No user-facing string in a component.** Everything readable comes from
+[`lib/copy.ts`](./lib/copy.ts); formatting from [`lib/format.ts`](./lib/format.ts).
+
+**No hex colour in a component.** Palette tokens live in
+[`app/globals.css`](./app/globals.css).
 
 ## CI
 
