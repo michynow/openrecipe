@@ -407,7 +407,7 @@ informal register throughout (*ty*, not *Pan/Pani*) — it's a household app, no
 | Draft ready | Szkic gotowy — sprawdź go przed zapisaniem. |
 | Import failed | Nie znaleziono przepisu na tej stronie. Spróbuj innego linku albo wpisz ręcznie. |
 | Validation | Podaj nazwę przepisu. |
-| Delete confirm | Usunąć „Ragu"? Tego nie da się cofnąć. |
+| Delete confirm | Usunąć „Ragu”? Tego nie da się cofnąć. |
 | Deleted | Usunięto. **Cofnij** |
 | No results | Brak wyników. Spróbuj innej frazy. |
 | Wake lock on | Ekran nie zgaśnie podczas gotowania. |
