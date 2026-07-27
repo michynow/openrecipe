@@ -1,0 +1,44 @@
+# OpenRecipe
+
+Private, invite-only recipe library for one household. Cooked from a phone, maintained
+from a laptop.
+
+- **[PRD.md](./PRD.md)** — what we're building and why
+- **[CONTEXT.md](./CONTEXT.md)** — glossary. Use these words in code, commits and tickets.
+- **[docs/adr/](./docs/adr/)** — decisions, with the reasoning that would otherwise be lost
+
+## Stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind 4 · Neon Postgres + Drizzle ·
+Better Auth · Vercel Blob. A separate laptop-side Worker does all LLM work —
+see [ADR-0002](./docs/adr/0002-ai-runs-on-a-local-worker.md).
+
+## Local
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Scripts: `dev`, `build`, `start`, `lint`, `typecheck`.
+
+## CI
+
+[`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs on every push to `main`
+and every PR: install (frozen lockfile), lint, typecheck, build.
+
+## Deploys
+
+Deploys are owned by **Vercel's Git integration**, not by CI — so there are no
+deploy tokens in this repo and preview deploys come free on every PR.
+
+One-time setup: Vercel → Add New → Project → import `michynow/openrecipe`. Framework
+detects as Next.js. Then add the environment variables listed in PRD §15.
+
+Push to `main` → production. Open a PR → preview URL on the PR.
+
+## Working agreement
+
+Build order and the Jira tracking rules live in PRD §14 and §17. Short version: one
+ticket in progress at a time, its status always reflects reality, and an Epic closes only
+when every child is genuinely done.

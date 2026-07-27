@@ -1,0 +1,517 @@
+# OpenRecipe — Product Requirements Document
+
+**Status:** Agreed through the grilling session of 2026-07-27. Ready to build.
+**Owner:** Michy (Master)
+**Glossary:** [CONTEXT.md](./CONTEXT.md) — capitalised terms below are defined there.
+**Decisions:** [docs/adr/](./docs/adr/)
+
+---
+
+## 1. What this is
+
+A private, invite-only recipe library for one household, cooked from a phone and
+maintained from a laptop. One Master, a handful of Members. Not a product — no signup,
+no SEO, no growth, no monetisation.
+
+Recipes arrive two ways:
+
+1. **By hand** — a polished editor.
+2. **By import** — park a URL from anywhere; a Worker on the Master's laptop turns it
+   into a Draft; a human reviews the Draft and approves it into a Recipe.
+
+Look: neon-diner. Words: clean and cheeky. Polish is not optional — every state
+(empty, loading, error, offline, partial) is designed, not defaulted.
+
+## 2. Non-goals
+
+- Public sign-up, SEO, sharing outside the instance.
+- Meal-plan calendars, week planners, pantry inventory tracked over time.
+- Nutrition computed from an ingredient database (kcal is a hand-entered or scraped number).
+- Native apps. Responsive web, phone-first for the cooking view.
+- Unit conversion between metric and imperial.
+- Any LLM call from the deployed app. See [ADR-0002](./docs/adr/0002-ai-runs-on-a-local-worker.md).
+
+## 3. Hard constraints
+
+| Constraint | Consequence |
+|---|---|
+| £0 running cost | Vercel Hobby, Neon free Postgres, Vercel Blob free allotment, no metered AI API |
+| Deploys to Vercel | Single Next.js app; Hobby functions may run up to 300s |
+| Next.js + TypeScript + Tailwind | Fixed by the brief |
+| Reuse existing Claude subscription | Inference only runs where the `claude` CLI exists — the laptop |
+
+## 4. Stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| App | Next.js App Router, TypeScript | Brief |
+| Styling | Tailwind, theme tokens only — no hex in components | Theme is a config file |
+| Data | Neon Postgres + Drizzle ORM | Free, serverless driver, typed schema shared with the Worker |
+| Mutations | Server Actions | No hand-written endpoints for CRUD |
+| Auth | Better Auth | [ADR-0003](./docs/adr/0003-better-auth-over-nextauth.md) |
+| Files | Vercel Blob | Owns its images, immune to hotlink rot |
+| Validation | Zod, one schema shared by form, Server Action and Worker | Single source of truth |
+| Worker | Node script, Claude Agent SDK, `sharp`, `cheerio` | Runs on the laptop, writes to Neon |
+| No NestJS | — | [ADR-0001](./docs/adr/0001-single-nextjs-app-no-nestjs.md) |
+
+## 5. Roles and access
+
+| | Master | Member |
+|---|---|---|
+| View Recipes | ✓ | ✓ |
+| Create / edit any Recipe | ✓ | ✓ |
+| Delete any Recipe | ✓ | ✓ (confirm dialog, soft delete) |
+| Park a URL for import | ✓ | ✓ |
+| Approve a Draft | ✓ | ✓ |
+| Settings: invites, members, tags | ✓ | — |
+| Run the Worker | ✓ | — |
+
+- **Free-for-all on Recipes.** It's one household's cookbook, not personal folders.
+- Delete requires an explicit confirm dialog naming the Recipe, and is a soft delete
+  (`deleted_at`), so the confirm is backed by an undo toast rather than by hope.
+- `author_id` never changes. The page also shows the last editor when it differs.
+- Master is derived at login by matching `MASTER_EMAIL` — never grantable in the UI.
+
+### Auth flows
+
+- **Login only.** No register link anywhere.
+- Email + password, and Google. Both resolve to the same account on matching email
+  (Better Auth trusted-provider linking).
+- Accounts exist only via an Invite: single-use token, 7-day expiry, optionally bound to
+  an email address, revocable.
+- No email provider, therefore **no self-service password reset** — the Master mints a
+  reset link and hands it over the same way as an Invite.
+
+## 6. Domain model
+
+Identity where it's needed, JSON where it isn't:
+
+- **Ingredient Lines are rows.** They carry Substitutes, they're individually ticked,
+  and they're reordered — they need identity.
+- **Steps and Tips are JSON arrays of strings.** They have no identity, no attributes,
+  and are always edited as a whole block. A table would buy nothing.
+
+```sql
+-- better-auth owns: user, session, account, verification
+-- extended on user: role ('master' | 'member'), name, image
+
+invite
+  id           uuid pk
+  token        text unique
+  email        text null          -- optional pre-binding
+  expires_at   timestamptz        -- created_at + 7 days
+  used_at      timestamptz null
+  used_by      uuid null -> user
+  created_by   uuid -> user
+  created_at   timestamptz
+
+recipe
+  id                uuid pk
+  slug              text unique       -- from title, collision-suffixed
+  title             text not null
+  image_url         text null         -- Blob URL; null is first-class
+  servings          int not null      -- what stored quantities produce
+  total_minutes     int null
+  kcal_per_serving  int null
+  source_url        text null
+  author_id         uuid -> user      -- immutable
+  updated_by        uuid null -> user
+  steps             jsonb not null default '[]'   -- string[]
+  tips              jsonb not null default '[]'   -- string[]
+  created_at, updated_at, deleted_at timestamptz
+
+ingredient_line
+  id           uuid pk
+  recipe_id    uuid -> recipe on delete cascade
+  position     int not null
+  quantity     numeric null      -- null = "to taste"; scales
+  unit         text null         -- free text: g, ml, tbsp, clove
+  item         text not null     -- "butter"
+  note         text null         -- "melted"
+  substitutes  jsonb not null default '[]'
+               -- [{ item, note }] - Worker-generated, stored, never live
+
+tag
+  id      uuid pk
+  facet   text not null    -- meal_slot | cuisine | diet | effort | vibe
+  slug    text unique
+  label   text not null
+
+recipe_tag
+  recipe_id, tag_id  composite pk
+  -- max 5 per recipe, enforced in Zod and by a trigger
+
+cook_log
+  id         uuid pk
+  recipe_id  uuid -> recipe
+  user_id    uuid -> user
+  cooked_at  timestamptz default now()
+
+draft                         -- also the import queue; status is the difference
+  id           uuid pk
+  source_url   text not null
+  status       text not null  -- queued | processing | ready | failed
+                              -- | approved | discarded
+  payload      jsonb null     -- the full recipe shape, editable pre-approval
+  error        text null      -- human-readable failure, shown in the UI
+  recipe_id    uuid null      -- set on approve; also set upfront when
+                              -- re-importing over an existing Recipe
+  created_by   uuid -> user
+  created_at, processed_at timestamptz
+```
+
+Indexes: `pg_trgm` GIN on `recipe.title` and `ingredient_line.item`; btree on
+`(created_at desc, id desc)` for keyset paging; btree on `draft.status`,
+`cook_log.recipe_id`, `cook_log.cooked_at`.
+
+### Tag taxonomy (seeded, Master-extensible)
+
+| Facet | Tags |
+|---|---|
+| **Meal Slot** | breakfast, brunch, lunch, dinner, snack, dessert, drink, side, sauce |
+| **Cuisine** | polish, italian, french, greek, mexican, asian, japanese, thai, indian, middle-eastern, american, mediterranean |
+| **Diet** | vegetarian, vegan, gluten-free, dairy-free, high-protein, low-carb |
+| **Effort** | under-15, under-30, one-pan, no-cook, slow-cooked, meal-prep, batch-cook |
+| **Vibe** | spicy, sweet, savoury, creamy, fresh, comfort, fast-food, healthy, fancy, boozy, hangover-cure |
+
+Max **5 Tags per Recipe**, any mix of Facets. Meal Slot is the only Facet with behaviour
+attached (it drives Proposals).
+
+## 7. Screens
+
+### 7.1 `/login`
+
+One screen. Email + password, and "Continue with Google". No register link, no
+"forgot password" self-service (a line explains the Master issues resets).
+Invalid credentials fail identically whether the email exists or not.
+
+### 7.2 `/join/[token]`
+
+The only route that creates an account. Validates the token first and says plainly if
+it's used, expired or unknown. Then name + password, or Google. Consumes the token
+atomically — a double-submit cannot mint two accounts.
+
+### 7.3 `/` — Dashboard
+
+1. **Stat widgets** — total Recipes, added this week, cooked this week, Drafts waiting
+   (links to the Draft list), most-cooked, longest-neglected.
+2. **Today's Proposals** — three cards: breakfast, lunch, dinner. Each is picked from
+   Recipes carrying that Meal Slot Tag, seeded by `(date, slot)` so it holds still all
+   day for everyone. Excludes anything in the Cook Log from the last 7 days. Recipes
+   with no Meal Slot Tag form a fallback pool, labelled *wildcard*, so nothing is
+   invisible. Reroll re-seeds. One query per slot:
+   `ORDER BY md5(id::text || :seed)  LIMIT 1`.
+3. **The library** — recent Recipes, grid, links to `/search` for everything.
+4. **Add** — one entry point offering both *type it out* and *park a link*.
+
+### 7.4 `/search`
+
+- Trigram search over Recipe title and Ingredient Line item, typo-tolerant.
+- Filters sectioned by Facet; multi-select within a Facet is OR, across Facets is AND.
+- Additional filters: max total minutes, has-image.
+- Autocomplete on the search box: `LIMIT 8`, each row a thumbnail + title + its Tags.
+- Infinite scroll on keyset cursor `(created_at, id)` — never OFFSET, which
+  double-shows rows when something is added mid-scroll.
+- Filter state lives in the URL, so a filtered view is back-button-safe and linkable.
+
+### 7.5 `/recipes/[slug]` — Recipe page
+
+Phone-first; this is the screen used with greasy hands.
+
+- Hero image or themed placeholder.
+- Title, author (name + avatar), added date, last editor when different, up to 5 Tags,
+  total time, kcal per serving, source link. **Null fields render as nothing** — no
+  "unknown", no em-dashes.
+- **Servings stepper.** Scales `quantity` only; renders as fractions (`0.375` → `⅜`,
+  `1.5` → `1½`). Lines with no quantity are untouched. Scaling is display-only and never
+  written back.
+- **Ingredient Lines with tick boxes** — the Pantry Check. Tapping an Ingredient Line
+  opens its stored Substitutes in a sheet; no network, no model.
+- **Keep screen awake** toggle — Screen Wake Lock API. Supported on Chrome/Edge and on
+  iOS Safari 16.4+; where unsupported the toggle is absent, not broken. Released on
+  page hide and on navigation away.
+- **Share shopping list** — the unticked lines at the current scale, as formatted text,
+  through `navigator.share()`, falling back to clipboard + toast.
+- **Steps** — numbered, one line each, deliberately terse.
+- **Tips** — at the bottom, after the Steps.
+- **"I made this"** — writes a Cook Log entry, optimistic, with an undo window.
+
+### 7.6 `/recipes/[slug]/edit` and `/recipes/new`
+
+**One component, three jobs:** manual create, manual edit, and Draft review. This is why
+the editor gets built before import.
+
+- Ingredient Lines: add, remove, drag to reorder, and a paste-a-block affordance that
+  splits pasted text into one line per row.
+- Tag picker grouped by Facet, hard-stopping at 5 with an explanation rather than a
+  silent no-op.
+- Image: drop or pick, uploaded to Blob, resized before upload, with progress and a
+  remove option.
+- Inline validation on blur, submit blocked with focus moved to the first offending
+  field and an error summary linked to it.
+- Unsaved-changes guard on navigation.
+- In Draft-review mode: a banner naming the source, per-field markers on anything the
+  Worker guessed, **Approve** and **Discard**.
+
+### 7.7 `/drafts`
+
+List of Drafts by status. Queued items show as waiting for the Worker. Failed items show
+the actual reason and offer retry or *type it myself instead*. Ready items link into the
+editor in review mode.
+
+### 7.8 `/settings` — Master only
+
+Invites (mint, copy, revoke, expiry countdown), Members (list, remove), Tags (add,
+rename, per Facet), and a read-only queue summary. Non-Masters get a 404, not a 403 —
+the screen doesn't advertise itself.
+
+## 8. Import pipeline
+
+```
+phone/anywhere      park URL              -> draft(status=queued)
+laptop  worker      claim                 -> status=processing
+                    fetch HTML
+                    JSON-LD @type=Recipe?
+                      yes -> name, image, recipeIngredient[],
+                             recipeInstructions[], recipeYield,
+                             nutrition.calories, totalTime, author
+                      no  -> strip nav/ads/comments, keep readable text
+                    Claude (structured output, the shared Zod schema):
+                      split each ingredient line into
+                        quantity / unit / item / note
+                      pick <=5 Tags from the closed list
+                      compress steps to one line each
+                      write Tips
+                      write 2-3 Substitutes per Ingredient Line
+                    download image -> resize 1200w webp -> Blob
+                    -> draft(status=ready, payload, confidence flags)
+phone               review in the editor  -> approve -> Recipe
+                                          -> discard -> status=discarded
+```
+
+Rules:
+
+- **Nothing is ever published without a human approving it.** No auto-approve, no
+  "trusted site" bypass.
+- The model is never asked what the ingredients *are* when JSON-LD says so — only how to
+  structure them. This is the difference between a wrong split (visible, fixable in
+  review) and an invented ingredient (invisible).
+- Tags come from the closed list; the model cannot mint new ones.
+- Failures are legible and specific: no markup found, fetch blocked, page not a recipe,
+  model returned nothing usable. Never a spinner that stops.
+- The Worker is idempotent and claims rows atomically, so running it twice is harmless.
+- Re-import over an existing Recipe sets `draft.recipe_id` upfront and the review screen
+  diffs against the current Recipe rather than showing a blank slate.
+
+## 9. Cooking mode details
+
+**Pantry Check** — browser-only, expires after one day, belongs to nobody in the
+database. See [ADR-0004](./docs/adr/0004-pantry-check-is-browser-only.md).
+
+```
+localStorage["openrecipe:pantry:<recipeId>"] = {
+  date: "2026-07-27",
+  checked: ["<ingredientLineId>", ...]
+}
+```
+
+Read on mount; if `date` isn't today, drop the entry and start clean. Keyed by
+Ingredient Line id, so reordering the recipe doesn't scramble the ticks.
+
+**Shopping Export format** — recipe title, the chosen serving count, the unticked lines
+at the current scale, and a count of what was skipped:
+
+```
+Ragu — 6 servings
+
+• 750 g beef mince
+• 3 tbsp tomato paste
+• 1½ onions
+• 400 ml red wine
+
+(4 of 11 — rest already in the pantry)
+```
+
+## 10. Theme — "neon diner"
+
+Tailwind tokens only. No hex literal ever appears in a component.
+
+```
+bg       #08090A    near-black
+surface  #121316    raised cards
+line     #22242A    hairlines
+accent   #C3FF3D    acid green — primary CTA, ticks, focus rings
+accent2  #FF3DDA    magenta — destructive, highlights, active filters
+text     #F2F3F5
+muted    #8B8F98
+
+display  Anton / Archivo Black — CAPS, tight tracking, big
+body     Inter
+mono     JetBrains Mono — quantities and units, so numbers align
+
+motion   snappy, slight overshoot on enter; 150-200ms
+         all of it behind prefers-reduced-motion
+radius   sharp-ish: 4px cards, 2px inputs
+```
+
+Dark only — a neon diner with a light mode is a lit diner.
+
+## 11. Voice
+
+Mild and cheeky. No swearing, no innuendo needing explanation. **Copy decorates, it
+never replaces information** — an error still names the field and the reason. All strings
+live in one keyed module (`lib/copy.ts`), so the register is swappable without touching
+components.
+
+| Where | String |
+|---|---|
+| Login | Welcome back. |
+| Empty library | No recipes yet. Add your first. |
+| Add | Add a recipe |
+| Import parked | Parked. It gets picked up next time the kitchen's open. |
+| Draft ready | Draft ready — check it before saving. |
+| Import failed | No recipe found on that page. Try another link, or type it out. |
+| Validation | Give your recipe a name. |
+| Delete confirm | Delete "Ragu"? This can't be undone. |
+| Deleted | Deleted. **Undo** |
+| No results | No matches. Try a different search. |
+| Wake lock on | Screen will stay on while you cook. |
+
+## 12. Validation
+
+| Field | Rule |
+|---|---|
+| title | 1–120 chars, trimmed, required |
+| servings | integer 1–99, required |
+| total_minutes | integer 1–10080, optional |
+| kcal_per_serving | integer 0–10000, optional |
+| tags | 0–5, must exist in the tag table |
+| ingredient lines | ≥1; `item` required 1–80 chars; `quantity` ≥0 and optional; `unit` ≤20 |
+| steps | ≥1, each 1–300 chars |
+| tips | each ≤300 chars |
+| image | jpg/png/webp, ≤5 MB pre-resize |
+| source_url | valid http(s) URL, optional |
+| invite token | single-use, unexpired, consumed atomically |
+
+Same Zod schema in the form, the Server Action and the Worker. Client validation is a
+convenience; the Server Action re-validates unconditionally.
+
+## 13. Non-functional
+
+- **Every state designed:** empty, loading (skeletons, not spinners, where the shape is
+  known), error, offline, partial data, permission-denied.
+- **Optimistic where it's safe** — ticks, cook log, reroll — with rollback and a toast on
+  failure.
+- **Accessibility:** keyboard-operable throughout, visible focus rings in accent, labels
+  on every input, error text tied to its field with `aria-describedby`, tick boxes as
+  real checkboxes, dialogs focus-trapped, contrast checked against the near-black ground,
+  motion respecting `prefers-reduced-motion`. Tap targets ≥44px — this is used with wet
+  hands.
+- **Performance:** recipe page server-rendered; images through `next/image` with sized
+  Blob sources; autocomplete debounced ~150ms with in-flight requests aborted.
+- **Secrets:** never in the client bundle. The Worker's credentials never leave the
+  laptop.
+
+## 14. Build phases
+
+Each phase deploys and is usable. You could stop after 3 and still use this daily.
+
+| # | Scope | Done when |
+|---|---|---|
+| 0 | Skeleton, Neon, Drizzle, Better Auth, invite + join, theme tokens, deployed | you can log in on the real URL, and a minted link creates a second account |
+| 1 | Schema, manual CRUD, recipe page, editor, Blob upload, tag picker | you've typed in a real recipe and it survives a redeploy |
+| 2 | Servings stepper, Pantry Check, wake lock, share export, cook log | you've cooked from your phone without the screen dying |
+| 3 | Search: trgm, Facet filters, autocomplete, infinite scroll | a typo still finds the recipe |
+| 4 | Worker: queue, JSON-LD parse, Claude Agent SDK, drafts, review mode, substitutes | a parked URL becomes a Recipe you approved |
+| 5 | Dashboard widgets, Proposals, settings screen | the dashboard tells you something you didn't know |
+| 6 | Polish pass: all states, validation, motion, a11y, mobile | nothing looks unfinished on a 375px screen |
+
+## 15. Environment
+
+**App (Vercel):** `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MASTER_EMAIL`, `BLOB_READ_WRITE_TOKEN`.
+
+**Worker (laptop):** `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, plus whatever the Claude
+CLI already has locally. No model key in either environment.
+
+## 16. Deliberate omissions
+
+Recorded so they're not mistaken for oversights: unit conversion, week planning,
+ingredient-level nutrition, multi-language recipes, recipe versioning, comments,
+ratings, print stylesheet, PWA install/offline, rate limiting (an invite-only app with
+five users doesn't need it).
+
+## 17. How we track the build (Jira)
+
+Jira is the single source of truth for build state. Not this document, not a branch name,
+not memory. If Jira and reality disagree, Jira is wrong and gets fixed immediately.
+
+**Project:** `OpenRecipe` (`OR`) on simpleweb.atlassian.net. One Epic per build phase from
+§14. Tasks hang off Epics. Subtasks only where a Task genuinely splits into steps that get
+picked up separately.
+
+### Ticket anatomy
+
+Every Task carries these four sections, in this order, in the description. They exist so
+an agent picking up the ticket cold needs nothing else:
+
+```
+## Goal
+One sentence. The observable outcome, not the activity.
+"A logged-in Member can tick ingredients and the ticks survive a reload."
+
+## Done when
+A checklist a stranger could verify without asking questions. Behaviour, not
+implementation. No "works properly", no "looks good".
+- [ ] Ticks persist across reload on the same day
+- [ ] Ticks are gone the next calendar day
+- [ ] Reordering ingredient lines does not move ticks
+
+## Context
+Files, tables, glossary terms, and the PRD/ADR sections that constrain this. Name the
+Language terms from CONTEXT.md — a ticket saying "Pantry Check" is unambiguous;
+one saying "checkbox state" is not.
+
+## Out of scope
+What NOT to touch. This is what stops a small ticket eating an afternoon.
+```
+
+### Status discipline
+
+- **A ticket's status matches reality at all times.** Move it to In Progress when work
+  starts — not after. Move it to Done when *Done when* is fully satisfied — not when the
+  code is written.
+- **One ticket In Progress at a time.** If something must pause, move it back and say why
+  in a comment.
+- **Blocked work gets a comment naming the blocker**, and moves back out of In Progress.
+  A ticket sitting In Progress for days with no movement is a lie.
+- **Partial completion is never Done.** Split the ticket instead: close what's finished,
+  open a new one for the rest, and reference it.
+- **Discoveries become tickets, not silent scope.** Found a real problem outside the
+  current ticket? New ticket in the same Epic, linked. Never widen the one in hand.
+- **A comment on completion** stating what actually shipped and anything that deviated
+  from the plan. This is the audit trail when something turns out wrong two phases later.
+
+### Epic closure
+
+An Epic moves to Done **only when every child Task is Done** — no exceptions, no
+"mostly". If a child is being dropped rather than built, it's explicitly closed as
+won't-do with a reason, which is a decision worth being able to find later. Closing the
+Epic is its own deliberate act: check the children, confirm the phase's "done when" from
+§14 holds, then close.
+
+### Glossary is binding
+
+Ticket titles, descriptions, branch names, commit messages and code all use the terms in
+[CONTEXT.md](./CONTEXT.md). Recipe, Draft, Worker, Pantry Check, Cook Log, Meal Slot.
+Not "meal", not "job runner", not "checklist state". This is what makes tickets and code
+searchable against each other.
+
+## 18. Still open
+
+- [ ] **Proposal reroll persistence.** Agreed as a per-user DB counter; I'd rather make
+      it a `?reroll=n` URL param — no table, no write path, survives refresh, and the
+      view is linkable. Loses: it resets when you navigate away. Your call.
+- [ ] Recipe template for the Worker's output voice (you said "anything will do for now").
+- [ ] Whether hand-typed Recipes should be enrichable by the Worker on demand
+      (Substitutes and Tips for recipes that never came from a URL).
