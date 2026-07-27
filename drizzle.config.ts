@@ -11,8 +11,14 @@ export default defineConfig({
   schema: "./lib/db/schema.ts",
   out: "./drizzle",
   dbCredentials: {
-    // Only db:migrate needs this. db:generate works offline, from the schema alone.
-    url: process.env.DATABASE_URL!,
+    /**
+     * Migrations run over a plain TCP session, so they use the direct (unpooled)
+     * endpoint — pgbouncer in transaction mode does not support everything DDL
+     * needs. The app itself uses the pooled URL over Neon's HTTP driver.
+     *
+     * Only db:migrate reads this. db:generate works offline from the schema alone.
+     */
+    url: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL!,
   },
   strict: true,
   verbose: true,
