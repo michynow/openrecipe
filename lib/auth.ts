@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { db } from "./db/index.ts";
 import * as schema from "./db/schema.ts";
+import { roleFor } from "./roles.ts";
 
 /**
  * Auth. See ADR-0003 for why Better Auth rather than Auth.js: this app needs a
@@ -66,6 +67,22 @@ export const auth = betterAuth({
         defaultValue: "member",
         /** Derived from MASTER_EMAIL (OR-12) — never accepted from a request. */
         input: false,
+      },
+    },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        /**
+         * Stamp the role at creation so queries and displayed labels agree with
+         * reality. This is a denormalisation, not the authority — `isMasterEmail`
+         * is what actually gates anything (see lib/roles.ts). Even if this row
+         * said "master", a check against MASTER_EMAIL would still say no.
+         */
+        before: async (newUser) => ({
+          data: { ...newUser, role: roleFor(newUser.email) },
+        }),
       },
     },
   },
