@@ -147,6 +147,13 @@ cook_log
   user_id    uuid -> user
   cooked_at  timestamptz default now()
 
+proposal_reroll               -- one row per person per day, only while they reroll
+  user_id  uuid -> user
+  day      date
+  n        int not null default 0
+  primary key (user_id, day)
+  -- joins the Proposal seed. No row means n = 0, so the common case writes nothing.
+
 draft                         -- also the import queue; status is the difference
   id           uuid pk
   source_url   text not null
@@ -204,8 +211,13 @@ atomically — a double-submit cannot mint two accounts.
    Recipes carrying that Meal Slot Tag, seeded by `(date, slot)` so it holds still all
    day for everyone. Excludes anything in the Cook Log from the last 7 days. Recipes
    with no Meal Slot Tag form a fallback pool, labelled *wildcard*, so nothing is
-   invisible. Reroll re-seeds. One query per slot:
+   invisible. One query per slot:
    `ORDER BY md5(id::text || :seed)  LIMIT 1`.
+
+   **Reroll** bumps a per-user, per-day counter held in the database, which joins the
+   seed. So a reroll survives a refresh, follows you from laptop to phone, and resets on
+   its own tomorrow — no cleanup job. Each person rerolls independently; yours doesn't
+   change what anyone else sees.
 3. **The library** — recent Recipes, grid, links to `/search` for everything.
 4. **Add** — one entry point offering both *type it out* and *park a link*.
 
@@ -483,6 +495,15 @@ Each phase deploys and is usable. You could stop after 3 and still use this dail
 
 ## 15. Environment
 
+**Production URL:** `https://openrecipe-michynows-projects.vercel.app`.
+`openrecipe.vercel.app` was already taken by an unrelated app, so this longer host is the
+canonical one — it's what `BETTER_AUTH_URL`, the Google redirect URIs and every Invite link
+must use.
+
+**Deployment Protection:** Vercel Authentication must be limited to preview deployments
+only. With it covering production, invited Members hit Vercel's own SSO login and never
+reach the app.
+
 **App (Vercel):** `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MASTER_EMAIL`, `BLOB_READ_WRITE_TOKEN`.
 
@@ -564,9 +585,9 @@ searchable against each other.
 
 ## 18. Still open
 
-- [ ] **Proposal reroll persistence.** Agreed as a per-user DB counter; I'd rather make
-      it a `?reroll=n` URL param — no table, no write path, survives refresh, and the
-      view is linkable. Loses: it resets when you navigate away. Your call.
 - [ ] Recipe template for the Worker's output voice (you said "anything will do for now").
 - [ ] Whether hand-typed Recipes should be enrichable by the Worker on demand
       (Substitutes and Tips for recipes that never came from a URL).
+
+**Resolved 2026-07-27:** Proposal reroll persists as a per-user database counter (§7.3),
+not a URL parameter. It follows you between devices and survives navigation.
