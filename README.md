@@ -17,8 +17,32 @@ see [ADR-0002](./docs/adr/0002-ai-runs-on-a-local-worker.md).
 
 ```bash
 pnpm install
+cp .env.example .env.local
 pnpm dev
 ```
+
+Fill in `.env.local` — each variable says which ticket needs it.
+
+## Database
+
+Schema is TypeScript in [`lib/db/schema.ts`](./lib/db/schema.ts); migrations are generated
+SQL files under `drizzle/`, committed and reviewed like any other code.
+
+```bash
+pnpm db:generate
+```
+
+Diffs the schema and writes a new migration. Works offline — no `DATABASE_URL` needed.
+
+```bash
+pnpm db:migrate
+```
+
+Applies pending migrations to whatever `DATABASE_URL` points at.
+
+`drizzle-kit push` is deliberately not wired up: it mutates the database without leaving a
+migration behind, and drift you cannot read in a diff is drift you cannot reason about six
+months later.
 
 Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `test`.
 
