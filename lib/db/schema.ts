@@ -1,9 +1,15 @@
 import {
   boolean,
+  index,
+  integer,
+  jsonb,
+  numeric,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -15,7 +21,6 @@ import {
  *
  * Tables still to come:
  *   OR-14  invite
- *   OR-17  recipe, ingredient_line, tag, recipe_tag
  *   OR-32  cook_log
  *   OR-38  draft
  *   OR-48  proposal_reroll
@@ -101,3 +106,124 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+/* ─────────────────────────── Recipes (OR-17) ─────────────────────────── */
+
+/**
+ * A Recipe.
+ *
+ * Steps and Tips are jsonb string arrays rather than tables: they have no
+ * identity, no attributes of their own, and are always edited as a whole block.
+ * Ingredient Lines are rows, because they get ticked, reordered, and carry
+ * Substitutes — identity where it is needed, JSON where it is not.
+ *
+ * Note `authorId` is `text`, not `uuid`: Better Auth issues text ids, so the
+ * foreign key has to match. PRD §6 says uuid, written before that was known.
+ */
+export const recipe = pgTable(
+  "recipe",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Generated from the title, collision-suffixed. Never changes on rename. */
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+
+    /** Blob URL, or null. Null is a first-class state — plenty of Recipes have no photo. */
+    imageUrl: text("image_url"),
+
+    /** What the stored quantities produce. Required. */
+    servings: integer("servings").notNull(),
+    totalMinutes: integer("total_minutes"),
+    kcalPerServing: integer("kcal_per_serving"),
+
+    /** Provenance for imported Recipes, and what re-import diffs against. */
+    sourceUrl: text("source_url"),
+
+    /** Immutable once set. Attribution, not permission — anyone may edit anything. */
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id),
+    /** Set on edit when the editor differs from the author. */
+    updatedById: text("updated_by_id").references(() => user.id),
+
+    /** string[] — ordered, one short line each. */
+    steps: jsonb("steps").$type<string[]>().notNull().default([]),
+    tips: jsonb("tips").$type<string[]>().notNull().default([]),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    /** Soft delete. Every read path must filter this out. */
+    deletedAt: timestamp("deleted_at"),
+  },
+  (table) => [
+    // Keyset pagination order (OR-35). Partial, because deleted rows are never listed.
+    index("recipe_created_at_id_idx").on(table.createdAt, table.id),
+  ],
+);
+
+/** One row of the ingredients list. */
+export const ingredientLine = pgTable(
+  "ingredient_line",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipe.id, { onDelete: "cascade" }),
+
+    /** Display order. Reordering rewrites this, which is why ticks key on id. */
+    position: integer("position").notNull(),
+
+    /**
+     * numeric, not a float: 0.1 + 0.2 must not drift in a measurement. Null means
+     * "do smaku" — a real state, not missing data, and it never gets scaled.
+     */
+    quantity: numeric("quantity"),
+    unit: text("unit"),
+    item: text("item").notNull(),
+    note: text("note"),
+
+    /** [{ item, note }] — Worker-generated and stored, never fetched live (ADR-0002). */
+    substitutes: jsonb("substitutes")
+      .$type<{ item: string; note: string | null }[]>()
+      .notNull()
+      .default([]),
+  },
+  (table) => [index("ingredient_line_recipe_idx").on(table.recipeId)],
+);
+
+/**
+ * A curated Tag. `slug` is English and is what code, queries and the Worker's
+ * prompt reference; `label` is Polish and is the only part ever rendered. That
+ * split is why there are two text columns — a reworded label breaks nothing.
+ */
+export const tag = pgTable(
+  "tag",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** meal_slot | cuisine | diet | effort | vibe */
+    facet: text("facet").notNull(),
+    slug: text("slug").notNull().unique(),
+    label: text("label").notNull(),
+  },
+  (table) => [index("tag_facet_idx").on(table.facet)],
+);
+
+/**
+ * At most 5 per Recipe. Enforced in Zod, in the picker, and by a database trigger
+ * added in the same migration — the trigger is the one that cannot be bypassed.
+ */
+export const recipeTag = pgTable(
+  "recipe_tag",
+  {
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipe.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tag.id, { onDelete: "restrict" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.recipeId, table.tagId] }),
+    index("recipe_tag_tag_idx").on(table.tagId),
+  ],
+);

@@ -114,8 +114,8 @@ recipe
   total_minutes     int null
   kcal_per_serving  int null
   source_url        text null
-  author_id         uuid -> user      -- immutable
-  updated_by        uuid null -> user
+  author_id         text -> user      -- immutable. text, not uuid: Better Auth
+  updated_by_id     text null -> user -- issues text ids, so the FK must match.
   steps             jsonb not null default '[]'   -- string[]
   tips              jsonb not null default '[]'   -- string[]
   created_at, updated_at, deleted_at timestamptz

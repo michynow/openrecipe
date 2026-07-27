@@ -8,6 +8,13 @@
       "when": 1785162723004,
       "tag": "0000_tired_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785173862918,
+      "tag": "0001_yellow_kid_colt",
+      "breakpoints": true
     }
   ]
 }
