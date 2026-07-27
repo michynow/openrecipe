@@ -1,16 +1,31 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Anton, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { SiteHeader } from "@/components/site-header";
 import { copy } from "@/lib/copy";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+/**
+ * latin-ext on all three is not optional: Polish needs ą ć ę ł ń ó ś ź ż, and a
+ * display face that silently falls back mid-word would wreck every heading.
+ */
+const display = Anton({
+  variable: "--font-display",
+  subsets: ["latin", "latin-ext"],
+  weight: "400", // Anton ships a single weight
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const body = Inter({
+  variable: "--font-body",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+
+/** Quantities and units, so numbers align down the ingredients column. */
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -27,9 +42,12 @@ export default function RootLayout({
   return (
     <html
       lang="pl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <SiteHeader />
+        {children}
+      </body>
     </html>
   );
 }
