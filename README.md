@@ -67,6 +67,19 @@ imports through the `@/` alias without an extension, as usual.
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs on every push to `main`
 and every PR: install (frozen lockfile), lint, typecheck, build.
 
+## First run on an empty database
+
+Accounts only exist via an Invite, and minting one needs a signed-in Master — circular
+when nobody exists yet. This opens that door once:
+
+```bash
+MASTER_PASSWORD='choose-something' pnpm bootstrap-master
+```
+
+It reads `MASTER_EMAIL` from the environment, refuses to overwrite an existing account, and
+takes the password from the environment rather than an argument so it stays out of `ps` and
+your shell history. Then sign in and mint Invites from `/settings`.
+
 ## Deploys
 
 Deploys are owned by **Vercel's Git integration**, not by CI — so there are no
