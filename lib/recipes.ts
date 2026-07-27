@@ -4,6 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { ingredientLine, recipe, recipeTag, tag } from "./db/schema.ts";
+import { copy } from "./copy.ts";
 import { recipeSchema, type RecipeInput } from "./recipe-schema.ts";
 import { uniqueSlug } from "./slug.ts";
 
@@ -19,9 +20,17 @@ export type SaveResult =
   | { ok: true; slug: string; id: string }
   | { ok: false; errors: string[] };
 
-/** Resolve Tag slugs to ids, and refuse anything not in the table. */
-async function resolveTagIds(slugs: string[]): Promise<string[]> {
-  if (slugs.length === 0) return [];
+/**
+ * Resolve Tag slugs to ids, refusing anything not in the table.
+ *
+ * Returns a result rather than throwing. These functions are called from Server
+ * Actions, and a thrown action reaches the user as an error page instead of a
+ * message on the form they were filling in.
+ */
+async function resolveTagIds(
+  slugs: string[],
+): Promise<{ ok: true; ids: string[] } | { ok: false; errors: string[] }> {
+  if (slugs.length === 0) return { ok: true, ids: [] };
 
   const rows = await db
     .select({ id: tag.id, slug: tag.slug })
@@ -31,10 +40,10 @@ async function resolveTagIds(slugs: string[]): Promise<string[]> {
   if (rows.length !== slugs.length) {
     const found = new Set(rows.map((r) => r.slug));
     const missing = slugs.filter((s) => !found.has(s));
-    throw new Error(`Unknown tag slugs: ${missing.join(", ")}`);
+    return { ok: false, errors: [`${copy.validation.tagUnknown} ${missing.join(", ")}`] };
   }
 
-  return rows.map((r) => r.id);
+  return { ok: true, ids: rows.map((r) => r.id) };
 }
 
 /**
@@ -54,7 +63,9 @@ export async function createRecipe(
   }
   const data = parsed.data;
 
-  const tagIds = await resolveTagIds(data.tagSlugs);
+  const tags = await resolveTagIds(data.tagSlugs);
+  if (!tags.ok) return { ok: false, errors: tags.errors };
+  const tagIds = tags.ids;
 
   const slug = await uniqueSlug(data.title, async (candidate) => {
     const hit = await db
@@ -129,7 +140,9 @@ export async function updateRecipe(
 
   if (existing.length === 0) return { ok: false, errors: ["Nie ma takiego przepisu."] };
 
-  const tagIds = await resolveTagIds(data.tagSlugs);
+  const tags = await resolveTagIds(data.tagSlugs);
+  if (!tags.ok) return { ok: false, errors: tags.errors };
+  const tagIds = tags.ids;
 
   const statements: unknown[] = [
     db

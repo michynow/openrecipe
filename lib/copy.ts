@@ -101,6 +101,12 @@ export const copy = {
     saving: "Zapisywanie…",
     cancel: "Anuluj",
     unsavedChanges: "Masz niezapisane zmiany. Wyjść i je porzucić?",
+    moveUp: "W górę",
+    moveDown: "W dół",
+    stepPlaceholder: "Krótko, jedna czynność",
+    tipPlaceholder: "Coś, co warto wiedzieć",
+    fixErrors: "Popraw zaznaczone pola.",
+    optional: "opcjonalne",
   },
 
   importFlow: {
@@ -171,6 +177,7 @@ export const copy = {
     kcalRange: "Kalorie muszą być między 0 a 10000.",
     tagsTooMany: "Maksymalnie 5 tagów.",
     tagsDuplicate: "Ten tag jest już wybrany.",
+    tagUnknown: "Nie znamy takiego tagu:",
     lineTooLong: "Za długo. Skróć do 300 znaków.",
     urlInvalid: "To nie wygląda na poprawny link.",
     imageTooBig: "Zdjęcie jest za duże. Maksymalnie 5 MB.",
