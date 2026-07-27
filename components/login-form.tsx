@@ -14,7 +14,13 @@ import { copy } from "@/lib/copy";
  * error would let anyone test which addresses have accounts here, and on an
  * invite-only instance that is exactly the thing not to leak.
  */
-export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
+export function LoginForm({
+  googleEnabled,
+  next = "/",
+}: {
+  googleEnabled: boolean;
+  next?: string;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState<"password" | "google" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,13 +45,13 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
       return;
     }
 
-    router.push("/");
+    router.push(next);
   }
 
   async function onGoogle() {
     setError(null);
     setPending("google");
-    const result = await signIn.social({ provider: "google", callbackURL: "/" });
+    const result = await signIn.social({ provider: "google", callbackURL: next });
     if (result?.error) {
       setError(copy.common.somethingFailed);
       setPending(null);
