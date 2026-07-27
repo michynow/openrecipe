@@ -107,6 +107,45 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+/* ─────────────────────────── Invites (OR-14) ─────────────────────────── */
+
+/**
+ * The only way an account comes into existence. Single-use, expiring, minted by
+ * the Master and delivered by hand — there is no email provider by design.
+ *
+ * `usedAt` is the mutex. Claiming is a conditional UPDATE that only succeeds while
+ * it is still null, so two parallel requests cannot both win.
+ */
+export const invite = pgTable(
+  "invite",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    token: text("token").notNull().unique(),
+
+    /** Optional pre-binding: when set, only this address may use the link. */
+    email: text("email"),
+
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+
+    /** Non-null means consumed. Also the claim lock. */
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    usedById: text("used_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+
+    /** Master-only in practice; the column records who, not who may. */
+    createdById: text("created_by_id")
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    /** Set when the Master revokes an unused Invite. */
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [index("invite_created_at_idx").on(table.createdAt)],
+);
+
 /* ─────────────────────────── Recipes (OR-17) ─────────────────────────── */
 
 /**

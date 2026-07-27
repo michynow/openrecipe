@@ -41,6 +41,12 @@ export const copy = {
     tokenUnknown: "Nie znamy tego zaproszenia.",
     tokenUsed: "To zaproszenie zostało już wykorzystane.",
     tokenExpired: "To zaproszenie straciło ważność.",
+    tokenWrongEmail: "To zaproszenie jest przypisane do innego adresu e-mail.",
+    emailTaken: "Konto z tym adresem już istnieje. Zaloguj się.",
+    couldNotCreate:
+      "Nie udało się utworzyć konta. Hasło musi mieć co najmniej 8 znaków.",
+    creating: "Tworzenie konta…",
+    goToLogin: "Przejdź do logowania",
   },
 
   library: {
@@ -146,6 +152,11 @@ export const copy = {
     tags: "Tagi",
     addTag: "Dodaj tag",
     queue: "Kolejka importu",
+    inviteState: {
+      used: "wykorzystane",
+      expired: "przedawnione",
+      revoked: "unieważnione",
+    },
   },
 
   validation: {
@@ -175,6 +186,9 @@ export const copy = {
     somethingFailed: "Nie udało się. Spróbuj jeszcze raz.",
     offline: "Brak połączenia. Przepis i lista zakupów działają dalej.",
     close: "Zamknij",
+    notFoundTitle: "Nie ma tu nic",
+    notFoundBody: "Ta strona nie istnieje albo nie masz do niej dostępu.",
+    backHome: "Wróć na start",
   },
 
   /** Plural forms, for the `plural` helper in ./format. Polish needs three. */
