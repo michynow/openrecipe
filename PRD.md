@@ -160,22 +160,27 @@ draft                         -- also the import queue; status is the difference
   created_at, processed_at timestamptz
 ```
 
-Indexes: `pg_trgm` GIN on `recipe.title` and `ingredient_line.item`; btree on
-`(created_at desc, id desc)` for keyset paging; btree on `draft.status`,
-`cook_log.recipe_id`, `cook_log.cooked_at`.
+Indexes: `unaccent` + `pg_trgm` GIN on `unaccent(lower(recipe.title))` and
+`unaccent(lower(ingredient_line.item))` — functional indexes, because the interface is
+Polish and search must ignore diacritics; btree on `(created_at desc, id desc)` for keyset
+paging; btree on `draft.status`, `cook_log.recipe_id`, `cook_log.cooked_at`.
 
 ### Tag taxonomy (seeded, Master-extensible)
 
-| Facet | Tags |
+`slug` is English and is what code and queries use. `label` is Polish and is the only part
+ever rendered.
+
+| Facet (`facet`) | `slug` → `label` |
 |---|---|
-| **Meal Slot** | breakfast, brunch, lunch, dinner, snack, dessert, drink, side, sauce |
-| **Cuisine** | polish, italian, french, greek, mexican, asian, japanese, thai, indian, middle-eastern, american, mediterranean |
-| **Diet** | vegetarian, vegan, gluten-free, dairy-free, high-protein, low-carb |
-| **Effort** | under-15, under-30, one-pan, no-cook, slow-cooked, meal-prep, batch-cook |
-| **Vibe** | spicy, sweet, savoury, creamy, fresh, comfort, fast-food, healthy, fancy, boozy, hangover-cure |
+| **Meal Slot** (`meal_slot`) | breakfast → Śniadanie · brunch → Brunch · lunch → Obiad · dinner → Kolacja · snack → Przekąska · dessert → Deser · drink → Napój · side → Dodatek · sauce → Sos |
+| **Cuisine** (`cuisine`) | polish → Polska · italian → Włoska · french → Francuska · greek → Grecka · mexican → Meksykańska · asian → Azjatycka · japanese → Japońska · thai → Tajska · indian → Indyjska · middle-eastern → Bliskowschodnia · american → Amerykańska · mediterranean → Śródziemnomorska |
+| **Diet** (`diet`) | vegetarian → Wegetariańskie · vegan → Wegańskie · gluten-free → Bezglutenowe · dairy-free → Bez laktozy · high-protein → Wysokobiałkowe · low-carb → Niskowęglowodanowe |
+| **Effort** (`effort`) | under-15 → Do 15 minut · under-30 → Do 30 minut · one-pan → Jedna patelnia · no-cook → Bez gotowania · slow-cooked → Długo duszone · meal-prep → Na zapas · batch-cook → Duża porcja |
+| **Vibe** (`vibe`) | spicy → Ostre · sweet → Słodkie · savoury → Wytrawne · creamy → Kremowe · fresh → Świeże · comfort → Comfort food · fast-food → Fast food · healthy → Zdrowe · fancy → Na wypas · boozy → Z alkoholem · hangover-cure → Na kaca |
 
 Max **5 Tags per Recipe**, any mix of Facets. Meal Slot is the only Facet with behaviour
-attached (it drives Proposals).
+attached (it drives Proposals). Note `Kolacja` for `dinner`: Polish meal structure puts
+the main meal at *obiad*, so the Proposals row reads Śniadanie / Obiad / Kolacja.
 
 ## 7. Screens
 
@@ -206,7 +211,8 @@ atomically — a double-submit cannot mint two accounts.
 
 ### 7.4 `/search`
 
-- Trigram search over Recipe title and Ingredient Line item, typo-tolerant.
+- Trigram search over Recipe title and Ingredient Line item, typo-tolerant **and
+  diacritic-insensitive** — `zurek` finds `żurek`, `jajka` finds `Jajka`.
 - Filters sectioned by Facet; multi-select within a Facet is OR, across Facets is AND.
 - Additional filters: max total minutes, has-image.
 - Autocomplete on the search box: `LIMIT 8`, each row a thumbnail + title + its Tags.
@@ -349,6 +355,9 @@ display  Anton / Archivo Black — CAPS, tight tracking, big
 body     Inter
 mono     JetBrains Mono — quantities and units, so numbers align
 
+all three loaded with subsets ['latin', 'latin-ext'] — Polish needs
+ą ć ę ł ń ó ś ź ż, and a display face that falls back on ł is unusable
+
 motion   snappy, slight overshoot on enter; 150-200ms
          all of it behind prefers-reduced-motion
 radius   sharp-ish: 4px cards, 2px inputs
@@ -356,26 +365,68 @@ radius   sharp-ish: 4px cards, 2px inputs
 
 Dark only — a neon diner with a light mode is a lit diner.
 
-## 11. Voice
+## 11. Language and voice
+
+**The interface is in Polish.** Every user-facing string, date, Tag label, validation
+message, error and empty state. There is no language switcher and no second locale.
+
+**Code stays in English.** Identifiers, table and column names, glossary terms, ADRs,
+commit messages and Jira tickets. `ingredientLine.item` holds `"masło"`. Mixed-language
+identifiers age badly and make the codebase unsearchable against its own docs.
+
+**No i18n library.** One module, `lib/copy.ts`, exporting a flat keyed object of Polish
+strings. `next-intl` and friends exist to serve a second locale; there isn't one. Every
+user-facing string comes from that module — none inline in a component.
+
+`<html lang="pl">`. Dates and numbers through `Intl` with `pl-PL`.
+
+### Voice
 
 Mild and cheeky. No swearing, no innuendo needing explanation. **Copy decorates, it
-never replaces information** — an error still names the field and the reason. All strings
-live in one keyed module (`lib/copy.ts`), so the register is swappable without touching
-components.
+never replaces information** — an error still names the field and the reason. Polish
+informal register throughout (*ty*, not *Pan/Pani*) — it's a household app, not a bank.
 
 | Where | String |
 |---|---|
-| Login | Welcome back. |
-| Empty library | No recipes yet. Add your first. |
-| Add | Add a recipe |
-| Import parked | Parked. It gets picked up next time the kitchen's open. |
-| Draft ready | Draft ready — check it before saving. |
-| Import failed | No recipe found on that page. Try another link, or type it out. |
-| Validation | Give your recipe a name. |
-| Delete confirm | Delete "Ragu"? This can't be undone. |
-| Deleted | Deleted. **Undo** |
-| No results | No matches. Try a different search. |
-| Wake lock on | Screen will stay on while you cook. |
+| Login | Witaj ponownie. |
+| Empty library | Brak przepisów. Dodaj pierwszy. |
+| Add | Dodaj przepis |
+| Import parked | Odłożone. Zajmiemy się tym, gdy kuchnia będzie otwarta. |
+| Draft ready | Szkic gotowy — sprawdź go przed zapisaniem. |
+| Import failed | Nie znaleziono przepisu na tej stronie. Spróbuj innego linku albo wpisz ręcznie. |
+| Validation | Podaj nazwę przepisu. |
+| Delete confirm | Usunąć „Ragu"? Tego nie da się cofnąć. |
+| Deleted | Usunięto. **Cofnij** |
+| No results | Brak wyników. Spróbuj innej frazy. |
+| Wake lock on | Ekran nie zgaśnie podczas gotowania. |
+| Pantry Check | Co już masz? |
+| Export | Wyślij listę zakupów |
+| Servings | Porcje |
+| Cook log | Ugotowane! |
+
+Polish typographic quotes („…") in copy, not straight quotes.
+
+### Consequences of Polish
+
+These are real work items, not notes:
+
+- **Tag labels are Polish, Tag slugs stay English.** `slug: "breakfast"`,
+  `label: "Śniadanie"`. The schema already separates them. Code and queries reference
+  slugs; only `label` is ever rendered.
+- **Search must ignore diacritics.** Someone typing `zurek` must find `żurek`, and
+  `Śniadanie` must match `sniadanie`. This needs the `unaccent` extension and a
+  functional trigram index over `unaccent(lower(title))` — not plain `pg_trgm`. Same for
+  Ingredient Line item.
+- **Polish sort order.** `ORDER BY label` needs the `pl-PL` collation, or Ł sorts after Z.
+- **The display font must carry Polish glyphs.** Anton and Archivo Black need the
+  `latin-ext` subset for ąćęłńóśźż; verify they render before committing to either.
+  A display face that silently falls back on ł is not usable.
+- **The Worker writes Polish.** An English source page yields a Polish Recipe — the model
+  translates as it structures. Ingredient items, Steps, Tips and Substitute notes all come
+  back in Polish. The `title` keeps the dish's proper name where one exists
+  (*Shakshuka*, *Ragù*), rather than being forcibly translated.
+- **Polish plural rules.** "1 porcja / 2 porcje / 5 porcji" — three forms, not two.
+  Use `Intl.PluralRules("pl-PL")`; naive `n === 1` logic is wrong in Polish.
 
 ## 12. Validation
 
@@ -395,6 +446,10 @@ components.
 
 Same Zod schema in the form, the Server Action and the Worker. Client validation is a
 convenience; the Server Action re-validates unconditionally.
+
+All messages Polish, from `lib/copy.ts` — including the ones Zod would otherwise generate
+in English. Character limits count Polish text, so bear in mind diacritics are single
+characters, not two.
 
 ## 13. Non-functional
 

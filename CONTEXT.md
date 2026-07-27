@@ -3,6 +3,11 @@
 A private, invite-only recipe library for one household. Recipes arrive either
 hand-typed or imported from a URL via an LLM, and are cooked from the phone.
 
+**The interface is Polish; this glossary is English.** These terms name concepts in code,
+schema, tickets and conversation. What the user sees is a Polish string in `lib/copy.ts`.
+The two are related by the table at the bottom — a term's Polish label is a rendering
+decision, not a rename.
+
 ## Language
 
 **Recipe**:
@@ -99,3 +104,30 @@ A record that someone actually made a Recipe on a given day. The only behavioura
 the system: it feeds the dashboard's counts and keeps Proposals off anything cooked in the
 last week.
 _Avoid_: history, activity, made-it
+
+## Polish rendering
+
+How each term surfaces in the interface. The left column is what you write in code; the
+right is what the user reads. Never the other way round.
+
+| Term | Polish label |
+|---|---|
+| Recipe | Przepis |
+| Ingredient Line | Składnik |
+| Servings | Porcje |
+| Step | Krok |
+| Tip | Wskazówka |
+| Tag | Tag |
+| Facet | Kategoria |
+| Meal Slot | Posiłek |
+| Proposal | Propozycja na dziś |
+| Invite | Zaproszenie |
+| Master | Właściciel |
+| Member | Domownik |
+| Draft | Szkic |
+| Source URL | Źródło |
+| Worker | — (never shown; it is infrastructure) |
+| Substitute | Zamiennik |
+| Pantry Check | Co już masz |
+| Shopping Export | Lista zakupów |
+| Cook Log | Ugotowane |
