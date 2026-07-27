@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import { Anton, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/components/site-header";
 import { copy } from "@/lib/copy";
 
 /**
- * latin-ext on all three is not optional: Polish needs ą ć ę ł ń ó ś ź ż, and a
- * display face that silently falls back mid-word would wreck every heading.
+ * Root layout: document, fonts, nothing else.
+ *
+ * The app shell lives in (app)/layout.tsx rather than here, because a nested
+ * layout composes with its parent — it cannot remove a header the root rendered.
+ * /login and /join must not show navigation to an app you are not signed into.
+ *
+ * latin-ext on all three fonts is not optional: Polish needs ą ć ę ł ń ó ś ź ż,
+ * and a display face that silently falls back mid-word would wreck every heading.
  */
 const display = Anton({
   variable: "--font-display",
@@ -44,10 +49,7 @@ export default function RootLayout({
       lang="pl"
       className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
-        <SiteHeader />
-        {children}
-      </body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }
