@@ -80,6 +80,10 @@ export const copy = {
     substitutes: "Zamienniki",
     noSubstitutes:
       "Brak zamienników dla tego składnika. Pojawiają się przy przepisach z linku.",
+    openSource: "Zobacz oryginał",
+    // The editor asks for minutes; the read view shows "1 h 35 min", so it must
+    // not repeat the unit in the label.
+    time: "Czas",
   },
 
   editor: {
