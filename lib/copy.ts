@@ -107,6 +107,17 @@ export const copy = {
     tipPlaceholder: "Coś, co warto wiedzieć",
     fixErrors: "Popraw zaznaczone pola.",
     optional: "opcjonalne",
+    quantity: "Ilość",
+    unit: "Jednostka",
+    item: "Składnik",
+    note: "Uwaga",
+    quantityPlaceholder: "2",
+    unitPlaceholder: "łyżki",
+    itemPlaceholder: "masło",
+    notePlaceholder: "roztopione",
+    pasteBlock: "Wklej listę",
+    pasteHint: "Wklej składniki — po jednym w linii. Rozbijemy je na pola; potem możesz poprawić.",
+    pasteApply: "Rozbij na wiersze",
   },
 
   importFlow: {

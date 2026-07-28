@@ -133,3 +133,30 @@ export function checkImage(file: {
   if (file.size > IMAGE_RULES.maxBytes) return v.imageTooBig;
   return null;
 }
+
+/**
+ * The concrete shape the editor holds in React state.
+ *
+ * `z.input<typeof recipeSchema>` is not usable for this: fields wrapped in
+ * `z.preprocess` widen to `unknown`, which is right for a parser accepting form
+ * strings but useless for typed component props. This type is what the UI works
+ * with; `recipeSchema.parse` is still the only thing that decides validity.
+ */
+export type RecipeFormValue = {
+  title: string;
+  servings: number;
+  totalMinutes: number | null;
+  kcalPerServing: number | null;
+  sourceUrl: string | null;
+  imageUrl: string | null;
+  ingredientLines: {
+    quantity: number | null;
+    unit: string | null;
+    item: string;
+    note: string | null;
+    substitutes: { item: string; note: string | null }[];
+  }[];
+  steps: string[];
+  tips: string[];
+  tagSlugs: string[];
+};

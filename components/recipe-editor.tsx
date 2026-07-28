@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { IngredientLinesEditor } from "@/components/ingredient-lines-editor";
 import { LineListEditor } from "@/components/line-list-editor";
 import { copy } from "@/lib/copy";
 import { firstErrorField, toFieldErrors, type FieldErrors } from "@/lib/form-errors";
-import { recipeSchema, type RecipeInput } from "@/lib/recipe-schema";
+import { recipeSchema, type RecipeFormValue } from "@/lib/recipe-schema";
 import type { SaveResult } from "@/lib/recipes";
 
 /**
@@ -16,12 +17,13 @@ import type { SaveResult } from "@/lib/recipes";
  * review an imported Draft, so it takes a value and a submit handler and knows
  * nothing about where either comes from.
  *
- * Ingredient Lines (OR-20), the Tag picker (OR-21) and image upload (OR-22) slot
- * in as children — this ticket covers the shell, the scalar fields, Steps, Tips,
- * validation and the unsaved-changes guard.
+ * All form state lives here, in one place. The Ingredient Lines editor is rendered
+ * directly rather than passed in: splitting one form's state across two components
+ * to keep a slot "pure" would trade a real bug surface for a cosmetic one. The
+ * `children` slot stays for the Tag picker (OR-21) and image upload (OR-22).
  */
 
-export type RecipeEditorValue = RecipeInput;
+export type RecipeEditorValue = RecipeFormValue;
 
 /** Focus order, which is the form's order rather than Zod's report order. */
 const FIELD_ORDER = [
@@ -59,7 +61,7 @@ export function RecipeEditor({
   /** Returns a SaveResult; the editor renders its errors rather than throwing. */
   onSubmit: (value: RecipeEditorValue) => Promise<SaveResult>;
   heading: string;
-  /** Slot for Ingredient Lines, Tags and image — their own tickets. */
+  /** Slot for the Tag picker and image upload — their own tickets. */
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -68,6 +70,14 @@ export function RecipeEditor({
   const [pending, setPending] = useState(false);
   const [dirty, setDirty] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  /**
+   * The double-submit guard has to be a ref, not the `pending` state.
+   * `setPending(true)` does not take effect until React re-renders, so three
+   * submits fired in one tick all read `pending === false` and all go through —
+   * verified by creating three identical Recipes before this was a ref. The
+   * disabled attribute only helps once a render has happened.
+   */
+  const submitting = useRef(false);
 
   /**
    * Warn before losing work. Only covers full page unloads — Next's client-side
@@ -109,7 +119,7 @@ export function RecipeEditor({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return; // belt and braces; the button is disabled too
+    if (submitting.current) return;
 
     const parsed = recipeSchema.safeParse(value);
     if (!parsed.success) {
@@ -129,13 +139,15 @@ export function RecipeEditor({
       return;
     }
 
+    submitting.current = true;
     setPending(true);
-    const result = await onSubmit(parsed.data as RecipeEditorValue);
+    const result = await onSubmit(value);
 
     if (!result.ok) {
       // Server rejection surfaces on the form, never as a thrown page.
       setErrors({ _form: result.errors.join(" ") });
       setPending(false);
+      submitting.current = false;
       return;
     }
 
@@ -191,7 +203,7 @@ export function RecipeEditor({
             inputMode="numeric"
             min={1}
             max={99}
-            value={value.servings as number}
+            value={value.servings}
             onChange={(event) => set("servings", Number(event.target.value))}
             onBlur={() => validateField("servings")}
             aria-invalid={errors.servings ? true : undefined}
@@ -210,7 +222,7 @@ export function RecipeEditor({
             id="totalMinutes"
             type="number"
             inputMode="numeric"
-            value={(value.totalMinutes as number | null) ?? ""}
+            value={value.totalMinutes ?? ""}
             onChange={(event) =>
               set("totalMinutes", numberOrNull(event.target.value))
             }
@@ -230,7 +242,7 @@ export function RecipeEditor({
             id="kcalPerServing"
             type="number"
             inputMode="numeric"
-            value={(value.kcalPerServing as number | null) ?? ""}
+            value={value.kcalPerServing ?? ""}
             onChange={(event) =>
               set("kcalPerServing", numberOrNull(event.target.value))
             }
@@ -241,13 +253,19 @@ export function RecipeEditor({
         </Field>
       </div>
 
-      {/* Ingredient Lines, Tag picker and image upload mount here. */}
+      <IngredientLinesEditor
+        values={value.ingredientLines}
+        onChange={(next) => set("ingredientLines", next)}
+        errors={errors}
+      />
+
+      {/* Tag picker (OR-21) and image upload (OR-22) mount here. */}
       {children}
 
       <LineListEditor
         id="steps"
         label={copy.recipe.steps}
-        values={value.steps as string[]}
+        values={value.steps}
         onChange={(next) => set("steps", next)}
         addLabel={copy.editor.addStep}
         placeholder={copy.editor.stepPlaceholder}
@@ -258,7 +276,7 @@ export function RecipeEditor({
       <LineListEditor
         id="tips"
         label={copy.recipe.tips}
-        values={value.tips as string[]}
+        values={value.tips}
         onChange={(next) => set("tips", next)}
         addLabel={copy.editor.addTip}
         placeholder={copy.editor.tipPlaceholder}
@@ -274,7 +292,7 @@ export function RecipeEditor({
         <input
           id="sourceUrl"
           type="url"
-          value={(value.sourceUrl as string | null) ?? ""}
+          value={value.sourceUrl ?? ""}
           onChange={(event) => set("sourceUrl", event.target.value || null)}
           onBlur={() => validateField("sourceUrl")}
           aria-invalid={errors.sourceUrl ? true : undefined}
