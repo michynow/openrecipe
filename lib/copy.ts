@@ -118,6 +118,13 @@ export const copy = {
     pasteBlock: "Wklej listę",
     pasteHint: "Wklej składniki — po jednym w linii. Rozbijemy je na pola; potem możesz poprawić.",
     pasteApply: "Rozbij na wiersze",
+    facets: {
+      meal_slot: "Posiłek",
+      cuisine: "Kuchnia",
+      diet: "Dieta",
+      effort: "Wysiłek",
+      vibe: "Charakter",
+    },
   },
 
   importFlow: {

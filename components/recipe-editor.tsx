@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { IngredientLinesEditor } from "@/components/ingredient-lines-editor";
 import { LineListEditor } from "@/components/line-list-editor";
+import { TagPicker } from "@/components/tag-picker";
 import { copy } from "@/lib/copy";
 import { firstErrorField, toFieldErrors, type FieldErrors } from "@/lib/form-errors";
 import { recipeSchema, type RecipeFormValue } from "@/lib/recipe-schema";
 import type { SaveResult } from "@/lib/recipes";
+import type { FacetGroup } from "@/lib/tags-query";
 
 /**
  * The Recipe editor. One form over the Recipe shape.
@@ -20,7 +22,7 @@ import type { SaveResult } from "@/lib/recipes";
  * All form state lives here, in one place. The Ingredient Lines editor is rendered
  * directly rather than passed in: splitting one form's state across two components
  * to keep a slot "pure" would trade a real bug surface for a cosmetic one. The
- * `children` slot stays for the Tag picker (OR-21) and image upload (OR-22).
+ * `children` slot stays for image upload (OR-22).
  */
 
 export type RecipeEditorValue = RecipeFormValue;
@@ -55,13 +57,16 @@ export function RecipeEditor({
   initial,
   onSubmit,
   heading,
+  tagGroups,
   children,
 }: {
   initial?: RecipeEditorValue;
+  /** Tag options, read from the database on the server. */
+  tagGroups: FacetGroup[];
   /** Returns a SaveResult; the editor renders its errors rather than throwing. */
   onSubmit: (value: RecipeEditorValue) => Promise<SaveResult>;
   heading: string;
-  /** Slot for the Tag picker and image upload — their own tickets. */
+  /** Slot for image upload — its own ticket. */
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -259,7 +264,14 @@ export function RecipeEditor({
         errors={errors}
       />
 
-      {/* Tag picker (OR-21) and image upload (OR-22) mount here. */}
+      <TagPicker
+        groups={tagGroups}
+        selected={value.tagSlugs}
+        onChange={(next) => set("tagSlugs", next)}
+        error={errors.tagSlugs}
+      />
+
+      {/* Image upload (OR-22) mounts here. */}
       {children}
 
       <LineListEditor

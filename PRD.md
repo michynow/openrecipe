@@ -429,7 +429,11 @@ These are real work items, not notes:
   `Śniadanie` must match `sniadanie`. This needs the `unaccent` extension and a
   functional trigram index over `unaccent(lower(title))` — not plain `pg_trgm`. Same for
   Ingredient Line item.
-- **Polish sort order.** `ORDER BY label` needs the `pl-PL` collation, or Ł sorts after Z.
+- **Polish sort order.** `ORDER BY label` needs `COLLATE "pl-PL-x-icu"`. Two traps: the
+  bare name `"pl-PL"` does not exist on Neon and errors the query outright (ICU
+  collations carry the `-x-icu` suffix), and this database's default collation is
+  `C.UTF-8`, so omitting it sorts by byte value and dumps every diacritic after Z —
+  `Świeże` lands last instead of after `Słodkie`.
 - **The display font must carry Polish glyphs.** Anton and Archivo Black need the
   `latin-ext` subset for ąćęłńóśźż; verify they render before committing to either.
   A display face that silently falls back on ł is not usable.
