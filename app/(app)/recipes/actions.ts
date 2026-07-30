@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/session";
 /**
  * Server Actions for the editor.
  *
- * Each one calls `requireUser()` itself. The middleware guard is a redirect for
+ * Each one calls `requireUser()` itself. The proxy guard is a redirect for
  * convenience, not authorisation — a Server Action is an HTTP endpoint and has to
  * defend itself.
  *
