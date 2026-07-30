@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { ingredientLine, recipe, recipeTag, tag } from "./db/schema.ts";
@@ -67,6 +67,11 @@ export async function createRecipe(
   if (!tags.ok) return { ok: false, errors: tags.errors };
   const tagIds = tags.ids;
 
+  /**
+   * The only query here that deliberately does NOT filter `deleted_at`. A
+   * soft-deleted Recipe still occupies its slug — the row is there and the unique
+   * index is real — so pretending it is gone would collide on insert.
+   */
   const slug = await uniqueSlug(data.title, async (candidate) => {
     const hit = await db
       .select({ id: recipe.id })
@@ -132,10 +137,12 @@ export async function updateRecipe(
   }
   const data = parsed.data;
 
+  // A soft-deleted Recipe is gone as far as the app is concerned, and this action
+  // is a public POST endpoint — editing one back into visibility is not an undo.
   const existing = await db
     .select({ slug: recipe.slug, authorId: recipe.authorId })
     .from(recipe)
-    .where(eq(recipe.id, recipeId))
+    .where(and(eq(recipe.id, recipeId), isNull(recipe.deletedAt)))
     .limit(1);
 
   if (existing.length === 0) return { ok: false, errors: ["Nie ma takiego przepisu."] };
@@ -195,6 +202,60 @@ export async function updateRecipe(
 
   // The slug deliberately does not follow the title: old links keep working.
   return { ok: true, slug: existing[0].slug, id: recipeId };
+}
+
+/**
+ * How long after a delete the undo still works.
+ *
+ * Deliberately longer than the toast that offers it: the toast is a UI timer, this
+ * is the trust boundary. A Server Action is reachable by POST from anywhere, and
+ * without a window `restoreRecipe` is an un-delete-anything endpoint. Generous
+ * enough that a slow phone on a slow network cannot lose someone their undo.
+ */
+const UNDO_GRACE_MS = 60_000;
+
+/**
+ * Deleting a Recipe (OR-25). Soft: the row stays and `deleted_at` is stamped, so
+ * every read path has to filter it out — see the note in lib/recipe-query.ts.
+ *
+ * Any signed-in user may delete any Recipe (PRD §5); the caller has already
+ * checked that somebody is signed in.
+ *
+ * Returns the slug so the caller can revalidate the page, or null when nothing was
+ * deleted. The `isNull` guard is what makes a second delete a no-op instead of
+ * moving the timestamp forward, which would quietly extend the undo window.
+ */
+export async function deleteRecipe(recipeId: string): Promise<string | null> {
+  const [row] = await db
+    .update(recipe)
+    .set({ deletedAt: new Date() })
+    .where(and(eq(recipe.id, recipeId), isNull(recipe.deletedAt)))
+    .returning({ slug: recipe.slug });
+
+  return row?.slug ?? null;
+}
+
+/**
+ * The undo behind the delete toast. There is no restore screen — this is the only
+ * way back, by design (OR-25).
+ *
+ * `gt` on a nullable column does the work of two checks: a Recipe that was never
+ * deleted has `deleted_at` null, `null > x` is null, and the row simply does not
+ * match.
+ */
+export async function restoreRecipe(recipeId: string): Promise<string | null> {
+  const [row] = await db
+    .update(recipe)
+    .set({ deletedAt: null })
+    .where(
+      and(
+        eq(recipe.id, recipeId),
+        gt(recipe.deletedAt, new Date(Date.now() - UNDO_GRACE_MS)),
+      ),
+    )
+    .returning({ slug: recipe.slug });
+
+  return row?.slug ?? null;
 }
 
 /**

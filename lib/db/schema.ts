@@ -21,7 +21,6 @@ import {
  *
  * Tables still to come:
  *   OR-14  invite
- *   OR-32  cook_log
  *   OR-38  draft
  *   OR-48  proposal_reroll
  */
@@ -264,5 +263,42 @@ export const recipeTag = pgTable(
   (table) => [
     primaryKey({ columns: [table.recipeId, table.tagId] }),
     index("recipe_tag_tag_idx").on(table.tagId),
+  ],
+);
+
+/* ─────────────────────────── Cook Log (OR-32) ─────────────────────────── */
+
+/**
+ * "I made this." The only behavioural data in the system — it feeds the
+ * dashboard's counts and keeps Proposals off anything cooked in the last week.
+ *
+ * There is deliberately no unique constraint on (recipe, user, day). Cooking the
+ * same thing for lunch and again for dinner is a real event, and a constraint
+ * would turn it into an error the user cannot explain. The button is what
+ * discourages the accidental double-tap, not the database.
+ *
+ * `userId` is `text` for the same reason as `recipe.authorId`: Better Auth issues
+ * text ids. PRD §6 says uuid, written before that was known.
+ */
+export const cookLog = pgTable(
+  "cook_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipe.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    cookedAt: timestamp("cooked_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // "How often was this cooked" — one Recipe, every entry.
+    index("cook_log_recipe_idx").on(table.recipeId),
+    // "What was cooked this week" and "keep Proposals off the last 7 days" scan by
+    // date across every Recipe, so the recipe index is no help to them (Phase 5).
+    index("cook_log_cooked_at_idx").on(table.cookedAt),
   ],
 );
