@@ -4,8 +4,8 @@ import { requireUser } from "@/lib/session";
 import { getTagsByFacet } from "@/lib/tags-query";
 
 export default async function NewRecipePage() {
-  // Middleware redirects anonymous visitors, but this page also refuses on its
-  // own — middleware is a redirect, not authorisation.
+  // Proxy redirects anonymous visitors, but this page also refuses on its
+  // own — the proxy guard is a redirect, not authorisation.
   await requireUser();
 
   // Read on the server so the picker ships with its options already in the HTML.
