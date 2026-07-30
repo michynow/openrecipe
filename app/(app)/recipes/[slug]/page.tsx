@@ -2,18 +2,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CookLogButton } from "@/components/cook-log-button";
+import { CookingPanel } from "@/components/cooking-panel";
+import { DeleteRecipeDialog } from "@/components/delete-recipe-dialog";
+import WakeLockToggle from "@/components/wake-lock-toggle";
+import { getCookLog } from "@/lib/cook-log";
 import { copy } from "@/lib/copy";
-import { count, formatDate, formatDuration } from "@/lib/format";
-import { formatQuantity } from "@/lib/quantity";
+import { formatDate, formatDuration } from "@/lib/format";
 import { getRecipeBySlug } from "@/lib/recipe-query";
 import { requireUser } from "@/lib/session";
 
 /**
- * The Recipe page. Read-only for now.
+ * The Recipe page.
  *
- * Phase 2 adds the Servings stepper, Pantry Check, wake lock, Shopping Export,
- * Cook Log and Substitutes (OR-27 through OR-33). Everything here is server
- * rendered — there is nothing to wait for, so nothing spins.
+ * A server component with a handful of interactive islands: the CookingPanel owns
+ * the Servings stepper, the Pantry Check and the Shopping Export, and the wake
+ * lock, Cook Log and delete each own themselves. Substitutes (OR-33) are still to
+ * come. Everything else here is server rendered — there is nothing to wait for, so
+ * nothing spins.
  *
  * The governing rule: a null field renders as **nothing at all**. No "unknown", no
  * em-dash, no empty labelled row. A Recipe with no photo, no time, no kcal, no
@@ -30,6 +36,7 @@ export default async function RecipePage({
   const recipe = await getRecipeBySlug(slug);
   if (!recipe) notFound();
 
+  const cookLog = await getCookLog(recipe.id);
   const duration = formatDuration(recipe.totalMinutes);
   const editedByOther = recipe.lastEditor !== null;
 
@@ -97,14 +104,9 @@ export default async function RecipePage({
           </ul>
         )}
 
+        {/* Servings are not here: the stepper below owns them, and showing the
+            stored count as well would leave two numbers disagreeing on screen. */}
         <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-          <div className="flex gap-2">
-            <dt className="text-muted">{copy.recipe.servings}</dt>
-            <dd className="font-mono">
-              {count(recipe.servings, copy.units.servings)}
-            </dd>
-          </div>
-
           {/* Each of these disappears entirely when null. */}
           {duration && (
             <div className="flex gap-2">
@@ -135,34 +137,20 @@ export default async function RecipePage({
               {copy.recipe.openSource}
             </a>
           )}
+          {/* Free-for-all, per PRD §5 — the dialog is the only gate. */}
+          <DeleteRecipeDialog recipeId={recipe.id} title={recipe.title} />
         </div>
       </header>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="font-display text-xl uppercase tracking-tight">
-          {copy.recipe.ingredients}
-        </h2>
-        <ul className="flex flex-col gap-1">
-          {recipe.ingredientLines.map((line) => (
-            <li key={line.id} className="flex gap-2 text-sm">
-              {/*
-                Quantity and unit in mono and right-aligned in a fixed column, so
-                numbers line up down the list instead of ragging with the words.
-              */}
-              <span className="w-24 shrink-0 text-right font-mono text-muted">
-                {line.quantity !== null && formatQuantity(line.quantity)}
-                {line.unit && ` ${line.unit}`}
-              </span>
-              <span>
-                {line.item}
-                {line.note && (
-                  <span className="text-muted"> ({line.note})</span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* Absent entirely where the browser has no Wake Lock API. */}
+      <WakeLockToggle />
+
+      <CookingPanel
+        recipeId={recipe.id}
+        title={recipe.title}
+        servings={recipe.servings}
+        lines={recipe.ingredientLines}
+      />
 
       <section className="flex flex-col gap-2">
         <h2 className="font-display text-xl uppercase tracking-tight">
@@ -196,6 +184,13 @@ export default async function RecipePage({
           </ul>
         </section>
       )}
+
+      {/* Last thing on the page, because it is the last thing you do. */}
+      <CookLogButton
+        recipeId={recipe.id}
+        times={cookLog.times}
+        lastCookedAt={cookLog.lastCookedAt}
+      />
     </main>
   );
 }

@@ -56,6 +56,8 @@ export const copy = {
 
   recipe: {
     servings: "Porcje",
+    fewerServings: "Mniej porcji",
+    moreServings: "Więcej porcji",
     ingredients: "Składniki",
     steps: "Przygotowanie",
     tips: "Wskazówki",
