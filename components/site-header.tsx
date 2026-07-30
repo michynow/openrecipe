@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { copy } from "@/lib/copy";
 
 const links = [
@@ -34,10 +35,20 @@ export function SiteHeader() {
 
         <Link
           href="/recipes/new"
-          className="order-2 ml-auto rounded-input bg-accent px-3 py-2 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90 sm:order-3"
+          className="order-2 ml-auto rounded-input bg-accent px-3 py-2 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90 sm:order-4"
         >
           {copy.nav.add}
         </Link>
+
+        {/*
+          Its own full-width row below sm — a search box narrow enough to share a
+          row with the nav is too narrow to read a suggestion in. From sm up the
+          ml-auto moves here, so search and the add button sit together on the
+          right and the nav stays next to the wordmark.
+        */}
+        <div className="order-4 w-full sm:order-3 sm:ml-auto sm:w-56">
+          <SearchAutocomplete />
+        </div>
 
         <nav className="order-3 -mx-3 flex w-full items-center gap-1 text-sm sm:order-2 sm:mx-0 sm:w-auto">
           {links.map((link) => (
