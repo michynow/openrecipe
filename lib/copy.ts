@@ -158,6 +158,10 @@ export const copy = {
     filters: "Filtry",
     clearFilters: "Wyczyść filtry",
     endOfResults: "To wszystko.",
+    maxTime: "Maksymalny czas",
+    anyTime: "Bez limitu",
+    hasImage: "Ze zdjęciem",
+    apply: "Pokaż wyniki",
   },
 
   dashboard: {
