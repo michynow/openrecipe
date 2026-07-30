@@ -196,6 +196,11 @@ export const recipe = pgTable(
   (table) => [
     // Keyset pagination order (OR-35). Partial, because deleted rows are never listed.
     index("recipe_created_at_id_idx").on(table.createdAt, table.id),
+    // `recipe_title_trgm_idx` also exists, over immutable_unaccent(lower(title)).
+    // It is not declared here on purpose: drizzle-kit cannot express an index over
+    // a function call, so it lives in drizzle/0004_search_trigram_indexes.sql. Do
+    // not add it here — the snapshot has never seen it, and generate would emit a
+    // second CREATE INDEX for an index that is already there.
   ],
 );
 
@@ -226,6 +231,8 @@ export const ingredientLine = pgTable(
       .notNull()
       .default([]),
   },
+  // `ingredient_line_item_trgm_idx` is the other half of the search foundation and
+  // is likewise hand-written — see the note on `recipe` above.
   (table) => [index("ingredient_line_recipe_idx").on(table.recipeId)],
 );
 
