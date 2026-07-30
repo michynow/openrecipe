@@ -16,10 +16,9 @@ import { requireUser } from "@/lib/session";
  * The Recipe page.
  *
  * A server component with a handful of interactive islands: the CookingPanel owns
- * the Servings stepper, the Pantry Check and the Shopping Export, and the wake
- * lock, Cook Log and delete each own themselves. Substitutes (OR-33) are still to
- * come. Everything else here is server rendered — there is nothing to wait for, so
- * nothing spins.
+ * the Servings stepper, the Pantry Check, the Shopping Export and the Substitutes
+ * sheet, and the wake lock, Cook Log and delete each own themselves. Everything
+ * else here is server rendered — there is nothing to wait for, so nothing spins.
  *
  * The governing rule: a null field renders as **nothing at all**. No "unknown", no
  * em-dash, no empty labelled row. A Recipe with no photo, no time, no kcal, no

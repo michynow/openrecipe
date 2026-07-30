@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 
+import { SubstitutesSheet } from "@/components/substitutes-sheet";
 import { copy } from "@/lib/copy";
 import { count } from "@/lib/format";
 import {
@@ -20,7 +21,8 @@ type Line = RecipeDetail["ingredientLines"][number];
 /**
  * The ingredients, the way they are used rather than the way they are stored:
  * scaled to the servings the reader wants, ticked off against what is already in
- * the cupboard, and exportable as a shopping list (OR-27, OR-28, OR-30).
+ * the cupboard, exportable as a shopping list, and each one able to show what it
+ * can be swapped for (OR-27, OR-28, OR-30, OR-33).
  *
  * All three are display state. The Recipe is never rewritten — a Recipe cooked for
  * six is still a Recipe for four (PRD §7.5), and the ticks belong to a shopping
@@ -39,6 +41,9 @@ export function CookingPanel({
 }) {
   const [servings, setServings] = useState(storedServings);
   const [copied, setCopied] = useState(false);
+  /** Which Line's Substitutes are open, by id — an id survives a re-render with
+      fresh props, a captured Line object goes stale. */
+  const [openLineId, setOpenLineId] = useState<string | null>(null);
 
   /**
    * localStorage is the store; React only reads it. The server snapshot is null
@@ -133,18 +138,40 @@ export function CookingPanel({
               .filter(Boolean)
               .join(" ");
 
+            /**
+             * The dotted underline is the only hint that an item is worth tapping,
+             * so it goes on the lines that actually have Substitutes. Ticked lines
+             * get the strike instead — the two are text decorations and cannot both
+             * apply, and a line already in the cupboard is not the one you are
+             * looking to replace.
+             */
+            const itemStyle = isChecked
+              ? "text-muted line-through"
+              : line.substitutes.length > 0
+                ? "underline decoration-accent decoration-dotted underline-offset-4"
+                : "";
+
             return (
-              <li key={line.id}>
-                {/* The whole row is the tap target: 44px tall, thumb-sized, greasy hands. */}
-                <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+              <li key={line.id} className="flex items-center gap-2 text-sm">
+                {/*
+                  Two tap targets side by side, not one stacked on the other. The row
+                  used to be a single label, so anything that opened the Substitutes
+                  sheet would have ticked the line on the way — the item text is the
+                  sheet's trigger, so it has to sit *outside* the label rather than
+                  inside it with a click handler wrestling the checkbox for the same
+                  pixels. The label keeps the checkbox and the measure column, the
+                  button takes the rest of the row, and both stay 44px tall for
+                  greasy hands.
+                */}
+                <label className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggle(line.id)}
                     /**
-                     * Explicit name: a wrapping label ought to name the input, but
-                     * the row is three spans and the computed name is not worth
-                     * gambling on when every line would announce alike.
+                     * Explicit name, and now load-bearing: the item moved out of the
+                     * label to become the sheet's trigger, so the label is a bare
+                     * measure and every tick would otherwise announce as "2 tbsp".
                      */
                     aria-label={`${measure} ${line.item}`.trim()}
                     className="size-5 shrink-0 accent-accent"
@@ -156,11 +183,18 @@ export function CookingPanel({
                   <span className="w-24 shrink-0 text-right font-mono text-muted">
                     {measure}
                   </span>
-                  <span className={isChecked ? "text-muted line-through" : undefined}>
-                    {line.item}
-                    {line.note && <span className="text-muted"> ({line.note})</span>}
-                  </span>
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setOpenLineId(line.id)}
+                  /* The visible text is the item, which says nothing about what the
+                     tap does; the name has to. */
+                  aria-label={`${copy.recipe.substitutes}: ${line.item}`}
+                  className={`min-h-11 flex-1 text-left ${itemStyle}`}
+                >
+                  {line.item}
+                  {line.note && <span className="text-muted"> ({line.note})</span>}
+                </button>
               </li>
             );
           })}
@@ -188,6 +222,11 @@ export function CookingPanel({
           </p>
         )}
       </div>
+
+      <SubstitutesSheet
+        line={lines.find((line) => line.id === openLineId) ?? null}
+        onClose={() => setOpenLineId(null)}
+      />
     </section>
   );
 }
