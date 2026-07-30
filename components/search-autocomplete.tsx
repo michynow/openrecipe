@@ -6,6 +6,7 @@ import { useEffect, useId, useState } from "react";
 
 import type { RecipeCardData } from "@/components/recipe-card";
 import { copy } from "@/lib/copy";
+import { searchHref } from "@/lib/search-params";
 
 /**
  * The header's search box with suggestions (OR-37).
@@ -110,6 +111,28 @@ export function SearchAutocomplete() {
       return;
     }
 
+    /**
+     * Enter is handled before the expanded guard, because it means something with
+     * the list closed too: a highlighted row opens that Recipe, and anything else
+     * hands the typed words to the full search page rather than doing nothing —
+     * suggestions are eight rows, and the reason to type past them is to see the
+     * rest.
+     */
+    if (event.key === "Enter") {
+      const trimmed = query.trim();
+      if (active >= 0 && expanded) {
+        event.preventDefault();
+        openRecipe(items[active]);
+      } else if (trimmed) {
+        event.preventDefault();
+        setOpen(false);
+        // Through searchHref, so the parameter is spelled in exactly one place
+        // (lib/search-params.ts) whichever screen builds the URL.
+        router.push(searchHref({ query: trimmed, tagSlugs: [], hasImage: false }));
+      }
+      return;
+    }
+
     if (!expanded) return;
 
     // Both arrows wrap, and both must preventDefault or the caret jumps to the
@@ -181,7 +204,7 @@ export function SearchAutocomplete() {
 
       {expanded && (
         <div className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-card border border-line bg-surface">
-          <ul id={listId} role="listbox" aria-label={copy.search.placeholder}>
+          <ul id={listId} role="listbox" aria-label={copy.search.suggestions}>
             {items.map((recipe, index) => (
               <li
                 key={recipe.slug}

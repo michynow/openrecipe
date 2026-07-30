@@ -162,6 +162,8 @@ export const copy = {
     anyTime: "Bez limitu",
     hasImage: "Ze zdjęciem",
     apply: "Pokaż wyniki",
+    /** Names the autocomplete's listbox. The placeholder is a question, not a name. */
+    suggestions: "Podpowiedzi",
   },
 
   dashboard: {
