@@ -18,6 +18,15 @@ const PUBLIC_PREFIXES = ["/login", "/join"];
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
+  /**
+   * Localhost signs itself in — see devMaster() in lib/session.ts, which is the
+   * other half of this and carries the same NODE_ENV guard. Without this skip the
+   * redirect would fire first and the bypass below it would never be reached.
+   */
+  if (process.env.NODE_ENV === "development") {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
