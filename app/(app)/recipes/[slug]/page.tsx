@@ -6,6 +6,7 @@ import { CookLogButton } from "@/components/cook-log-button";
 import { CookingPanel } from "@/components/cooking-panel";
 import { DeleteRecipeDialog } from "@/components/delete-recipe-dialog";
 import WakeLockToggle from "@/components/wake-lock-toggle";
+import { imageSrc } from "@/lib/blob";
 import { getCookLog } from "@/lib/cook-log";
 import { copy } from "@/lib/copy";
 import { formatDate, formatDuration } from "@/lib/format";
@@ -44,10 +45,12 @@ export default async function RecipePage({
       {recipe.imageUrl ? (
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-card">
           <Image
-            src={recipe.imageUrl}
+            src={imageSrc(recipe.imageUrl)!}
             alt={recipe.title}
             fill
             priority
+            /* Served through /api/image, which the optimizer cannot authenticate. */
+            unoptimized
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 672px"
           />

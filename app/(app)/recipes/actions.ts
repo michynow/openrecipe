@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { deleteBlob } from "@/lib/blob-server";
 import { logCooked, undoCooked } from "@/lib/cook-log";
 import type { RecipeInput } from "@/lib/recipe-schema";
 import {
@@ -53,6 +54,20 @@ export async function updateRecipeAction(
   }
 
   return result;
+}
+
+/* ───────────────────────────── Image (OR-22) ──────────────────────────── */
+
+/**
+ * Drops a blob the editor uploaded and then replaced or removed before saving.
+ * Without this, every second thought about a photo leaves one behind.
+ *
+ * Images that a Recipe already carries are *not* deleted here — `updateRecipe`
+ * does that once the save commits, so a cancelled edit keeps its picture.
+ */
+export async function deleteImageAction(url: string): Promise<void> {
+  await requireUser();
+  await deleteBlob(url);
 }
 
 /* ──────────────────────────── Delete (OR-25) ──────────────────────────── */

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 
+import { deleteBlob } from "./blob-server.ts";
 import { db } from "./db/index.ts";
 import { ingredientLine, recipe, recipeTag, tag } from "./db/schema.ts";
 import { copy } from "./copy.ts";
@@ -140,7 +141,11 @@ export async function updateRecipe(
   // A soft-deleted Recipe is gone as far as the app is concerned, and this action
   // is a public POST endpoint — editing one back into visibility is not an undo.
   const existing = await db
-    .select({ slug: recipe.slug, authorId: recipe.authorId })
+    .select({
+      slug: recipe.slug,
+      authorId: recipe.authorId,
+      imageUrl: recipe.imageUrl,
+    })
     .from(recipe)
     .where(and(eq(recipe.id, recipeId), isNull(recipe.deletedAt)))
     .limit(1);
@@ -199,6 +204,16 @@ export async function updateRecipe(
   }
 
   await runAtomically(statements);
+
+  /**
+   * The image the Recipe used to carry is now unreachable, so the blob goes with
+   * it. Deliberately *after* the write, not when the editor cleared the field:
+   * until the save commits, the old URL is still what the Recipe shows, and an
+   * abandoned edit must not take the picture with it.
+   */
+  if (existing[0].imageUrl !== data.imageUrl) {
+    await deleteBlob(existing[0].imageUrl);
+  }
 
   // The slug deliberately does not follow the title: old links keep working.
   return { ok: true, slug: existing[0].slug, id: recipeId };

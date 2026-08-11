@@ -54,14 +54,7 @@ export function TagPicker({
   const full = selected.length >= MAX_TAGS;
 
   return (
-    <fieldset className="flex flex-col gap-3">
-      <legend className="text-sm text-muted">
-        {copy.editor.tags}{" "}
-        <span className="font-mono text-xs">
-          {selected.length} {copy.editor.tagsCount}
-        </span>
-      </legend>
-
+    <>
       {/* Chosen Tags, removable here without hunting through the groups. */}
       {selected.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">
@@ -81,8 +74,12 @@ export function TagPicker({
       )}
 
       <div className="flex flex-col gap-3">
-        {groups.map((group) => (
-          <div key={group.facet} className="flex flex-col gap-1.5">
+        {groups.map((group, index) => (
+          <div
+            key={group.facet}
+            /* Hairline between Facets, so the five clusters separate from each other. */
+            className={`flex flex-col gap-1.5 ${index > 0 ? "border-t border-line/40 pt-3" : ""}`}
+          >
             <p className="text-xs uppercase tracking-wide text-muted">
               {copy.editor.facets[group.facet] ?? group.facet}
             </p>
@@ -134,6 +131,6 @@ export function TagPicker({
           {error}
         </p>
       )}
-    </fieldset>
+    </>
   );
 }

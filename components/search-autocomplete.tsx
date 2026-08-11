@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
 import type { RecipeCardData } from "@/components/recipe-card";
+import { imageSrc } from "@/lib/blob";
 import { copy } from "@/lib/copy";
 import { searchHref } from "@/lib/search-params";
 
@@ -225,13 +226,15 @@ export function SearchAutocomplete() {
               >
                 {recipe.imageUrl ? (
                   <Image
-                    src={recipe.imageUrl}
+                    src={imageSrc(recipe.imageUrl)!}
                     // Empty: the title sits beside it and is the row's name
                     // already, so alt text here would announce it twice.
                     alt=""
                     width={THUMBNAIL_PX}
                     height={THUMBNAIL_PX}
                     sizes={`${THUMBNAIL_PX}px`}
+                    /* Served through /api/image, which the optimizer cannot authenticate. */
+                    unoptimized
                     className="h-12 w-12 shrink-0 rounded-input object-cover"
                   />
                 ) : (

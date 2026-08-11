@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { imageSrc } from "@/lib/blob";
 import { copy } from "@/lib/copy";
 import { formatDuration } from "@/lib/format";
 
@@ -48,9 +49,11 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
       <div className="relative aspect-4/3 w-full overflow-hidden">
         {recipe.imageUrl ? (
           <Image
-            src={recipe.imageUrl}
+            src={imageSrc(recipe.imageUrl)!}
             alt={recipe.title}
             fill
+            /* Served through /api/image, which the optimizer cannot authenticate. */
+            unoptimized
             className="object-cover"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
           />

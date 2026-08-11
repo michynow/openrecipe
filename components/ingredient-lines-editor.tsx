@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { RowButton } from "@/components/section-card";
 import { copy } from "@/lib/copy";
 import type { FieldErrors } from "@/lib/form-errors";
 import { parseIngredientBlock } from "@/lib/parse-ingredient";
@@ -82,17 +83,27 @@ export function IngredientLinesEditor({
   const numberOrNull = (raw: string) => (raw === "" ? null : Number(raw));
 
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm text-muted">{copy.recipe.ingredients}</legend>
-
-      <ol className="flex flex-col gap-2">
+    <>
+      <ol className="flex flex-col">
         {values.map((line, index) => {
           const itemError = errors[`ingredientLines.${index}.item`];
           const quantityError = errors[`ingredientLines.${index}.quantity`];
 
           return (
-            <li key={index} className="flex flex-col gap-1">
+            <li
+              key={index}
+              /* Hairlines between rows: eight ingredients otherwise read as one block. */
+              className="flex flex-col gap-1 border-t border-line/60 py-2 first:border-t-0 first:pt-0"
+            >
               <div className="flex flex-wrap items-start gap-2 sm:flex-nowrap">
+                {/* Same numbering language as Steps, which ingredients lacked. */}
+                <span
+                  aria-hidden
+                  className="mt-3 w-5 shrink-0 text-right font-mono text-xs text-muted"
+                >
+                  {index + 1}
+                </span>
+
                 <input
                   id={`ingredientLines.${index}.quantity`}
                   aria-label={`${copy.editor.quantity} ${index + 1}`}
@@ -103,7 +114,7 @@ export function IngredientLinesEditor({
                     update(index, { quantity: numberOrNull(event.target.value) })
                   }
                   aria-invalid={quantityError ? true : undefined}
-                  className="w-20 rounded-input border border-line bg-surface px-2 py-2 font-mono"
+                  className="w-20 rounded-input border border-line bg-bg px-2 py-2 font-mono"
                 />
 
                 <input
@@ -113,7 +124,7 @@ export function IngredientLinesEditor({
                   onChange={(event) =>
                     update(index, { unit: event.target.value || null })
                   }
-                  className="w-24 rounded-input border border-line bg-surface px-2 py-2"
+                  className="w-24 rounded-input border border-line bg-bg px-2 py-2"
                 />
 
                 <input
@@ -129,7 +140,7 @@ export function IngredientLinesEditor({
                     }
                   }}
                   aria-invalid={itemError ? true : undefined}
-                  className="min-w-32 flex-1 rounded-input border border-line bg-surface px-3 py-2"
+                  className="min-w-32 flex-1 rounded-input border border-line bg-bg px-3 py-2"
                 />
 
                 <input
@@ -139,36 +150,28 @@ export function IngredientLinesEditor({
                   onChange={(event) =>
                     update(index, { note: event.target.value || null })
                   }
-                  className="min-w-28 flex-1 rounded-input border border-line bg-surface px-3 py-2"
+                  className="min-w-28 flex-1 rounded-input border border-line bg-bg px-3 py-2"
                 />
 
                 <span className="flex shrink-0 items-center">
-                  <button
-                    type="button"
+                  <RowButton
+                    icon="up"
+                    label={`${copy.editor.moveUp}: ${index + 1}`}
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
-                    aria-label={`${copy.editor.moveUp}: ${index + 1}`}
-                    className="px-2 py-2 text-muted disabled:opacity-30"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <RowButton
+                    icon="down"
+                    label={`${copy.editor.moveDown}: ${index + 1}`}
                     onClick={() => move(index, 1)}
                     disabled={index === values.length - 1}
-                    aria-label={`${copy.editor.moveDown}: ${index + 1}`}
-                    className="px-2 py-2 text-muted disabled:opacity-30"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <RowButton
+                    icon="remove"
+                    label={`${copy.common.delete}: ${index + 1}`}
                     onClick={() => remove(index)}
-                    aria-label={`${copy.common.delete}: ${index + 1}`}
-                    className="px-2 py-2 text-accent2"
-                  >
-                    ×
-                  </button>
+                    destructive
+                  />
                 </span>
               </div>
 
@@ -206,7 +209,7 @@ export function IngredientLinesEditor({
       </div>
 
       {pasteOpen && (
-        <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-3">
+        <div className="flex flex-col gap-2 rounded-card border border-line bg-bg p-3">
           <label htmlFor="paste-ingredients" className="text-sm text-muted">
             {copy.editor.pasteHint}
           </label>
@@ -215,7 +218,7 @@ export function IngredientLinesEditor({
             rows={6}
             value={pasteText}
             onChange={(event) => setPasteText(event.target.value)}
-            className="rounded-input border border-line bg-bg px-3 py-2 font-mono text-sm"
+            className="rounded-input border border-line bg-surface px-3 py-2 font-mono text-sm"
           />
           <div className="flex gap-2">
             <button
@@ -238,6 +241,6 @@ export function IngredientLinesEditor({
           </div>
         </div>
       )}
-    </fieldset>
+    </>
   );
 }
