@@ -52,6 +52,7 @@ export const copy = {
   library: {
     empty: "Brak przepisów. Dodaj pierwszy.",
     recent: "Ostatnio dodane",
+    seeAll: "Zobacz wszystkie",
   },
 
   recipe: {
