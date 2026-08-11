@@ -10,7 +10,11 @@ import { SectionCard } from "@/components/section-card";
 import { TagPicker } from "@/components/tag-picker";
 import { copy } from "@/lib/copy";
 import { firstErrorField, toFieldErrors, type FieldErrors } from "@/lib/form-errors";
-import { recipeSchema, type RecipeFormValue } from "@/lib/recipe-schema";
+import {
+  emptyRecipe,
+  recipeSchema,
+  type RecipeFormValue,
+} from "@/lib/recipe-schema";
 import type { SaveResult } from "@/lib/recipes";
 import type { FacetGroup } from "@/lib/tags-query";
 
@@ -41,19 +45,6 @@ const FIELD_ORDER = [
   "tips",
   "tagSlugs",
 ] as const;
-
-export const emptyRecipe: RecipeEditorValue = {
-  title: "",
-  servings: 4,
-  totalMinutes: null,
-  kcalPerServing: null,
-  sourceUrl: null,
-  imageUrl: null,
-  ingredientLines: [],
-  steps: [""],
-  tips: [],
-  tagSlugs: [],
-};
 
 export function RecipeEditor({
   initial,

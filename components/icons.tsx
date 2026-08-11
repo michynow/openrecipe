@@ -20,6 +20,9 @@ const PATHS = {
   steps: "M4 6h.01 M4 12h.01 M4 18h.01 M8 6h12 M8 12h12 M8 18h12",
   tips: "M9 18h6 M10 21h4 M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0 0 12 3Z",
 
+  /** A parked Source URL, on the button that queues one. */
+  link: "M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1 M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1",
+
   /* Row actions */
   up: "M6 15l6-6 6 6",
   down: "M6 9l6 6 6-6",

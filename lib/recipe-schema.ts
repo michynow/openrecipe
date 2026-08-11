@@ -38,20 +38,30 @@ const nullableText = (max: number) =>
     z.union([z.null(), z.string().trim().min(1).max(max)]),
   );
 
-/** http(s) only — no javascript: or data: URLs reaching an href. */
+/**
+ * http(s) only — no javascript: or data: URLs reaching an href.
+ *
+ * One check that parses, rather than `.url()` followed by a refinement reading
+ * `new URL(value).protocol`. Zod 4 keeps running later checks after an earlier
+ * one fails, so that shape called `new URL()` on strings already known not to be
+ * URLs and threw TypeError out of the parse — crashing the Server Action instead
+ * of returning "Podaj poprawny link".
+ */
+export const httpUrlSchema = z
+  .string()
+  .trim()
+  .refine((value) => {
+    try {
+      const { protocol } = new URL(value);
+      return protocol === "http:" || protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, v.urlInvalid);
+
 const nullableHttpUrl = z.preprocess(
   absentToNull,
-  z.union([
-    z.null(),
-    z
-      .string()
-      .trim()
-      .url(v.urlInvalid)
-      .refine(
-        (value) => /^https?:$/.test(new URL(value).protocol),
-        v.urlInvalid,
-      ),
-  ]),
+  z.union([z.null(), httpUrlSchema]),
 );
 
 /** A stand-in for an Ingredient Line's item. Worker-generated, stored, not fetched. */
@@ -142,6 +152,27 @@ export function checkImage(file: {
  * strings but useless for typed component props. This type is what the UI works
  * with; `recipeSchema.parse` is still the only thing that decides validity.
  */
+/**
+ * A blank Recipe, as the editor holds it before anything is typed.
+ *
+ * Lives here rather than in the editor because a Server Component needs it too
+ * (prefilling the Source URL from a failed import, OR-45), and a value exported
+ * from a "use client" module does not survive that crossing — it arrives as a
+ * client reference, and spreading it yields an object with no fields.
+ */
+export const emptyRecipe: RecipeFormValue = {
+  title: "",
+  servings: 4,
+  totalMinutes: null,
+  kcalPerServing: null,
+  sourceUrl: null,
+  imageUrl: null,
+  ingredientLines: [],
+  steps: [""],
+  tips: [],
+  tagSlugs: [],
+};
+
 export type RecipeFormValue = {
   title: string;
   servings: number;

@@ -186,6 +186,34 @@ export const copy = {
     neglected: "Dawno nieużywane",
   },
 
+  /** Parking a link, and the Drafts screen (OR-39, OR-45). */
+  imports: {
+    parkTitle: "Wklej link",
+    parkHint: "Zajmiemy się nim, gdy kuchnia będzie otwarta.",
+    parkAction: "Odłóż na później",
+    parked: "Odłożone. Zajmiemy się tym, gdy kuchnia będzie otwarta.",
+    alreadyParked: "Ten link już czeka w kolejce.",
+    alreadyImported: "Ten przepis już jest w bibliotece.",
+    openExisting: "Otwórz go",
+    orPasteLink: "Masz link? Wklej go zamiast wpisywać.",
+    draftsTitle: "Szkice",
+    draftsEmpty: "Nic nie czeka. Wklej link, a zajmiemy się resztą.",
+    review: "Sprawdź szkic",
+    retry: "Spróbuj jeszcze raz",
+    discard: "Odrzuć",
+    typeInstead: "Wpisz ręcznie",
+    failedFallback:
+      "Nie znaleziono przepisu na tej stronie. Spróbuj innego linku albo wpisz ręcznie.",
+    status: {
+      queued: "Czeka w kolejce",
+      processing: "W robocie",
+      ready: "Gotowy do sprawdzenia",
+      failed: "Nie wyszło",
+      approved: "Dodany do biblioteki",
+      discarded: "Odrzucony",
+    },
+  },
+
   settings: {
     title: "Ustawienia",
     invites: "Zaproszenia",

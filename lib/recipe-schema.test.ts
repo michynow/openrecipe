@@ -116,7 +116,18 @@ test("coerces numeric strings, because form fields are strings", () => {
 });
 
 test("rejects non-http URL schemes", () => {
-  for (const sourceUrl of ["javascript:alert(1)", "data:text/html,x", "ftp://x.pl/a"]) {
+  /**
+   * "kwestiasmaku" is the regression: it is not a URL at all, so the old
+   * `.url()` + `new URL(value).protocol` refinement threw TypeError instead of
+   * failing the parse — Zod 4 runs later checks even after an earlier one fails.
+   * safeParse is supposed to be total; it was not.
+   */
+  for (const sourceUrl of [
+    "javascript:alert(1)",
+    "data:text/html,x",
+    "ftp://x.pl/a",
+    "kwestiasmaku",
+  ]) {
     const result = recipeSchema.safeParse({ ...valid(), sourceUrl });
     assert.equal(result.success, false, `${sourceUrl} should be rejected`);
   }

@@ -1,4 +1,8 @@
-import { recipeSchema, type Recipe } from "./recipe-schema.ts";
+import {
+  httpUrlSchema,
+  recipeSchema,
+  type Recipe,
+} from "./recipe-schema.ts";
 
 /**
  * The Draft status model (OR-38).
@@ -18,6 +22,13 @@ import { recipeSchema, type Recipe } from "./recipe-schema.ts";
  * `discarded` are terminal: a Draft that became a Recipe is finished, and
  * un-discarding is not a feature anyone asked for.
  */
+
+/**
+ * A parked link. Same http(s)-only rule as `recipe.sourceUrl`, because this URL
+ * ends up there on approval — and because the Worker will fetch whatever this
+ * accepts, which makes it a trust boundary rather than a formatting nicety.
+ */
+export const sourceUrlSchema = httpUrlSchema;
 
 export const DRAFT_STATUSES = [
   "queued",

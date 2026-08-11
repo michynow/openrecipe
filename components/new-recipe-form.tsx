@@ -14,14 +14,18 @@ import type { FacetGroup } from "@/lib/tags-query";
 export function NewRecipeForm({
   heading,
   tagGroups,
+  initial,
 }: {
   heading: string;
   tagGroups: FacetGroup[];
+  /** Set when a failed import handed the Source URL over (OR-45). */
+  initial?: RecipeEditorValue;
 }) {
   return (
     <RecipeEditor
       heading={heading}
       tagGroups={tagGroups}
+      initial={initial}
       onSubmit={(value: RecipeEditorValue) => createRecipeAction(value)}
     />
   );

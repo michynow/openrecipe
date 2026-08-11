@@ -10,6 +10,7 @@ import {
   isReclaimable,
   parseDraftPayload,
   RECLAIM_AFTER_MS,
+  sourceUrlSchema,
 } from "./drafts.ts";
 
 const validPayload = {
@@ -84,6 +85,21 @@ test("payload is validated with the shared Recipe schema", () => {
 test("ready demands a payload", () => {
   assert.throws(() => assertReady(null), /valid payload/);
   assert.equal(assertReady(validPayload).servings, 4);
+});
+
+test("a parked link that is not a URL is rejected, not thrown at", () => {
+  // Regression: `.url()` followed by a refinement reading new URL(value) threw
+  // TypeError out of the parse, because Zod 4 keeps running later checks after
+  // an earlier one fails. That reached the user as a crashed Server Action.
+  assert.equal(sourceUrlSchema.safeParse("nie-jest-linkiem").success, false);
+  assert.equal(sourceUrlSchema.safeParse("").success, false);
+  assert.equal(sourceUrlSchema.safeParse("javascript:alert(1)").success, false);
+  assert.equal(sourceUrlSchema.safeParse("ftp://example.com/x").success, false);
+
+  const ok = sourceUrlSchema.safeParse(
+    "  https://www.kwestiasmaku.com/przepis/zurek  ",
+  );
+  assert.equal(ok.success && ok.data, "https://www.kwestiasmaku.com/przepis/zurek");
 });
 
 test("isDraftStatus rejects anything not in the model", () => {
