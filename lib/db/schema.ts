@@ -341,6 +341,14 @@ export const draft = pgTable(
      */
     payload: jsonb("payload"),
 
+    /**
+     * Field names the model worked out rather than read off the page (OR-42),
+     * e.g. ["servings", "totalMinutes"]. Review highlights them, because a
+     * guessed serving count is exactly the kind of thing that looks right and
+     * is not. Empty when everything came from structured data.
+     */
+    inferred: jsonb("inferred").$type<string[]>(),
+
     /** Why it failed, in Polish, for the Drafts screen. Null unless failed. */
     error: text("error"),
 

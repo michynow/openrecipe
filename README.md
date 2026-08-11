@@ -97,7 +97,11 @@ that got closed. With an empty queue it prints `nothing to do` and exits, so run
 whim costs nothing.
 
 What it does per Draft: fetch the page, read its JSON-LD if it publishes any, otherwise keep
-the readable text for the model, build a Recipe payload, and store it as `ready` for review.
+the readable text, hand either to Claude through the Agent SDK — which uses the CLI's own
+subscription, so there is no API key here or on Vercel — and store the result as `ready` for
+review. The model runs on both paths: a JSON-LD page still arrives in the wrong language,
+with no Tags and no Substitutes. If it fails on a structured page, the Draft is still saved
+from the page's own data, untranslated, rather than thrown away.
 Every failure ends with the row moved to `failed` and a Polish reason on it — never a row
 stranded in `processing`.
 

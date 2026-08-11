@@ -5,8 +5,12 @@ import {
   reclaimStale,
 } from "../lib/draft-queue.ts";
 import { copy } from "../lib/copy.ts";
+import { db } from "../lib/db/index.ts";
+import { tag } from "../lib/db/schema.ts";
 import { extractRecipeFromUrl, type ExtractFailure } from "../lib/import/extract.ts";
+import { generateRecipe } from "../lib/import/generate.ts";
 import { buildPayload } from "../lib/import/payload.ts";
+import type { TagOption } from "../lib/import/prompt.ts";
 
 /**
  * The Worker (OR-40). Runs on the Master's laptop, never on Vercel — see
@@ -33,7 +37,11 @@ const FAILURE_COPY: Record<ExtractFailure | "needs-a-model" | "invalid", string>
 };
 
 /** One Draft, start to finish. Returns what happened, for the log. */
-async function process(id: string, sourceUrl: string): Promise<string> {
+async function process(
+  id: string,
+  sourceUrl: string,
+  tags: TagOption[],
+): Promise<string> {
   const extracted = await extractRecipeFromUrl(sourceUrl);
 
   if (!extracted.ok) {
@@ -41,21 +49,51 @@ async function process(id: string, sourceUrl: string): Promise<string> {
     return `failed (${extracted.reason})`;
   }
 
-  const built = buildPayload(extracted.page, sourceUrl);
+  const page = extracted.page;
 
-  if (!built.ok) {
-    await markFailed(id, FAILURE_COPY[built.reason]);
-    return `failed (${built.reason}, via ${extracted.page.path})`;
+  /**
+   * The model runs on both paths, not only when structured data is missing: a
+   * JSON-LD page still arrives in the wrong language, with no Tags and no
+   * Substitutes. What differs is what it is given — facts to restructure, or
+   * prose to read (see lib/import/prompt.ts).
+   */
+  console.log(`  extracted via ${page.path}, asking the model`);
+  const generated = await generateRecipe(page, sourceUrl, tags);
+
+  if (generated.ok) {
+    await markReady(id, generated.payload, generated.inferred);
+    const { ingredientLines, steps, tagSlugs } = generated.payload;
+    return `ready (${page.path} + model, ${ingredientLines.length} ingredients, ${steps.length} steps, tags: ${tagSlugs.join(", ") || "none"})`;
   }
 
-  await markReady(id, built.payload);
+  /**
+   * The model failed. A structured page can still become a usable Draft without
+   * it — untranslated and untagged, but with every quantity the site published.
+   * That is worth more to the reviewer than a failure message.
+   */
+  const built = buildPayload(page, sourceUrl);
 
-  return `ready (${extracted.page.path}, ${built.payload.ingredientLines.length} ingredients, ${built.payload.steps.length} steps)`;
+  if (built.ok) {
+    await markReady(id, built.payload, ["translation"]);
+    return `ready (${page.path}, no model: ${generated.reason})`;
+  }
+
+  await markFailed(id, FAILURE_COPY[built.reason]);
+  return `failed (model ${generated.reason}, then ${built.reason})`;
 }
 
 async function main(): Promise<void> {
   const reclaimed = await reclaimStale();
   if (reclaimed > 0) console.log(`reclaimed ${reclaimed} stuck draft(s)`);
+
+  /**
+   * The closed list, read once. The model picks Tags by slug out of this, so a
+   * Tag the Master adds later is available to imports with no code change —
+   * and one the model invents is rejected before it reaches the database.
+   */
+  const tags: TagOption[] = await db
+    .select({ slug: tag.slug, label: tag.label, facet: tag.facet })
+    .from(tag);
 
   let handled = 0;
 
@@ -67,7 +105,7 @@ async function main(): Promise<void> {
     console.log(`claimed ${draft.id} ${draft.sourceUrl}`);
 
     try {
-      console.log(`  ${await process(draft.id, draft.sourceUrl)}`);
+      console.log(`  ${await process(draft.id, draft.sourceUrl, tags)}`);
     } catch (error) {
       /**
        * The catch-all matters more than it looks: without it a thrown step

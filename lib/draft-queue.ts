@@ -235,7 +235,11 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
  * `ready` is what puts a Draft in front of a human, and a payload that does not
  * parse would make the review screen throw instead of the Worker failing.
  */
-export async function markReady(id: string, payload: unknown): Promise<void> {
+export async function markReady(
+  id: string,
+  payload: unknown,
+  inferred: string[] = [],
+): Promise<void> {
   const recipe = assertReady(payload);
 
   await db
@@ -243,6 +247,7 @@ export async function markReady(id: string, payload: unknown): Promise<void> {
     .set({
       status: "ready",
       payload: recipe,
+      inferred,
       error: null,
       processedAt: new Date(),
     })
