@@ -13,12 +13,14 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs migrate",
     "db:seed": "node --env-file-if-exists=.env.local scripts/seed-tags.ts",
-    "bootstrap-master": "node --env-file-if-exists=.env.local scripts/bootstrap-master.ts"
+    "bootstrap-master": "node --env-file-if-exists=.env.local scripts/bootstrap-master.ts",
+    "worker": "node --env-file-if-exists=.env.local scripts/worker.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
     "@vercel/blob": "^2.8.0",
     "better-auth": "^1.6.25",
+    "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
     "next": "16.2.12",
     "react": "19.2.4",

@@ -1,10 +1,12 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { draft, recipe } from "./db/schema.ts";
 import {
+  assertReady,
   assertTransition,
   isDraftStatus,
+  RECLAIM_AFTER_MS,
   sourceUrlSchema,
   type DraftStatus,
 } from "./drafts.ts";
@@ -160,6 +162,103 @@ async function transition(id: string, to: DraftStatus): Promise<boolean> {
     .where(eq(draft.id, id));
 
   return true;
+}
+
+/* ─────────────────────────── The Worker's side ────────────────────────── */
+
+/**
+ * Take back Drafts abandoned mid-run, so a closed laptop does not strand them.
+ *
+ * The timeout lives in lib/drafts.ts as RECLAIM_AFTER_MS and is interpolated as
+ * milliseconds rather than reformatted as an interval string, so there is one
+ * number and the tests can reason about it.
+ */
+export async function reclaimStale(): Promise<number> {
+  const result = await db.execute(sql`
+    update draft
+       set status = 'queued', claimed_at = null
+     where status = 'processing'
+       and (claimed_at is null
+            or claimed_at < now() - (${RECLAIM_AFTER_MS} || ' milliseconds')::interval)
+    returning id`);
+
+  return (result.rows ?? []).length;
+}
+
+/**
+ * Claim exactly one queued Draft, atomically.
+ *
+ * `for update skip locked` inside the subquery is what makes two Workers safe to
+ * run at once: the second one steps over the row the first is taking rather than
+ * blocking on it or claiming it twice. The whole thing is one statement because
+ * the Neon HTTP driver has no multi-statement transaction (see lib/recipes.ts).
+ *
+ * Returns null when the queue is empty, which is the Worker's cue to exit.
+ */
+export async function claimNextDraft(): Promise<DraftRow | null> {
+  const result = await db.execute(sql`
+    update draft
+       set status = 'processing', claimed_at = now()
+     where id = (select id
+                   from draft
+                  where status = 'queued'
+                  order by created_at
+                  limit 1
+                    for update skip locked)
+    returning id, source_url, status, error, recipe_id, created_at`);
+
+  const row = (result.rows ?? [])[0] as
+    | {
+        id: string;
+        source_url: string;
+        status: string;
+        error: string | null;
+        recipe_id: string | null;
+        created_at: string | Date;
+      }
+    | undefined;
+
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    sourceUrl: row.source_url,
+    status: "processing",
+    error: row.error,
+    recipeId: row.recipe_id,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+/**
+ * The Worker got a Recipe out of the page. Validated here rather than trusted:
+ * `ready` is what puts a Draft in front of a human, and a payload that does not
+ * parse would make the review screen throw instead of the Worker failing.
+ */
+export async function markReady(id: string, payload: unknown): Promise<void> {
+  const recipe = assertReady(payload);
+
+  await db
+    .update(draft)
+    .set({
+      status: "ready",
+      payload: recipe,
+      error: null,
+      processedAt: new Date(),
+    })
+    .where(eq(draft.id, id));
+}
+
+/**
+ * Every failure path ends here. The message is Polish and is shown verbatim on
+ * the Drafts screen, so it says what happened and what to do — never a stack
+ * trace, never an error code.
+ */
+export async function markFailed(id: string, error: string): Promise<void> {
+  await db
+    .update(draft)
+    .set({ status: "failed", error, processedAt: new Date() })
+    .where(eq(draft.id, id));
 }
 
 /** "Try that link again" — failed, or a ready Draft nobody liked. */

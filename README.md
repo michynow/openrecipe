@@ -80,6 +80,31 @@ It reads `MASTER_EMAIL` from the environment, refuses to overwrite an existing a
 takes the password from the environment rather than an argument so it stays out of `ps` and
 your shell history. Then sign in and mint Invites from `/settings`.
 
+## The Worker
+
+Imports run on the laptop, never on Vercel ([ADR-0002](docs/adr/0002-ai-runs-on-a-local-worker.md)).
+Park a link at `/drafts`, then drain the queue here:
+
+```bash
+pnpm worker
+```
+
+It needs `DATABASE_URL` and, once OR-43 lands, `BLOB_READ_WRITE_TOKEN` — both already in
+`.env.local`. It touches the `draft` table only: claims one queued row at a time with a
+conditional `UPDATE … for update skip locked`, so two Workers running at once never take the
+same row, and reclaims anything left in `processing` for more than ten minutes by a laptop
+that got closed. With an empty queue it prints `nothing to do` and exits, so running it on a
+whim costs nothing.
+
+What it does per Draft: fetch the page, read its JSON-LD if it publishes any, otherwise keep
+the readable text for the model, build a Recipe payload, and store it as `ready` for review.
+Every failure ends with the row moved to `failed` and a Polish reason on it — never a row
+stranded in `processing`.
+
+Worth knowing: **most Polish recipe sites publish no `@type: Recipe` structured data.**
+Kwestia Smaku and Ania Gotuje both fall to the readable-text path, so the model call (OR-42)
+is what makes them work, not a nicety on top.
+
 ## Deploys
 
 Deploys are owned by **Vercel's Git integration**, not by CI — so there are no

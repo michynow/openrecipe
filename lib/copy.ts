@@ -204,6 +204,15 @@ export const copy = {
     typeInstead: "Wpisz ręcznie",
     failedFallback:
       "Nie znaleziono przepisu na tej stronie. Spróbuj innego linku albo wpisz ręcznie.",
+    /** What the Worker writes on a Draft it could not finish. Shown verbatim. */
+    failures: {
+      blocked: "Strona nie chciała się otworzyć. Może zniknęła albo nas blokuje.",
+      notHtml: "Ten link nie prowadzi do strony z przepisem.",
+      needsModel:
+        "Ta strona nie publikuje danych przepisu — trzeba ją przeczytać ze zrozumieniem. Na razie wpisz przepis ręcznie.",
+      invalid: "Przepis z tej strony wyszedł niekompletny. Wpisz go ręcznie.",
+      crashed: "Coś poszło nie tak przy przetwarzaniu. Spróbuj jeszcze raz.",
+    },
     status: {
       queued: "Czeka w kolejce",
       processing: "W robocie",
