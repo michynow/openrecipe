@@ -9,6 +9,7 @@ import { db } from "../lib/db/index.ts";
 import { tag } from "../lib/db/schema.ts";
 import { extractRecipeFromUrl, type ExtractFailure } from "../lib/import/extract.ts";
 import { generateRecipe } from "../lib/import/generate.ts";
+import { storeImageFromUrl } from "../lib/import/image.ts";
 import { buildPayload } from "../lib/import/payload.ts";
 import type { TagOption } from "../lib/import/prompt.ts";
 
@@ -60,10 +61,21 @@ async function process(
   console.log(`  extracted via ${page.path}, asking the model`);
   const generated = await generateRecipe(page, sourceUrl, tags);
 
+  /**
+   * The photo is fetched once, here, and stored in our own Blob (OR-43). Done
+   * after the model rather than before: an import that was going to fail should
+   * not leave a stored image behind with nothing pointing at it.
+   */
+  const imageUrl = page.imageUrl
+    ? await storeImageFromUrl(page.imageUrl, sourceUrl)
+    : null;
+  if (page.imageUrl) console.log(`  image ${imageUrl ? "stored" : "skipped"}`);
+
   if (generated.ok) {
-    await markReady(id, generated.payload, generated.inferred);
-    const { ingredientLines, steps, tagSlugs } = generated.payload;
-    return `ready (${page.path} + model, ${ingredientLines.length} ingredients, ${steps.length} steps, tags: ${tagSlugs.join(", ") || "none"})`;
+    const payload = { ...generated.payload, imageUrl };
+    await markReady(id, payload, generated.inferred);
+    const { ingredientLines, steps, tagSlugs } = payload;
+    return `ready (${page.path} + model, ${ingredientLines.length} ingredients, ${steps.length} steps, tags: ${tagSlugs.join(", ") || "none"}${imageUrl ? ", image" : ""})`;
   }
 
   /**
@@ -74,7 +86,7 @@ async function process(
   const built = buildPayload(page, sourceUrl);
 
   if (built.ok) {
-    await markReady(id, built.payload, ["translation"]);
+    await markReady(id, { ...built.payload, imageUrl }, ["translation"]);
     return `ready (${page.path}, no model: ${generated.reason})`;
   }
 

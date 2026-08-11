@@ -20,11 +20,18 @@ export type GenerateResult =
   | { ok: true; payload: RecipeFormValue; inferred: string[] }
   | { ok: false; reason: "no-answer" | "invalid-json" | "schema" };
 
-/** No tools, one turn: this is a text transformation, not an agent doing work. */
+/**
+ * No tools: this is a text transformation, not an agent doing work.
+ *
+ * `maxTurns: 1` was the obvious setting and was wrong — a long answer costs more
+ * than one turn, and the SDK then ends the run with "Reached maximum number of
+ * turns" instead of the JSON. Three is enough for the answer and still nowhere
+ * near enough for anything to wander, with no tools to wander with.
+ */
 const OPTIONS = {
   systemPrompt: SYSTEM_PROMPT,
   allowedTools: [] as string[],
-  maxTurns: 1,
+  maxTurns: 3,
 };
 
 /**
@@ -50,12 +57,23 @@ export function extractJson(text: string): unknown {
 async function ask(prompt: string): Promise<string> {
   let answer = "";
 
-  for await (const message of query({ prompt, options: OPTIONS })) {
-    if (message.type !== "assistant") continue;
+  try {
+    for await (const message of query({ prompt, options: OPTIONS })) {
+      if (message.type !== "assistant") continue;
 
-    for (const block of message.message.content) {
-      if (block.type === "text") answer += block.text;
+      for (const block of message.message.content) {
+        if (block.type === "text") answer += block.text;
+      }
     }
+  } catch (error) {
+    /**
+     * The SDK throws on its own error results — a rate limit, an interrupted
+     * run, a turn ceiling. Whatever text arrived before the throw is still worth
+     * trying: the JSON is usually already complete. An empty answer becomes a
+     * clean `no-answer`, which the Worker can fall back from, rather than a
+     * crashed Draft.
+     */
+    console.error("  model call failed:", (error as Error).message);
   }
 
   return answer.trim();
