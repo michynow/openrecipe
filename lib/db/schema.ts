@@ -20,8 +20,6 @@ import {
  * the database is the interface between the two. See ADR-0002.
  *
  * Tables still to come:
- *   OR-14  invite
- *   OR-38  draft
  *   OR-48  proposal_reroll
  */
 
@@ -307,5 +305,80 @@ export const cookLog = pgTable(
     // "What was cooked this week" and "keep Proposals off the last 7 days" scan by
     // date across every Recipe, so the recipe index is no help to them (Phase 5).
     index("cook_log_cooked_at_idx").on(table.cookedAt),
+  ],
+);
+
+/* ───────────────────────────── Draft (OR-38) ──────────────────────────── */
+
+/**
+ * The import queue and the draft store, in one table. Status is the only
+ * difference between "a URL somebody parked" and "a Recipe waiting for review",
+ * so parking a link costs no second table and the review screen has one place to
+ * read from.
+ *
+ * This table is the interface between the app and the Worker (ADR-0002): the app
+ * only ever writes `queued`, the Worker only ever moves rows out of it. Neither
+ * calls the other. The legal moves live in lib/drafts.ts, next to the code that
+ * enforces them.
+ *
+ * `createdBy` is `text` for the same reason as `recipe.authorId`: Better Auth
+ * issues text ids. PRD §6 says uuid, written before that was known.
+ */
+export const draft = pgTable(
+  "draft",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceUrl: text("source_url").notNull(),
+
+    /** One of DRAFT_STATUSES. See lib/drafts.ts for what may follow what. */
+    status: text("status").notNull().default("queued"),
+
+    /**
+     * The full Recipe shape the Worker produced, editable before approval.
+     * Null until then. Validated against the shared Zod schema on the way in and
+     * on the way out — jsonb keeps its shape honest about as well as a text
+     * column does.
+     */
+    payload: jsonb("payload"),
+
+    /** Why it failed, in Polish, for the Drafts screen. Null unless failed. */
+    error: text("error"),
+
+    /**
+     * Set on approve, and set upfront when re-importing over an existing Recipe
+     * so the review screen can diff against it (OR-46).
+     *
+     * `set null` rather than cascade: deleting a Recipe should not silently erase
+     * the record that it was once imported from somewhere.
+     */
+    recipeId: uuid("recipe_id").references(() => recipe.id, {
+      onDelete: "set null",
+    }),
+
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+
+    /**
+     * When the Worker picked this row up. Not in PRD §6, and needed: the Worker
+     * runs on a laptop that gets closed mid-run, and without a claim time a row
+     * left in `processing` is indistinguishable from one being worked on right
+     * now. This is what makes the reclaim in lib/drafts.ts possible.
+     */
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+
+    /** When it reached a terminal status. Null while it is still moving. */
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+  },
+  (table) => [
+    /**
+     * The Worker's claim query is `where status = 'queued' order by created_at`,
+     * and the Drafts screen groups by status. Both are served by this.
+     */
+    index("draft_status_idx").on(table.status, table.createdAt),
   ],
 );
