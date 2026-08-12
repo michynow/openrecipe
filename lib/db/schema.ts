@@ -1,5 +1,6 @@
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -19,8 +20,7 @@ import {
  * The Worker is a plain Node script on a laptop and imports this file directly;
  * the database is the interface between the two. See ADR-0002.
  *
- * Tables still to come:
- *   OR-48  proposal_reroll
+ * Every table in PRD §6 now exists.
  */
 
 /**
@@ -389,4 +389,30 @@ export const draft = pgTable(
      */
     index("draft_status_idx").on(table.status, table.createdAt),
   ],
+);
+
+/* ─────────────────────── Proposal reroll (OR-48) ──────────────────────── */
+
+/**
+ * How many times one person has rerolled today's Proposals.
+ *
+ * A row exists only while somebody is rerolling: no row means zero, so the
+ * common case — everyone taking the day's first suggestion — writes nothing at
+ * all. Yesterday's rows are harmless and need no cleanup job; the day is part of
+ * the key, so they simply stop being read.
+ *
+ * In the database rather than in a URL parameter so a reroll survives a refresh
+ * and follows you from laptop to phone (PRD §7.3, resolved 2026-07-27).
+ */
+export const proposalReroll = pgTable(
+  "proposal_reroll",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** The local day the count belongs to, as a date rather than a timestamp. */
+    day: date("day").notNull(),
+    n: integer("n").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.day] })],
 );

@@ -1,9 +1,12 @@
 import Link from "next/link";
 
+import { Proposals } from "@/components/proposals";
 import { RecipeGrid } from "@/components/recipe-card";
 import { StatWidgets } from "@/components/stat-widgets";
 import { copy } from "@/lib/copy";
 import { getDashboardStats } from "@/lib/dashboard-query";
+import { getProposals } from "@/lib/proposals-query";
+import { requireUser } from "@/lib/session";
 import { searchRecipes } from "@/lib/search-query";
 
 /**
@@ -18,14 +21,19 @@ import { searchRecipes } from "@/lib/search-query";
 const RECENT_LIMIT = 8;
 
 export default async function Home() {
-  const [{ recipes, nextCursor }, stats] = await Promise.all([
+  const user = await requireUser();
+
+  const [{ recipes, nextCursor }, stats, proposals] = await Promise.all([
     searchRecipes({ limit: RECENT_LIMIT }),
     getDashboardStats(),
+    getProposals(user.id),
   ]);
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
       <StatWidgets stats={stats} />
+
+      <Proposals proposals={proposals} />
 
       <div className="flex items-baseline justify-between gap-4">
         <h1 className="font-display text-3xl uppercase tracking-tight sm:text-4xl">

@@ -176,6 +176,17 @@ export const copy = {
     suggestions: "Podpowiedzi",
   },
 
+  /**
+   * The three Proposal slots (OR-48). These duplicate the Tag labels on purpose:
+   * a Tag's label is the Master's to rename, and the dashboard's headings should
+   * not change under it.
+   */
+  mealSlots: {
+    breakfast: "Śniadanie",
+    lunch: "Obiad",
+    dinner: "Kolacja",
+  },
+
   dashboard: {
     proposals: "Na dziś",
     reroll: "Coś innego",
