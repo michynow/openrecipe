@@ -89,8 +89,7 @@ Park a link at `/drafts`, then drain the queue here:
 pnpm worker
 ```
 
-It needs `DATABASE_URL` and, once OR-43 lands, `BLOB_READ_WRITE_TOKEN` — both already in
-`.env.local`. It touches the `draft` table only: claims one queued row at a time with a
+It needs `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN`, both already in `.env.local`. It touches the `draft` table only: claims one queued row at a time with a
 conditional `UPDATE … for update skip locked`, so two Workers running at once never take the
 same row, and reclaims anything left in `processing` for more than ten minutes by a laptop
 that got closed. With an empty queue it prints `nothing to do` and exits, so running it on a
@@ -108,6 +107,20 @@ stranded in `processing`.
 Worth knowing: **most Polish recipe sites publish no `@type: Recipe` structured data.**
 Kwestia Smaku and Ania Gotuje both fall to the readable-text path, so the model call (OR-42)
 is what makes them work, not a nicety on top.
+
+## Where the build is
+
+Phases 0 to 5 from PRD §14 are built. What that means in practice: sign in, type a
+Recipe or park a link, let `pnpm worker` turn it into a Draft, review what the model
+guessed, approve it, cook from your phone, search with typos, and see what the household
+has been cooking.
+
+Phase 6 — the polish pass over states, accessibility, motion and 375px — is deliberately
+still open, and so is the wider UI rework that supersedes part of it.
+
+Two things still need a person rather than a commit: linking the repo to Vercel so
+production deploys on push (OR-8), and finishing the Better Auth Google setup against the
+production URL (OR-11).
 
 ## Deploys
 

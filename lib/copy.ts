@@ -143,25 +143,6 @@ export const copy = {
     },
   },
 
-  importFlow: {
-    pasteLink: "Wklej link do przepisu",
-    park: "Odłóż na później",
-    queued: "Odłożone. Zajmiemy się tym, gdy kuchnia będzie otwarta.",
-    duplicate: "Ten link już u nas jest.",
-    openExisting: "Otwórz to, co mamy",
-
-    draftReady: "Szkic gotowy — sprawdź go przed zapisaniem.",
-    guessedField: "Zgadywane — sprawdź",
-    approve: "Zatwierdź",
-    discard: "Odrzuć",
-
-    failed:
-      "Nie znaleziono przepisu na tej stronie. Spróbuj innego linku albo wpisz ręcznie.",
-    retry: "Spróbuj ponownie",
-    typeItMyself: "Wpiszę ręcznie",
-    waitingForWorker: "Czeka na przetworzenie.",
-  },
-
   search: {
     placeholder: "Czego szukasz?",
     noResults: "Brak wyników. Spróbuj innej frazy.",
@@ -199,7 +180,6 @@ export const copy = {
     addedThisWeek: "Nowe w tym tygodniu",
     cookedThisWeek: "Ugotowane w tym tygodniu",
     neverCooked: "jeszcze nigdy",
-    statsEmpty: "Jeszcze nic tu nie ma.",
   },
 
   /** Parking a link, and the Drafts screen (OR-39, OR-45). */
