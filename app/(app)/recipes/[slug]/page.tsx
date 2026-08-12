@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { CookLogButton } from "@/components/cook-log-button";
 import { CookingPanel } from "@/components/cooking-panel";
 import { DeleteRecipeDialog } from "@/components/delete-recipe-dialog";
+import { ReimportButton } from "@/components/reimport-button";
 import WakeLockToggle from "@/components/wake-lock-toggle";
 import { imageSrc } from "@/lib/blob";
 import { getCookLog } from "@/lib/cook-log";
@@ -130,14 +131,18 @@ export default async function RecipePage({
             {copy.recipe.edit}
           </Link>
           {recipe.sourceUrl && (
-            <a
-              href={recipe.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted underline"
-            >
-              {copy.recipe.openSource}
-            </a>
+            <>
+              <a
+                href={recipe.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted underline"
+              >
+                {copy.recipe.openSource}
+              </a>
+              {/* Only a Recipe that came from somewhere can be fetched again. */}
+              <ReimportButton recipeId={recipe.id} />
+            </>
           )}
           {/* Free-for-all, per PRD §5 — the dialog is the only gate. */}
           <DeleteRecipeDialog recipeId={recipe.id} title={recipe.title} />

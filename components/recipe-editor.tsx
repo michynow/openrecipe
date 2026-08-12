@@ -68,7 +68,18 @@ export function RecipeEditor({
    * guessed, and a Discard button beside Save. No second form component — if
    * review needed one, the Phase 1 editor would have been built wrong.
    */
-  banner?: React.ReactNode;
+  banner?:
+    | React.ReactNode
+    /**
+     * Re-import (OR-46) needs to write into the editor from outside it: the diff
+     * panel offers incoming values one at a time. A render prop keeps the state
+     * where it belongs — the editor stays the only owner — instead of lifting it
+     * into every caller that does not need it.
+     */
+    | ((helpers: {
+        value: RecipeEditorValue;
+        apply: (patch: Partial<RecipeEditorValue>) => void;
+      }) => React.ReactNode);
   /** Field names the Worker inferred rather than read. Marked, not blocked. */
   inferred?: string[];
   submitLabel?: string;
@@ -189,7 +200,15 @@ export function RecipeEditor({
     >
       <h1 className="font-display text-3xl uppercase tracking-tight">{heading}</h1>
 
-      {banner}
+      {typeof banner === "function"
+        ? banner({
+            value,
+            apply: (patch) => {
+              setDirty(true);
+              setValue((current) => ({ ...current, ...patch }));
+            },
+          })
+        : banner}
 
       <SectionCard number="01" icon="basics" label={copy.editor.basics}>
         <Field

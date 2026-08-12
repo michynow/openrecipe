@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache";
 import {
   discardDraft,
   markApproved,
+  parkReimport,
   parkUrl,
   retryDraft,
   type ParkResult,
 } from "@/lib/draft-queue";
 import type { RecipeInput } from "@/lib/recipe-schema";
-import { createRecipe, type SaveResult } from "@/lib/recipes";
+import { createRecipe, updateRecipe, type SaveResult } from "@/lib/recipes";
 import { requireUser } from "@/lib/session";
 
 /**
@@ -34,6 +35,24 @@ export async function parkUrlAction(sourceUrl: string): Promise<ParkResult> {
 }
 
 /**
+ * Queue a re-import of a Recipe that already has a Source URL (OR-46).
+ *
+ * The Draft carries `recipe_id` from the moment it is queued, which is what lets
+ * review diff against the Recipe instead of offering a blank slate.
+ */
+export async function reimportAction(recipeId: string): Promise<{ ok: boolean }> {
+  const user = await requireUser();
+  const id = await parkReimport(recipeId, user.id);
+
+  if (id) {
+    revalidatePath("/drafts");
+    revalidatePath("/");
+  }
+
+  return { ok: id !== null };
+}
+
+/**
  * Approve a reviewed Draft into a Recipe (OR-44).
  *
  * Takes the editor's current value, not the stored payload: the whole point of
@@ -47,10 +66,19 @@ export async function parkUrlAction(sourceUrl: string): Promise<ParkResult> {
 export async function approveDraftAction(
   id: string,
   input: RecipeInput,
+  /**
+   * Set on a re-import (OR-46): the Recipe this Draft belongs to. Approving then
+   * updates it in place rather than creating a second copy — the slug and the
+   * author stay as they were, because `updateRecipe` never touches either.
+   */
+  recipeId?: string,
 ): Promise<SaveResult> {
   const user = await requireUser();
 
-  const result = await createRecipe(input, user.id);
+  const result = recipeId
+    ? await updateRecipe(recipeId, input, user.id)
+    : await createRecipe(input, user.id);
+
   if (!result.ok) return result;
 
   await markApproved(id, result.id);

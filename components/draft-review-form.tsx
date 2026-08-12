@@ -6,6 +6,7 @@ import { useState } from "react";
 import { approveDraftAction, discardDraftAction } from "@/app/(app)/drafts/actions";
 import { Icon } from "@/components/icons";
 import { RecipeEditor, type RecipeEditorValue } from "@/components/recipe-editor";
+import { ReimportDiff } from "@/components/reimport-diff";
 import { copy } from "@/lib/copy";
 import type { FacetGroup } from "@/lib/tags-query";
 
@@ -23,13 +24,20 @@ export function DraftReviewForm({
   initial,
   inferred,
   tagGroups,
+  recipeId,
+  current,
 }: {
   draftId: string;
   sourceUrl: string;
   initial: RecipeEditorValue;
   inferred: string[];
   tagGroups: FacetGroup[];
+  /** Set on a re-import (OR-46): the Recipe this Draft updates. */
+  recipeId?: string | null;
+  /** What that Recipe says today. The editor starts here, not from the import. */
+  current?: RecipeEditorValue | null;
 }) {
+  const reimport = Boolean(recipeId && current);
   const router = useRouter();
   const [discarding, setDiscarding] = useState(false);
 
@@ -44,15 +52,21 @@ export function DraftReviewForm({
 
   return (
     <RecipeEditor
-      heading={copy.imports.reviewTitle}
+      heading={reimport ? copy.imports.reviewChangesTitle : copy.imports.reviewTitle}
       tagGroups={tagGroups}
-      initial={initial}
-      inferred={inferred}
-      submitLabel={copy.imports.approve}
-      onSubmit={(value: RecipeEditorValue) => approveDraftAction(draftId, value)}
-      banner={
-        <div className="flex flex-col gap-1 rounded-card border border-accent/40 bg-surface p-3">
-          <p className="text-sm">{copy.imports.reviewHint}</p>
+      /* A re-import starts from the Recipe you have, never from the import. */
+      initial={reimport ? current! : initial}
+      inferred={reimport ? [] : inferred}
+      submitLabel={reimport ? copy.imports.updateRecipe : copy.imports.approve}
+      onSubmit={(value: RecipeEditorValue) =>
+        approveDraftAction(draftId, value, recipeId ?? undefined)
+      }
+      banner={(helpers) => (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1 rounded-card border border-accent/40 bg-surface p-3">
+          <p className="text-sm">
+            {reimport ? copy.imports.diffHint : copy.imports.reviewHint}
+          </p>
           <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
             <Icon name="link" className="size-4 shrink-0" />
             <span className="shrink-0">{copy.imports.fromSource}</span>
@@ -69,8 +83,18 @@ export function DraftReviewForm({
               {sourceUrl}
             </a>
           </p>
+          </div>
+
+          {reimport && (
+            <ReimportDiff
+              current={current!}
+              incoming={initial}
+              value={helpers.value}
+              apply={helpers.apply}
+            />
+          )}
         </div>
-      }
+      )}
       extraActions={
         <button
           type="button"

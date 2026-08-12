@@ -31,6 +31,8 @@ export default async function DraftReviewPage({
       initial={draft.payload}
       inferred={draft.inferred}
       tagGroups={tagGroups}
+      recipeId={draft.recipeId}
+      current={draft.current}
     />
   );
 }

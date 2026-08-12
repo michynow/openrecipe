@@ -11,6 +11,7 @@ import {
   sourceUrlSchema,
   type DraftStatus,
 } from "./drafts.ts";
+import { getRecipeById, toFormValue } from "./recipe-query.ts";
 import type { RecipeFormValue } from "./recipe-schema.ts";
 
 /**
@@ -92,6 +93,9 @@ export async function parkUrl(
 export type DraftForReview = DraftRow & {
   payload: RecipeFormValue;
   inferred: string[];
+  /** Set on a re-import: the Recipe this Draft is proposing changes to (OR-46). */
+  current: RecipeFormValue | null;
+  currentSlug: string | null;
 };
 
 /**
@@ -111,6 +115,13 @@ export async function getDraftForReview(
   const payload = parseDraftPayload(row.payload);
   if (!payload) return null;
 
+  /**
+   * A re-import carries recipe_id from the moment it is queued, so review can
+   * diff against what the Recipe says today rather than showing a blank slate
+   * and quietly overwriting six months of corrections.
+   */
+  const existing = row.recipeId ? await getRecipeById(row.recipeId) : null;
+
   return {
     id: row.id,
     sourceUrl: row.sourceUrl,
@@ -120,7 +131,49 @@ export async function getDraftForReview(
     createdAt: row.createdAt,
     payload,
     inferred: row.inferred ?? [],
+    current: existing ? toFormValue(existing) : null,
+    currentSlug: existing?.slug ?? null,
   };
+}
+
+/**
+ * Queue a re-import of a Recipe that already carries a Source URL (OR-46).
+ *
+ * Returns null when the Recipe has no Source URL — there is nothing to re-import
+ * from — or when one is already in flight, in which case the existing Draft is
+ * the answer.
+ */
+export async function parkReimport(
+  recipeId: string,
+  userId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ sourceUrl: recipe.sourceUrl })
+    .from(recipe)
+    .where(and(eq(recipe.id, recipeId), isNull(recipe.deletedAt)))
+    .limit(1);
+
+  if (!row?.sourceUrl) return null;
+
+  const [inFlight] = await db
+    .select({ id: draft.id })
+    .from(draft)
+    .where(and(eq(draft.recipeId, recipeId), inArray(draft.status, OPEN)))
+    .limit(1);
+
+  if (inFlight) return inFlight.id;
+
+  const [created] = await db
+    .insert(draft)
+    .values({
+      sourceUrl: row.sourceUrl,
+      status: "queued",
+      createdBy: userId,
+      recipeId,
+    })
+    .returning({ id: draft.id });
+
+  return created.id;
 }
 
 /**
