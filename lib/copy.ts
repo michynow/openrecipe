@@ -184,6 +184,11 @@ export const copy = {
     draftsWaiting: "Szkice czekają",
     mostCooked: "Najczęściej gotowane",
     neglected: "Dawno nieużywane",
+    total: "Przepisy",
+    addedThisWeek: "Nowe w tym tygodniu",
+    cookedThisWeek: "Ugotowane w tym tygodniu",
+    neverCooked: "jeszcze nigdy",
+    statsEmpty: "Jeszcze nic tu nie ma.",
   },
 
   /** Parking a link, and the Drafts screen (OR-39, OR-45). */

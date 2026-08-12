@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { RecipeGrid } from "@/components/recipe-card";
+import { StatWidgets } from "@/components/stat-widgets";
 import { copy } from "@/lib/copy";
+import { getDashboardStats } from "@/lib/dashboard-query";
 import { searchRecipes } from "@/lib/search-query";
 
 /**
@@ -16,10 +18,15 @@ import { searchRecipes } from "@/lib/search-query";
 const RECENT_LIMIT = 8;
 
 export default async function Home() {
-  const { recipes, nextCursor } = await searchRecipes({ limit: RECENT_LIMIT });
+  const [{ recipes, nextCursor }, stats] = await Promise.all([
+    searchRecipes({ limit: RECENT_LIMIT }),
+    getDashboardStats(),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
+      <StatWidgets stats={stats} />
+
       <div className="flex items-baseline justify-between gap-4">
         <h1 className="font-display text-3xl uppercase tracking-tight sm:text-4xl">
           {copy.library.recent}
