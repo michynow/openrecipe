@@ -82,6 +82,20 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) return devMaster();
 
+  /**
+   * A removed Member is nobody (OR-50). Their sessions and credentials are
+   * deleted when they are removed, so this is the belt to that braces: a cookie
+   * that outlived the deletion, or a fresh Google sign-in relinking by email,
+   * both stop here.
+   */
+  const [row] = await db
+    .select({ removedAt: userTable.removedAt })
+    .from(userTable)
+    .where(eq(userTable.id, session.user.id))
+    .limit(1);
+
+  if (!row || row.removedAt) return null;
+
   const { user } = session;
   /**
    * Master is decided by MASTER_EMAIL, not by the stored column. A tampered or

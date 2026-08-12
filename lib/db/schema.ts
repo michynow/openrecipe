@@ -41,6 +41,15 @@ export const user = pgTable("user", {
   /** 'master' | 'member'. Never grantable through the UI. */
   role: text("role").notNull().default("member"),
 
+  /**
+   * Set when the Master removes a Member (OR-50). The row stays: recipe.author_id
+   * points at it, and attribution outlives membership. Sessions and credentials
+   * are deleted alongside, and getCurrentUser refuses a stamped row — which also
+   * closes the Google path, where signing in again would otherwise relink to the
+   * same account by email.
+   */
+  removedAt: timestamp("removed_at"),
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
