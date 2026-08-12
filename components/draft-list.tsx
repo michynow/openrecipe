@@ -72,11 +72,14 @@ function DraftItem({ draft }: { draft: DraftRow }) {
       )}
 
       <div className="flex flex-wrap gap-2">
-        {/*
-          The review link belongs here and is deliberately absent: OR-44 builds
-          the screen it would point at, and a button that 404s is worse than no
-          button. Nothing can reach `ready` before the Worker exists anyway.
-        */}
+        {draft.status === "ready" && (
+          <Link
+            href={`/drafts/${draft.id}`}
+            className="flex min-h-11 items-center rounded-input bg-accent px-3 text-sm font-medium text-accent-ink"
+          >
+            {copy.imports.review}
+          </Link>
+        )}
 
         {canRetry && (
           <button

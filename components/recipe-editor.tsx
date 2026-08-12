@@ -51,6 +51,10 @@ export function RecipeEditor({
   onSubmit,
   heading,
   tagGroups,
+  banner,
+  inferred = [],
+  submitLabel,
+  extraActions,
 }: {
   initial?: RecipeEditorValue;
   /** Tag options, read from the database on the server. */
@@ -58,7 +62,19 @@ export function RecipeEditor({
   /** Returns a SaveResult; the editor renders its errors rather than throwing. */
   onSubmit: (value: RecipeEditorValue) => Promise<SaveResult>;
   heading: string;
+  /**
+   * Draft review (OR-44) mounts this same editor with three extra things: a
+   * banner naming where the Draft came from, the list of fields the Worker
+   * guessed, and a Discard button beside Save. No second form component — if
+   * review needed one, the Phase 1 editor would have been built wrong.
+   */
+  banner?: React.ReactNode;
+  /** Field names the Worker inferred rather than read. Marked, not blocked. */
+  inferred?: string[];
+  submitLabel?: string;
+  extraActions?: React.ReactNode;
 }) {
+  const guessed = (field: string) => inferred.includes(field);
   const router = useRouter();
   const [value, setValue] = useState<RecipeEditorValue>(initial ?? emptyRecipe);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -173,9 +189,12 @@ export function RecipeEditor({
     >
       <h1 className="font-display text-3xl uppercase tracking-tight">{heading}</h1>
 
+      {banner}
+
       <SectionCard number="01" icon="basics" label={copy.editor.basics}>
         <Field
           id="title"
+          guessed={guessed("title")}
           label={copy.editor.title}
           error={errors.title}
           required
@@ -194,6 +213,7 @@ export function RecipeEditor({
         <div className="grid gap-3 sm:grid-cols-3">
           <Field
             id="servings"
+            guessed={guessed("servings")}
             label={copy.recipe.servings}
             error={errors.servings}
             required
@@ -215,6 +235,7 @@ export function RecipeEditor({
 
           <Field
             id="totalMinutes"
+            guessed={guessed("totalMinutes")}
             label={copy.editor.totalMinutes}
             error={errors.totalMinutes}
             hint={copy.editor.optional}
@@ -235,6 +256,7 @@ export function RecipeEditor({
 
           <Field
             id="kcalPerServing"
+            guessed={guessed("kcalPerServing")}
             label={copy.editor.kcal}
             error={errors.kcalPerServing}
             hint={copy.editor.optional}
@@ -278,7 +300,12 @@ export function RecipeEditor({
         </Field>
       </SectionCard>
 
-      <SectionCard number="02" icon="ingredients" label={copy.recipe.ingredients}>
+      <SectionCard
+        number="02"
+        icon="ingredients"
+        label={copy.recipe.ingredients}
+        trailing={guessed("ingredientLines") ? <GuessedChip /> : undefined}
+      >
         <IngredientLinesEditor
           values={value.ingredientLines}
           onChange={(next) => set("ingredientLines", next)}
@@ -291,8 +318,11 @@ export function RecipeEditor({
         icon="tags"
         label={copy.editor.tags}
         trailing={
-          <span className="font-mono text-xs text-muted">
-            {value.tagSlugs.length} {copy.editor.tagsCount}
+          <span className="flex items-center gap-2">
+            {guessed("tagSlugs") && <GuessedChip />}
+            <span className="font-mono text-xs text-muted">
+              {value.tagSlugs.length} {copy.editor.tagsCount}
+            </span>
           </span>
         }
       >
@@ -311,7 +341,12 @@ export function RecipeEditor({
         />
       </SectionCard>
 
-      <SectionCard number="05" icon="steps" label={copy.recipe.steps}>
+      <SectionCard
+        number="05"
+        icon="steps"
+        label={copy.recipe.steps}
+        trailing={guessed("steps") ? <GuessedChip /> : undefined}
+      >
         <LineListEditor
           id="steps"
           label={copy.recipe.steps}
@@ -324,7 +359,12 @@ export function RecipeEditor({
         />
       </SectionCard>
 
-      <SectionCard number="06" icon="tips" label={copy.recipe.tips}>
+      <SectionCard
+        number="06"
+        icon="tips"
+        label={copy.recipe.tips}
+        trailing={guessed("tips") ? <GuessedChip /> : undefined}
+      >
         <LineListEditor
           id="tips"
           label={copy.recipe.tips}
@@ -349,8 +389,10 @@ export function RecipeEditor({
           disabled={pending}
           className="rounded-input bg-accent px-4 py-2.5 font-medium text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? copy.editor.saving : copy.editor.save}
+          {pending ? copy.editor.saving : (submitLabel ?? copy.editor.save)}
         </button>
+
+        {extraActions}
         <button
           type="button"
           onClick={cancel}
@@ -364,12 +406,31 @@ export function RecipeEditor({
   );
 }
 
+/**
+ * "The Worker guessed this" (OR-44).
+ *
+ * Accent, not accent2: a guessed field is worth a look, not an error. Magenta
+ * here would read as "this is broken" next to real validation messages, which is
+ * the one thing the reviewer must be able to tell apart at a glance.
+ */
+function GuessedChip() {
+  return (
+    <span
+      title={copy.imports.guessedHint}
+      className="rounded-input border border-accent px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wide text-accent"
+    >
+      {copy.imports.guessed}
+    </span>
+  );
+}
+
 function Field({
   id,
   label,
   error,
   hint,
   required,
+  guessed,
   children,
 }: {
   id: string;
@@ -377,6 +438,7 @@ function Field({
   error?: string;
   hint?: string;
   required?: boolean;
+  guessed?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -393,6 +455,11 @@ function Field({
         {hint && !required && (
           <span className="ml-1 normal-case tracking-normal opacity-60">
             ({hint})
+          </span>
+        )}
+        {guessed && (
+          <span className="ml-2 align-middle">
+            <GuessedChip />
           </span>
         )}
       </label>

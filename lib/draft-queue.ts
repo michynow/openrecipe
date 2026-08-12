@@ -6,10 +6,12 @@ import {
   assertReady,
   assertTransition,
   isDraftStatus,
+  parseDraftPayload,
   RECLAIM_AFTER_MS,
   sourceUrlSchema,
   type DraftStatus,
 } from "./drafts.ts";
+import type { RecipeFormValue } from "./recipe-schema.ts";
 
 /**
  * Reading and writing the import queue (OR-39, OR-45).
@@ -85,6 +87,60 @@ export async function parkUrl(
     .returning({ id: draft.id });
 
   return { ok: true, id: row.id, alreadyQueued: false };
+}
+
+export type DraftForReview = DraftRow & {
+  payload: RecipeFormValue;
+  inferred: string[];
+};
+
+/**
+ * One Draft, for the review screen (OR-44).
+ *
+ * Returns null unless it is `ready` and its payload still parses. A Draft whose
+ * payload no longer validates — the schema tightened since it was generated, say
+ * — must not open an editor half-populated with fields the save will reject.
+ */
+export async function getDraftForReview(
+  id: string,
+): Promise<DraftForReview | null> {
+  const [row] = await db.select().from(draft).where(eq(draft.id, id)).limit(1);
+
+  if (!row || row.status !== "ready") return null;
+
+  const payload = parseDraftPayload(row.payload);
+  if (!payload) return null;
+
+  return {
+    id: row.id,
+    sourceUrl: row.sourceUrl,
+    status: "ready",
+    error: row.error,
+    recipeId: row.recipeId,
+    createdAt: row.createdAt,
+    payload,
+    inferred: row.inferred ?? [],
+  };
+}
+
+/**
+ * The Draft became a Recipe. Terminal: `recipe_id` is the link back, and it is
+ * what stops the same import being approved twice.
+ */
+export async function markApproved(id: string, recipeId: string): Promise<void> {
+  const [row] = await db
+    .select({ status: draft.status })
+    .from(draft)
+    .where(eq(draft.id, id))
+    .limit(1);
+
+  if (!row || !isDraftStatus(row.status)) return;
+  assertTransition(row.status, "approved");
+
+  await db
+    .update(draft)
+    .set({ status: "approved", recipeId, processedAt: new Date() })
+    .where(eq(draft.id, id));
 }
 
 /**

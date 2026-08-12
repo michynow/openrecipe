@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 
 import {
   discardDraft,
+  markApproved,
   parkUrl,
   retryDraft,
   type ParkResult,
 } from "@/lib/draft-queue";
+import type { RecipeInput } from "@/lib/recipe-schema";
+import { createRecipe, type SaveResult } from "@/lib/recipes";
 import { requireUser } from "@/lib/session";
 
 /**
@@ -26,6 +29,36 @@ export async function parkUrlAction(sourceUrl: string): Promise<ParkResult> {
     // The dashboard counts what is waiting (OR-47).
     revalidatePath("/");
   }
+
+  return result;
+}
+
+/**
+ * Approve a reviewed Draft into a Recipe (OR-44).
+ *
+ * Takes the editor's current value, not the stored payload: the whole point of
+ * review is that what the reviewer fixed is what gets saved. The payload is
+ * left as it was, so a Draft that fails validation here can be reopened and
+ * tried again rather than losing the edits.
+ *
+ * `createRecipe` validates unconditionally, so nothing can be approved that
+ * would fail Recipe validation — the Draft only moves once the Recipe exists.
+ */
+export async function approveDraftAction(
+  id: string,
+  input: RecipeInput,
+): Promise<SaveResult> {
+  const user = await requireUser();
+
+  const result = await createRecipe(input, user.id);
+  if (!result.ok) return result;
+
+  await markApproved(id, result.id);
+
+  revalidatePath("/drafts");
+  revalidatePath("/");
+  revalidatePath("/search");
+  revalidatePath(`/recipes/${result.slug}`);
 
   return result;
 }
