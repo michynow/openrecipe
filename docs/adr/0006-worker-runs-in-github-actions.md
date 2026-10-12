@@ -40,6 +40,11 @@ keeping the laptop.
 - **The subscription token expires** (about a year). When it does, model calls
   fail, the worker falls back to page data where it can, and the Draft's log
   carries the SDK's error. Regenerate with `claude setup-token`.
+- **The subscription has usage limits.** When the CLI says "You've hit your
+  session limit · resets …", the Draft goes to `limited` instead of failing,
+  with the reset time as its retry time; the first run after it (usually the
+  cron) claims it again. The run stops there and leaves the rest of the queue
+  for later, since every Draft would hit the same limit.
 - **Scheduled workflows pause** after 60 days without repository activity.
   The dispatch trigger is unaffected; re-enable the schedule in the Actions tab.
 - **The laptop still works.** `pnpm worker` locally is the same code and claims

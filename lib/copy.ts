@@ -282,6 +282,8 @@ export const copy = {
         stored ? "Zdjęcie zapisane." : "Zdjęcia nie udało się zapisać — szkic będzie bez niego.",
       ready: "Szkic gotowy do sprawdzenia.",
       crashed: (message: string) => `Worker się wysypał: ${message}`,
+      limited: (at: string) =>
+        `Skończył się limit subskrypcji Claude. Szkic poczeka i kuchnia sama spróbuje ponownie po ${at}.`,
     },
 
     /** The progress bar on a Draft that is queued or being worked on. */
@@ -299,11 +301,15 @@ export const copy = {
         "Kuchnia rusza sama w ciągu minuty. Ta strona odświeży się sama, a w logach widać każdy krok. Po 3 dniach czekania link wygasa.",
       live: "Na żywo",
     },
+    /** A Draft parked by a usage limit. `at` is the retry time, household clock. */
+    limitedHint: (at: string) =>
+      `Skończył się limit subskrypcji Claude. Kuchnia spróbuje sama po ${at} — możesz też kliknąć „Spróbuj jeszcze raz”, kiedy limit się odnowi.`,
     status: {
       queued: "Czeka w kolejce",
       processing: "W robocie",
       ready: "Gotowy do sprawdzenia",
       failed: "Nie wyszło",
+      limited: "Czeka na limit Claude",
       approved: "Dodany do biblioteki",
       discarded: "Odrzucony",
     },

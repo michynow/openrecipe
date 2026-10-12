@@ -26,7 +26,7 @@ export type DashboardStats = {
 };
 
 /** Statuses that mean a Draft still wants something from a human or the Worker. */
-const OPEN_DRAFTS = ["queued", "processing", "ready", "failed"];
+const OPEN_DRAFTS = ["queued", "processing", "limited", "ready", "failed"];
 
 const weekAgo = () => new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 

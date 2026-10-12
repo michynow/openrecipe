@@ -84,3 +84,20 @@ export function formatDuration(minutes: number | null): string | null {
   if (rest === 0) return `${hours} h`;
   return `${hours} h ${rest} min`;
 }
+
+const clockFormat = new Intl.DateTimeFormat("pl-PL", {
+  timeZone: "Europe/Warsaw",
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+/**
+ * "12.10, 21:52" on the household's clock — for a time that is coming, like a
+ * retry after a usage limit. The zone is pinned: the Worker runs in UTC and
+ * the server renders in UTC, but the reader lives in Warsaw.
+ */
+export function formatClock(value: Date | string | number): string {
+  return clockFormat.format(new Date(value));
+}
