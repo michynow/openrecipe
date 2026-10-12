@@ -43,11 +43,11 @@ export function Proposals({ proposals }: { proposals: Proposal[] }) {
         {proposals.map((proposal) => (
           <li key={proposal.slot} className="flex flex-col gap-1.5">
             <p className="flex items-baseline gap-2">
-              <span className="font-mono text-xs uppercase tracking-widest text-muted">
+              <span className="text-sm font-extrabold uppercase tracking-wide text-text">
                 {copy.mealSlots[proposal.slot]}
               </span>
               {proposal.wildcard && (
-                <span className="text-xs text-accent2">
+                <span className="text-sm text-accent2">
                   {copy.dashboard.wildcard}
                 </span>
               )}

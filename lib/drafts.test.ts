@@ -7,8 +7,10 @@ import {
   canTransition,
   DRAFT_STATUSES,
   isDraftStatus,
+  isQueueExpired,
   isReclaimable,
   parseDraftPayload,
+  QUEUE_MAX_MS,
   RECLAIM_AFTER_MS,
   sourceUrlSchema,
 } from "./drafts.ts";
@@ -106,4 +108,15 @@ test("isDraftStatus rejects anything not in the model", () => {
   assert.equal(isDraftStatus("ready"), true);
   assert.equal(isDraftStatus("banana"), false);
   assert.equal(isDraftStatus(undefined), false);
+});
+
+test("a queued Draft expires after QUEUE_MAX_MS, and only a queued one", () => {
+  const now = new Date("2026-10-12T12:00:00Z");
+  const fresh = new Date(now.getTime() - QUEUE_MAX_MS + 1000);
+  const stale = new Date(now.getTime() - QUEUE_MAX_MS);
+
+  assert.equal(isQueueExpired("queued", fresh, now), false);
+  assert.equal(isQueueExpired("queued", stale, now), true);
+  assert.equal(isQueueExpired("processing", stale, now), false);
+  assert.equal(canTransition("queued", "failed"), true);
 });

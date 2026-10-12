@@ -125,7 +125,7 @@ export function LoginForm({
       */}
       {googleEnabled && (
         <>
-          <div className="flex items-center gap-3 text-xs text-muted">
+          <div className="flex items-center gap-3 text-sm text-muted">
             <span className="h-px flex-1 bg-line" />
             <span>lub</span>
             <span className="h-px flex-1 bg-line" />
@@ -143,7 +143,7 @@ export function LoginForm({
       )}
 
       {/* There is no email provider by design, so resets go through the Master. */}
-      <p className="text-xs text-muted">{copy.auth.noSelfReset}</p>
+      <p className="text-sm text-muted">{copy.auth.noSelfReset}</p>
     </div>
   );
 }

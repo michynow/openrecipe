@@ -63,7 +63,7 @@ export function TagPicker({
               <button
                 type="button"
                 onClick={() => toggle(slug)}
-                className="rounded-input bg-accent px-2 py-1 text-xs font-medium text-accent-ink"
+                className="rounded-input bg-accent px-2 py-1 text-sm font-extrabold text-accent-ink"
                 aria-label={`${copy.common.delete}: ${labelFor(slug)}`}
               >
                 {labelFor(slug)} ×
@@ -80,7 +80,7 @@ export function TagPicker({
             /* Hairline between Facets, so the five clusters separate from each other. */
             className={`flex flex-col gap-1.5 ${index > 0 ? "border-t border-line/40 pt-3" : ""}`}
           >
-            <p className="text-xs uppercase tracking-wide text-muted">
+            <p className="text-sm font-extrabold uppercase tracking-wide text-text">
               {copy.editor.facets[group.facet] ?? group.facet}
             </p>
             <ul className="flex flex-wrap gap-1.5">
@@ -91,10 +91,10 @@ export function TagPicker({
                     <label
                       className={`flex cursor-pointer items-center gap-1.5 rounded-input border px-2 py-1 text-sm transition-colors ${
                         isSelected
-                          ? "border-accent text-text"
+                          ? "border-accent bg-accent font-extrabold text-accent-ink"
                           : full
-                            ? "border-line text-muted opacity-50"
-                            : "border-line text-muted hover:text-text"
+                            ? "cursor-not-allowed border-dashed border-line font-bold text-muted"
+                            : "border-line font-bold text-text hover:bg-fill"
                       }`}
                     >
                       <input

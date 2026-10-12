@@ -88,7 +88,7 @@ function Tile({
 }) {
   const body = (
     <>
-      <span className="font-mono text-xs uppercase tracking-widest text-muted">
+      <span className="text-sm font-extrabold uppercase tracking-wide text-text">
         {label}
       </span>
       <span
@@ -98,7 +98,7 @@ function Tile({
       >
         {value}
       </span>
-      {detail && <span className="text-xs text-muted">{detail}</span>}
+      {detail && <span className="text-sm text-muted">{detail}</span>}
     </>
   );
 

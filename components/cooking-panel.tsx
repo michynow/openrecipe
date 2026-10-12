@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 
+import { Icon } from "@/components/icons";
+import { IngredientSprite } from "@/components/pixel-sprite";
 import { SubstitutesSheet } from "@/components/substitutes-sheet";
 import { copy } from "@/lib/copy";
 import { count } from "@/lib/format";
@@ -93,8 +95,10 @@ export function CookingPanel({
     await navigator.share({ text }).catch(() => {});
   }
 
+  const openLine = lines.find((line) => line.id === openLineId) ?? null;
+
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
       <h2 className="font-display text-xl uppercase tracking-tight">
         {copy.recipe.ingredients}
       </h2>
@@ -131,70 +135,68 @@ export function CookingPanel({
         <ul className="flex flex-col">
           {lines.map((line) => {
             const isChecked = checked.includes(line.id);
-            const measure = [
-              formatScaledQuantity(line.quantity, factor),
-              line.unit,
-            ]
-              .filter(Boolean)
-              .join(" ");
+            const amount = formatScaledQuantity(line.quantity, factor);
+            const measure = [amount, line.unit].filter(Boolean).join(" ");
 
-            /**
-             * The dotted underline is the only hint that an item is worth tapping,
-             * so it goes on the lines that actually have Substitutes. Ticked lines
-             * get the strike instead — the two are text decorations and cannot both
-             * apply, and a line already in the cupboard is not the one you are
-             * looking to replace.
-             */
-            const itemStyle = isChecked
-              ? "text-muted line-through"
-              : line.substitutes.length > 0
-                ? "underline decoration-accent decoration-dotted underline-offset-4"
-                : "";
+            const itemStyle = isChecked ? "text-muted line-through" : "";
 
             return (
-              <li key={line.id} className="flex items-center gap-2 text-sm">
+              <li key={line.id} className="flex items-center gap-2 border-t-2 border-line/10 text-base first:border-t-0">
                 {/*
-                  Two tap targets side by side, not one stacked on the other. The row
-                  used to be a single label, so anything that opened the Substitutes
-                  sheet would have ticked the line on the way — the item text is the
-                  sheet's trigger, so it has to sit *outside* the label rather than
-                  inside it with a click handler wrestling the checkbox for the same
-                  pixels. The label keeps the checkbox and the measure column, the
-                  button takes the rest of the row, and both stay 44px tall for
-                  greasy hands.
+                  The whole row is the checkbox's label — tapping the item ticks it,
+                  which is what a pantry check expects. Substitutes get their own
+                  labelled button, and only on lines that have any: a dotted
+                  underline on the item name was a hint nobody read as clickable.
                 */}
-                <label className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2">
+                <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-1.5 sm:gap-2">
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggle(line.id)}
                     /**
-                     * Explicit name, and now load-bearing: the item moved out of the
-                     * label to become the sheet's trigger, so the label is a bare
-                     * measure and every tick would otherwise announce as "2 tbsp".
+                     * Explicit name: the stacked fraction would otherwise read out
+                     * as "1 2 ząbek". The string keeps the ½.
                      */
                     aria-label={`${measure} ${line.item}`.trim()}
                     className="size-5 shrink-0 accent-accent"
                   />
+                  {/* A fixed tile, so sprites of different shapes still make one column.
+                      Always light: the sprites are outlined in ink, which a dark
+                      tile would swallow. */}
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-input border-2 border-line bg-[var(--px-w)] sm:size-10">
+                    <IngredientSprite item={line.item} className="size-7" />
+                  </span>
                   {/*
-                    Quantity and unit in mono and right-aligned in a fixed column, so
-                    numbers line up down the list instead of ragging with the words.
+                    Number and unit are two columns, not one string: "350 g" and
+                    "1 łyżeczka" right-aligned as a whole put their numbers in
+                    different places. The number is right-aligned in tabular figures,
+                    the unit starts on one left edge. On a phone the unit tucks under
+                    the number to leave the item room.
                   */}
-                  <span className="w-24 shrink-0 text-right font-mono text-muted">
-                    {measure}
+                  <span className="flex w-14 shrink-0 flex-col items-end leading-tight sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                    <span className="font-mono text-lg font-bold tabular-nums sm:w-16 sm:text-right">
+                      <Amount text={amount} />
+                    </span>
+                    <span className="text-sm font-semibold sm:w-24 sm:text-base">{line.unit}</span>
+                  </span>
+                  <span className={`min-w-0 flex-1 py-2 font-bold ${itemStyle}`}>
+                    {line.item}
+                    {line.note && <span className="font-semibold text-muted"> ({line.note})</span>}
                   </span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setOpenLineId(line.id)}
-                  /* The visible text is the item, which says nothing about what the
-                     tap does; the name has to. */
-                  aria-label={`${copy.recipe.substitutes}: ${line.item}`}
-                  className={`min-h-11 flex-1 text-left ${itemStyle}`}
-                >
-                  {line.item}
-                  {line.note && <span className="text-muted"> ({line.note})</span>}
-                </button>
+                {line.substitutes.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOpenLineId(line.id)}
+                    aria-label={`${copy.recipe.substitutes}: ${line.item}`}
+                    title={copy.recipe.substitutes}
+                    className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-input border border-line px-2 text-sm font-extrabold text-accent2"
+                  >
+                    <Icon name="swap" className="size-5" />
+                    <span className="hidden sm:inline">{copy.recipe.substitutes}</span>
+                    <span className="font-mono tabular-nums">{line.substitutes.length}</span>
+                  </button>
+                )}
               </li>
             );
           })}
@@ -224,9 +226,46 @@ export function CookingPanel({
       </div>
 
       <SubstitutesSheet
-        line={lines.find((line) => line.id === openLineId) ?? null}
+        line={openLine}
+        measure={
+          openLine
+            ? [formatScaledQuantity(openLine.quantity, factor), openLine.unit].filter(Boolean).join(" ")
+            : ""
+        }
         onClose={() => setOpenLineId(null)}
       />
     </section>
   );
+}
+
+/** The vulgar-fraction glyphs lib/quantity.ts emits, as numerator/denominator. */
+const FRACTIONS: Record<string, [number, number]> = {
+  "⅛": [1, 8], "⅙": [1, 6], "⅕": [1, 5], "¼": [1, 4], "⅓": [1, 3],
+  "⅜": [3, 8], "⅖": [2, 5], "½": [1, 2], "⅗": [3, 5], "⅝": [5, 8],
+  "⅔": [2, 3], "¾": [3, 4], "⅘": [4, 5], "⅚": [5, 6], "⅞": [7, 8],
+};
+const FRACTION_GLYPH = /([⅛⅙⅕¼⅓⅜⅖½⅗⅝⅔¾⅘⅚⅞])/;
+
+/**
+ * A quantity with its fraction drawn as a stacked fraction — numerator over a
+ * rule over denominator — rather than the Unicode glyph, which every face sets
+ * at half the height of a digit. Only the display changes; the string still
+ * goes to the shopping list as-is.
+ */
+function Amount({ text }: { text: string | null }) {
+  if (!text) return null;
+  return text.split(FRACTION_GLYPH).map((part, index) => {
+    const fraction = FRACTIONS[part];
+    if (!fraction) return part;
+    return (
+      <span
+        key={index}
+        className="ml-0.5 inline-flex flex-col items-center align-middle text-[0.82em] leading-none font-extrabold"
+      >
+        <span>{fraction[0]}</span>
+        <span aria-hidden className="h-[2px] w-full min-w-[1.1em] rounded-full bg-current" />
+        <span>{fraction[1]}</span>
+      </span>
+    );
+  });
 }

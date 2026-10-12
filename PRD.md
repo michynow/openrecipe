@@ -19,7 +19,7 @@ Recipes arrive two ways:
 2. **By import** — park a URL from anywhere; a Worker on the Master's laptop turns it
    into a Draft; a human reviews the Draft and approves it into a Recipe.
 
-Look: bakery sticker — flat 2D food illustration. Words: clean and cheeky. Polish is not optional — every state
+Look: snack arcade — a cartoon 2D game you cook from. Words: clean and cheeky. Polish is not optional — every state
 (empty, loading, error, offline, partial) is designed, not defaulted.
 
 ## 2. Non-goals
@@ -350,40 +350,62 @@ Ragu — 6 servings
 (4 of 11 — rest already in the pantry)
 ```
 
-## 10. Theme — "bakery sticker"
+## 10. Theme — "snack arcade"
 
-Tailwind tokens only. No hex literal ever appears in a component.
+A cartoon 2D game (Overcooked-ish), tasty first. Tailwind tokens only; no hex
+literal in a component. The game look is applied in app/globals.css by selectors
+on classes components already carry, so a restyle stays one file.
 
 ```
-bg       #FFF6E5    cream paper
-surface  #FFFDF7    napkin — raised cards
-line     #2B1D14    chocolate ink — outlines, drawn not hairline
-fill     #F6E1BD    pie crust — placeholders, skeletons, active rows
-accent   #D63A1F    tomato — primary CTA, ticks, focus rings
-accent2  #9B2C6F    berry — destructive, highlights, active filters
-text     #2B1D14
-muted    #7A5F4C
+           light                      dark ("arcade at night")
+bg         #FFF1C9 custard            #1A1030 grape cabinet
+surface    #FFFAF0 plate              #2B1D4D
+line       #1D1033 ink outline        #07030F
+fill       #FFE0A3 crust              #3D2A66   placeholders, skeletons, active rows
+gold       #FFC61A                    same      HUD bar, title drop shadow, selection
+ink        #1D1033                    same      text on gold
+accent     #C0221A tomato             #FF6A55   primary CTA, ticks, focus rings
+accent2    #7A2BC9 grape              #D39BFF   destructive, highlights, active filters
+text       #1D1033                    #FFF4DC
+muted      #5B4A6E                    #C9B8E6
+sausage    #C0492B                    same      the announcer
 
-display  Baloo 2 800 — round, chunky, friendly
+display  Baloo 2 800 — round, chunky (Lilita One tried: no Polish capitals)
 body     Nunito
 mono     JetBrains Mono — quantities and units, so numbers align
 
 all three loaded with subsets ['latin', 'latin-ext'] — Polish needs
 ą ć ę ł ń ó ś ź ż, and a display face that falls back on ł is unusable
 
-motion   snappy, slight overshoot on enter; 150-200ms
-         all of it behind prefers-reduced-motion
-radius   soft: 18px cards, 12px inputs
-shadow   outlined cards: hard 4px offset in ink, no blur (sticker look)
+page     gingham tablecloth: two 7% tomato stripes over bg, 48px
+header   gold HUD bar, 4px ink bottom edge
+lines    2px outlines, 3px on cards
+cards    hard 5px ink offset shadow (sticker); dashed = empty slot, flat
+buttons  coloured: 2px ink border on a 4px ink lip, press drops onto the lip;
+         outlined: 3px lip
+h1       ink letters, hard 3px gold drop
+radius   20px cards, 14px inputs
+motion   cards pop in (scale .92, slight tilt, overshoot); linked cards hop and
+         tilt on hover; buttons press; 160-220ms; all behind
+         prefers-reduced-motion
 ```
 
-Dark mode follows the OS (prefers-color-scheme), tokens only — "night kitchen":
-bg #1E140E espresso, surface #2A1D15, line #E9CFA3 cream ink, fill #3A2A1E,
-accent #FF6B4A, accent2 #E573B4, text #FBEFDC, muted #C4A88C.
-Text colours clear WCAG AA on bg in both modes.
+type     18px root (html 112.5%) — every rem-based size scales with it;
+         body Nunito 500; labels bold, full text colour, never muted
+pixels   UI icons and food sprites are 12×12 pixel art (lib/pixel.ts);
+         every Ingredient Line gets a sprite by Polish stem match
+         (lib/ingredient-sprites.ts), a pot when nothing matches
 
-motion detail: outlined cards pop in (scale .96 → 1, overshoot); linked cards
-lift 2px with a deeper shadow on hover; buttons squish to .96 on press.
+Text colours clear WCAG AA in both modes, measured on every screen.
+
+### Announcer — MC Kiełbas
+
+The "?" in the header opens a game-dialogue box pinned to the bottom of the
+screen: portrait, name plate, text typed out letter by letter, ▼ to advance
+(click/Enter finishes the line, then moves on; Escape leaves). A smug sausage
+in a bow tie doing fighting-game MC — cheeky innuendo, never explicit. One
+script per screen in `copy.help.pages`, chosen by `lib/help.ts`. Every line
+must stay true about what the screen does. Reduced motion: no typing, no bob.
 
 ## 11. Language and voice
 

@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 
-import { RowButton } from "@/components/section-card";
+import { IngredientSprite } from "@/components/pixel-sprite";
+import { GripButton, RowButton } from "@/components/section-card";
+import { reorder, useSortable } from "@/components/use-sortable";
 import { copy } from "@/lib/copy";
 import type { FieldErrors } from "@/lib/form-errors";
 import { parseIngredientBlock } from "@/lib/parse-ingredient";
@@ -25,8 +27,9 @@ const blankLine: Line = {
  * convenience and lands in editable inputs, so a wrong guess costs one keystroke —
  * see lib/parse-ingredient.ts for why it is deliberately naive.
  *
- * Reorder works by keyboard as well as by button. Drag-only reordering is unusable
- * without a mouse, and this is the most-used form in the app.
+ * Rows reorder by dragging the grip, or with the arrow keys on it — drag-only
+ * reordering is unusable without a mouse, and this is the most-used form in
+ * the app. Every row shows a pixel sprite for its item (lib/ingredient-sprites).
  */
 export function IngredientLinesEditor({
   values,
@@ -40,6 +43,9 @@ export function IngredientLinesEditor({
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const focusRow = useRef<number | null>(null);
+  const { list, dragging, handleProps } = useSortable((from, to) =>
+    onChange(reorder(values, from, to)),
+  );
 
   function update(index: number, patch: Partial<Line>) {
     onChange(values.map((line, i) => (i === index ? { ...line, ...patch } : line)));
@@ -54,15 +60,6 @@ export function IngredientLinesEditor({
     // Focus the row that slides into this position, or the previous one at the end.
     focusRow.current = Math.min(index, values.length - 2);
     onChange(values.filter((_, i) => i !== index));
-  }
-
-  function move(index: number, delta: number) {
-    const target = index + delta;
-    if (target < 0 || target >= values.length) return;
-    const next = [...values];
-    [next[index], next[target]] = [next[target], next[index]];
-    focusRow.current = target;
-    onChange(next);
   }
 
   function applyPaste() {
@@ -84,7 +81,21 @@ export function IngredientLinesEditor({
 
   return (
     <>
-      <ol className="flex flex-col">
+      {/* Column captions from sm up; below that each field carries its own. */}
+      <div
+        aria-hidden
+        className="hidden items-end gap-2 text-sm font-extrabold uppercase tracking-wide sm:flex"
+      >
+        <span className="w-11 shrink-0" />
+        <span className="w-11 shrink-0" />
+        <span className="w-24 shrink-0">{copy.editor.quantity}</span>
+        <span className="w-28 shrink-0">{copy.editor.unit}</span>
+        <span className="min-w-32 flex-1">{copy.editor.item}</span>
+        <span className="min-w-28 flex-1">{copy.editor.note}</span>
+        <span className="w-11 shrink-0" />
+      </div>
+
+      <ol ref={list} className="flex flex-col">
         {values.map((line, index) => {
           const itemError = errors[`ingredientLines.${index}.item`];
           const quantityError = errors[`ingredientLines.${index}.quantity`];
@@ -92,87 +103,86 @@ export function IngredientLinesEditor({
           return (
             <li
               key={index}
-              /* Hairlines between rows: eight ingredients otherwise read as one block. */
-              className="flex flex-col gap-1 border-t border-line/60 py-2 first:border-t-0 first:pt-0"
+              /* Rules between rows: eight ingredients otherwise read as one block. */
+              className={`flex flex-col gap-1 border-t-2 border-line/15 py-2 first:border-t-0 first:pt-0 ${
+                dragging === index ? "rounded-input bg-fill" : ""
+              }`}
             >
-              <div className="flex flex-wrap items-start gap-2 sm:flex-nowrap">
-                {/* Same numbering language as Steps, which ingredients lacked. */}
-                <span
-                  aria-hidden
-                  className="mt-3 w-5 shrink-0 text-right font-mono text-xs text-muted"
-                >
-                  {index + 1}
+              <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
+                <GripButton
+                  label={`${copy.editor.reorder}: ${line.item || index + 1}`}
+                  active={dragging === index}
+                  {...handleProps(index, values.length)}
+                />
+
+                {/* Updates as you type the item — a quiet "yes, I know what that is". */}
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-input border border-line bg-[var(--px-w)]">
+                  <IngredientSprite item={line.item} className="size-8" />
                 </span>
 
-                <input
-                  id={`ingredientLines.${index}.quantity`}
-                  aria-label={`${copy.editor.quantity} ${index + 1}`}
-                  inputMode="decimal"
-                  value={line.quantity === null ? "" : String(line.quantity)}
-                  placeholder={copy.editor.quantityPlaceholder}
-                  onChange={(event) =>
-                    update(index, { quantity: numberOrNull(event.target.value) })
-                  }
-                  aria-invalid={quantityError ? true : undefined}
-                  className="w-20 rounded-input border border-line bg-bg px-2 py-2 font-mono"
-                />
-
-                <input
-                  aria-label={`${copy.editor.unit} ${index + 1}`}
-                  value={line.unit ?? ""}
-                  placeholder={copy.editor.unitPlaceholder}
-                  onChange={(event) =>
-                    update(index, { unit: event.target.value || null })
-                  }
-                  className="w-24 rounded-input border border-line bg-bg px-2 py-2"
-                />
-
-                <input
-                  id={`ingredientLines.${index}.item`}
-                  aria-label={`${copy.editor.item} ${index + 1}`}
-                  value={line.item}
-                  placeholder={copy.editor.itemPlaceholder}
-                  onChange={(event) => update(index, { item: event.target.value })}
-                  ref={(node) => {
-                    if (node && focusRow.current === index) {
-                      node.focus();
-                      focusRow.current = null;
+                <Labelled caption={copy.editor.quantity} className="w-24">
+                  <input
+                    id={`ingredientLines.${index}.quantity`}
+                    aria-label={`${copy.editor.quantity} ${index + 1}`}
+                    inputMode="decimal"
+                    value={line.quantity === null ? "" : String(line.quantity)}
+                    placeholder={copy.editor.quantityPlaceholder}
+                    onChange={(event) =>
+                      update(index, { quantity: numberOrNull(event.target.value) })
                     }
-                  }}
-                  aria-invalid={itemError ? true : undefined}
-                  className="min-w-32 flex-1 rounded-input border border-line bg-bg px-3 py-2"
-                />
+                    aria-invalid={quantityError ? true : undefined}
+                    className="w-full rounded-input border border-line bg-bg px-2 py-2 font-mono"
+                  />
+                </Labelled>
 
-                <input
-                  aria-label={`${copy.editor.note} ${index + 1}`}
-                  value={line.note ?? ""}
-                  placeholder={copy.editor.notePlaceholder}
-                  onChange={(event) =>
-                    update(index, { note: event.target.value || null })
-                  }
-                  className="min-w-28 flex-1 rounded-input border border-line bg-bg px-3 py-2"
-                />
+                <Labelled caption={copy.editor.unit} className="w-28">
+                  <input
+                    aria-label={`${copy.editor.unit} ${index + 1}`}
+                    value={line.unit ?? ""}
+                    placeholder={copy.editor.unitPlaceholder}
+                    onChange={(event) =>
+                      update(index, { unit: event.target.value || null })
+                    }
+                    className="w-full rounded-input border border-line bg-bg px-2 py-2"
+                  />
+                </Labelled>
 
-                <span className="flex shrink-0 items-center">
-                  <RowButton
-                    icon="up"
-                    label={`${copy.editor.moveUp}: ${index + 1}`}
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0}
+                <Labelled caption={copy.editor.item} className="min-w-32 flex-1">
+                  <input
+                    id={`ingredientLines.${index}.item`}
+                    aria-label={`${copy.editor.item} ${index + 1}`}
+                    value={line.item}
+                    placeholder={copy.editor.itemPlaceholder}
+                    onChange={(event) => update(index, { item: event.target.value })}
+                    ref={(node) => {
+                      if (node && focusRow.current === index) {
+                        node.focus();
+                        focusRow.current = null;
+                      }
+                    }}
+                    aria-invalid={itemError ? true : undefined}
+                    className="w-full rounded-input border border-line bg-bg px-3 py-2 font-bold"
                   />
-                  <RowButton
-                    icon="down"
-                    label={`${copy.editor.moveDown}: ${index + 1}`}
-                    onClick={() => move(index, 1)}
-                    disabled={index === values.length - 1}
+                </Labelled>
+
+                <Labelled caption={copy.editor.note} className="min-w-28 flex-1">
+                  <input
+                    aria-label={`${copy.editor.note} ${index + 1}`}
+                    value={line.note ?? ""}
+                    placeholder={copy.editor.notePlaceholder}
+                    onChange={(event) =>
+                      update(index, { note: event.target.value || null })
+                    }
+                    className="w-full rounded-input border border-line bg-bg px-3 py-2"
                   />
-                  <RowButton
-                    icon="remove"
-                    label={`${copy.common.delete}: ${index + 1}`}
-                    onClick={() => remove(index)}
-                    destructive
-                  />
-                </span>
+                </Labelled>
+
+                <RowButton
+                  icon="remove"
+                  label={`${copy.common.delete}: ${line.item || index + 1}`}
+                  onClick={() => remove(index)}
+                  destructive
+                />
               </div>
 
               {(itemError || quantityError) && (
@@ -195,14 +205,14 @@ export function IngredientLinesEditor({
         <button
           type="button"
           onClick={add}
-          className="rounded-input border border-line px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
+          className="rounded-input border border-line px-3 py-1.5 text-sm font-bold text-text"
         >
           {copy.editor.addIngredient}
         </button>
         <button
           type="button"
           onClick={() => setPasteOpen((open) => !open)}
-          className="rounded-input border border-line px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
+          className="rounded-input border border-line px-3 py-1.5 text-sm font-bold text-text"
         >
           {copy.editor.pasteBlock}
         </button>
@@ -242,5 +252,28 @@ export function IngredientLinesEditor({
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * A field with its caption visible on a phone, where the column headings are
+ * hidden, and screen-reader-only from sm up, where the headings say it.
+ */
+function Labelled({
+  caption,
+  className,
+  children,
+}: {
+  caption: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`flex shrink-0 flex-col gap-0.5 ${className}`}>
+      <span aria-hidden className="text-sm font-extrabold uppercase tracking-wide sm:sr-only">
+        {caption}
+      </span>
+      {children}
+    </div>
   );
 }

@@ -196,7 +196,7 @@ export function RecipeEditor({
         They used to be the same number, which is what made the form read as an
         undifferentiated wall.
       */
-      className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-8 sm:px-6"
+      className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-4 py-8 sm:px-6"
     >
       <h1 className="font-display text-3xl uppercase tracking-tight">{heading}</h1>
 
@@ -339,7 +339,7 @@ export function RecipeEditor({
         trailing={
           <span className="flex items-center gap-2">
             {guessed("tagSlugs") && <GuessedChip />}
-            <span className="font-mono text-xs text-muted">
+            <span className="font-mono text-sm text-muted">
               {value.tagSlugs.length} {copy.editor.tagsCount}
             </span>
           </span>
@@ -436,7 +436,7 @@ function GuessedChip() {
   return (
     <span
       title={copy.imports.guessedHint}
-      className="rounded-input border border-accent px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wide text-accent"
+      className="rounded-input border-2 border-accent bg-surface px-2 py-0.5 text-sm font-extrabold uppercase tracking-wide text-accent"
     >
       {copy.imports.guessed}
     </span>
@@ -468,11 +468,11 @@ function Field({
       */}
       <label
         htmlFor={id}
-        className="font-mono text-xs uppercase tracking-widest text-muted"
+        className="text-sm font-extrabold uppercase tracking-wide text-text"
       >
         {label}
         {hint && !required && (
-          <span className="ml-1 normal-case tracking-normal opacity-60">
+          <span className="ml-1 normal-case tracking-normal">
             ({hint})
           </span>
         )}

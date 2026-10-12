@@ -31,7 +31,7 @@ function CardPlaceholder({ title }: { title: string }) {
       aria-hidden
       className="flex h-full w-full items-center justify-center bg-fill"
     >
-      <span className="font-display text-3xl uppercase text-muted/40">
+      <span className="font-display text-3xl uppercase text-muted">
         {title.slice(0, 2)}
       </span>
     </div>
@@ -67,11 +67,11 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           {recipe.title}
         </h3>
 
-        <div className="mt-auto flex flex-wrap items-center gap-1.5 text-xs">
+        <div className="mt-auto flex flex-wrap items-center gap-1.5 text-sm">
           {recipe.tagLabels.slice(0, MAX_TAGS_ON_CARD).map((label) => (
             <span
               key={label}
-              className="rounded-input border border-line px-1.5 py-0.5 text-muted"
+              className="rounded-input border border-line bg-fill px-1.5 py-0.5 font-bold text-text"
             >
               {label}
             </span>

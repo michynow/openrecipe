@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef } from "react";
 
+import { Icon } from "@/components/icons";
+import { IngredientSprite } from "@/components/pixel-sprite";
 import { copy } from "@/lib/copy";
 import type { RecipeDetail } from "@/lib/recipe-query";
 
@@ -24,9 +26,12 @@ type Line = RecipeDetail["ingredientLines"][number];
  */
 export function SubstitutesSheet({
   line,
+  measure,
   onClose,
 }: {
   line: Line | null;
+  /** The line's quantity and unit at the current scale, e.g. "350 g". */
+  measure: string;
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -58,37 +63,72 @@ export function SubstitutesSheet({
       className="mx-0 mb-0 mt-auto w-full max-w-none rounded-t-card border-t border-line bg-surface p-0 text-text backdrop:bg-bg/80"
     >
       {line && (
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 p-5">
-          <h2
-            id={`${id}-title`}
-            className="font-display text-lg uppercase tracking-tight"
-          >
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-5">
+          <h2 id={`${id}-title`} className="font-display text-2xl uppercase tracking-tight">
             {copy.recipe.substitutes}
           </h2>
-          <p id={`${id}-item`} className="text-sm text-muted">
-            {line.item}
-          </p>
 
-          {line.substitutes.length === 0 ? (
-            <p className="text-sm text-muted">{copy.recipe.noSubstitutes}</p>
-          ) : (
-            <ul className="flex flex-col gap-2 text-sm">
-              {line.substitutes.map((substitute) => (
-                <li key={substitute.item}>
-                  {substitute.item}
-                  {substitute.note && (
-                    <span className="text-muted"> ({substitute.note})</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          {/*
+            Reads as a swap: what the recipe asks for → what can stand in for it,
+            each option with what changes if you use it. Side by side from sm up,
+            stacked with a down arrow on a phone.
+          */}
+          <div className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.4fr)]">
+            <section className="flex flex-col gap-2">
+              <p className="text-sm font-extrabold uppercase tracking-wide text-muted">
+                {copy.recipe.insteadOf}
+              </p>
+              <div className="flex items-center gap-3 rounded-input border-2 border-line bg-fill p-3">
+                <SpriteTile item={line.item} />
+                <p id={`${id}-item`} className="min-w-0 text-lg font-extrabold leading-snug">
+                  {measure && <span className="font-mono">{measure} </span>}
+                  {line.item}
+                </p>
+              </div>
+            </section>
+
+            <Icon
+              name="swap"
+              className="size-8 self-center justify-self-center text-accent2 max-sm:rotate-90 sm:mt-7"
+            />
+
+            <section className="flex flex-col gap-2">
+              <p className="text-sm font-extrabold uppercase tracking-wide text-muted">
+                {copy.recipe.youCanUse}
+              </p>
+              {line.substitutes.length === 0 ? (
+                <p className="text-base text-muted">{copy.recipe.noSubstitutes}</p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {line.substitutes.map((substitute, index) => (
+                    <li key={substitute.item} className="flex flex-col gap-2">
+                      {index > 0 && (
+                        <span className="self-center text-sm font-extrabold uppercase tracking-wide text-muted">
+                          {copy.recipe.or}
+                        </span>
+                      )}
+                      <div className="flex items-start gap-3 rounded-input border-2 border-line bg-surface p-3">
+                        <SpriteTile item={substitute.item} />
+                        <div className="min-w-0">
+                          <p className="text-lg font-extrabold leading-snug">{substitute.item}</p>
+                          {substitute.note && (
+                            <p className="text-base leading-snug text-muted">{substitute.note}</p>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
 
           {/* method="dialog" closes the thing with no handler and no state. */}
           <form method="dialog">
             <button
               type="submit"
-              className="min-h-11 w-full rounded-input border border-line text-sm text-muted"
+              autoFocus
+              className="min-h-11 w-full rounded-input border border-line text-base font-extrabold text-text"
             >
               {copy.common.close}
             </button>
@@ -96,5 +136,14 @@ export function SubstitutesSheet({
         </div>
       )}
     </dialog>
+  );
+}
+
+/** Same light tile as the ingredient list, so the sprites read as the same things. */
+function SpriteTile({ item }: { item: string }) {
+  return (
+    <span className="flex size-12 shrink-0 items-center justify-center rounded-input border-2 border-line bg-[var(--px-w)]">
+      <IngredientSprite item={item} className="size-9" />
+    </span>
   );
 }

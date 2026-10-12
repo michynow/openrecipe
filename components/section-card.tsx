@@ -37,11 +37,11 @@ export function SectionCard({
     */
     <fieldset className="min-w-0 rounded-card border border-line bg-surface p-4">
       <legend className="float-left mb-3 flex w-full items-center gap-2 border-b border-line pb-2">
-        <span aria-hidden className="font-mono text-xs text-accent">
+        <span aria-hidden className="font-mono text-base font-bold text-accent">
           {number}
         </span>
-        <Icon name={icon} className="size-5 text-muted" />
-        <span className="font-display text-sm uppercase tracking-wide">
+        <Icon name={icon} className="size-7 text-text" />
+        <span className="font-display text-xl uppercase tracking-wide">
           {label}
         </span>
         {trailing && <span className="ml-auto">{trailing}</span>}
@@ -83,6 +83,31 @@ export function RowButton({
       }`}
     >
       <Icon name={icon} />
+    </button>
+  );
+}
+
+/**
+ * The drag grip on a sortable row. Spread `useSortable().handleProps(...)` onto
+ * it. 44px like every row action; `touch-none` so dragging it on a phone moves
+ * the row instead of scrolling the page.
+ */
+export function GripButton({
+  label,
+  active,
+  ...handle
+}: { label: string; active: boolean } & React.HTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      {...handle}
+      className={`flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-input active:cursor-grabbing ${
+        active ? "bg-gold text-ink" : "text-muted hover:text-text"
+      }`}
+    >
+      <Icon name="grip" className="size-6" />
     </button>
   );
 }

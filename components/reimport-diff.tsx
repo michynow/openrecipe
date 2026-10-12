@@ -66,7 +66,7 @@ function Row({
 }) {
   return (
     <li className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-1.5 text-sm first:border-t-0 first:pt-0">
-      <span className="font-mono text-xs uppercase tracking-widest text-muted">
+      <span className="text-sm font-extrabold uppercase tracking-wide text-text">
         {copy.imports.diffFields[difference.field]}
       </span>
 
@@ -79,7 +79,7 @@ function Row({
         type="button"
         onClick={onApply}
         disabled={taken}
-        className="ml-auto min-h-11 shrink-0 rounded-input border border-line px-3 text-xs text-muted transition-colors hover:text-accent disabled:border-accent/40 disabled:text-accent disabled:opacity-100"
+        className="ml-auto min-h-11 shrink-0 rounded-input border border-line px-3 text-sm text-muted transition-colors hover:text-accent disabled:border-accent/40 disabled:text-accent disabled:opacity-100"
       >
         {taken ? copy.imports.diffTaken : copy.imports.diffApply}
       </button>

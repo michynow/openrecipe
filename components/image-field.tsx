@@ -159,7 +159,7 @@ export function ImageField({
           >
             {copy.editor.pickImage}
           </button>
-          <p className="text-xs text-muted opacity-60">{copy.editor.imageHint}</p>
+          <p className="text-sm text-muted">{copy.editor.imageHint}</p>
         </div>
       )}
 
@@ -187,7 +187,7 @@ export function ImageField({
             aria-label={copy.editor.uploading}
             className="h-1 flex-1"
           />
-          <span className="font-mono text-xs text-muted">
+          <span className="font-mono text-sm text-muted">
             {Math.round(progress ?? 0)}%
           </span>
           <button

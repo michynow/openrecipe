@@ -81,6 +81,10 @@ export const copy = {
     cookedConfirmed: "Zapisane. Smacznego.",
 
     substitutes: "Zamienniki",
+    /** The two sides of the Substitutes sheet: what you lack → what works. */
+    insteadOf: "Zamiast",
+    youCanUse: "Możesz użyć",
+    or: "albo",
     noSubstitutes:
       "Brak zamienników dla tego składnika. Pojawiają się przy przepisach z linku.",
     openSource: "Zobacz oryginał",
@@ -117,20 +121,20 @@ export const copy = {
     saving: "Zapisywanie…",
     cancel: "Anuluj",
     unsavedChanges: "Masz niezapisane zmiany. Wyjść i je porzucić?",
-    moveUp: "W górę",
-    moveDown: "W dół",
-    stepPlaceholder: "Krótko, jedna czynność",
-    tipPlaceholder: "Coś, co warto wiedzieć",
+    /** The grip on each row: a drag target, and arrow keys when focused. */
+    reorder: "Przeciągnij albo użyj strzałek ↑ ↓, żeby przestawić",
+    stepPlaceholder: "np. Podsmaż cebulę na złoto, ok. 5 minut",
+    tipPlaceholder: "np. Sos można zamrozić na miesiąc",
     fixErrors: "Popraw zaznaczone pola.",
     optional: "opcjonalne",
     quantity: "Ilość",
     unit: "Jednostka",
     item: "Składnik",
     note: "Uwaga",
-    quantityPlaceholder: "2",
-    unitPlaceholder: "łyżki",
-    itemPlaceholder: "masło",
-    notePlaceholder: "roztopione",
+    quantityPlaceholder: "np. 2",
+    unitPlaceholder: "np. łyżki",
+    itemPlaceholder: "np. masło",
+    notePlaceholder: "np. roztopione",
     pasteBlock: "Wklej listę",
     pasteHint: "Wklej składniki — po jednym w linii. Rozbijemy je na pola; potem możesz poprawić.",
     pasteApply: "Rozbij na wiersze",
@@ -236,6 +240,23 @@ export const copy = {
         "Ta strona nie publikuje danych przepisu — trzeba ją przeczytać ze zrozumieniem. Na razie wpisz przepis ręcznie.",
       invalid: "Przepis z tej strony wyszedł niekompletny. Wpisz go ręcznie.",
       crashed: "Coś poszło nie tak przy przetwarzaniu. Spróbuj jeszcze raz.",
+      expired:
+        "Czekał w kolejce ponad 3 dni i kuchnia go nie ruszyła. Spróbuj jeszcze raz, kiedy worker będzie działał.",
+    },
+    /** The progress bar on a Draft that is queued or being worked on. */
+    progress: {
+      steps: {
+        queued: "W kolejce",
+        fetching: "Pobieram stronę",
+        generating: "Model czyta przepis",
+        image: "Zapisuję zdjęcie",
+      },
+      step: "Etap",
+      waiting: "czeka",
+      working: "w robocie",
+      queuedHint:
+        "Kuchnia rusza, gdy na laptopie właściciela działa worker (pnpm worker). Ta strona odświeży się sama. Po 3 dniach czekania link wygasa.",
+      live: "Na żywo",
     },
     status: {
       queued: "Czeka w kolejce",
@@ -309,6 +330,65 @@ export const copy = {
     notFoundTitle: "Nie ma tu nic",
     notFoundBody: "Ta strona nie istnieje albo nie masz do niej dostępu.",
     backHome: "Wróć na start",
+  },
+
+  /**
+   * MC Kiełbas, the announcer behind the "?" button. A smug sausage in a bow
+   * tie doing fighting-game MC: loud, cheeky, innuendo on every line — never
+   * explicit. Lines are game-dialogue short, one beat each, and every one must
+   * still be true about what the screen does.
+   */
+  help: {
+    open: "Pomoc — co tu robić?",
+    name: "MC Kiełbas",
+    next: "Dalej",
+    close: "Zamknij",
+    pages: {
+      dashboard: [
+        "UWAGA, UWAGA! Na ring wchodzi twoja kuchnia! Ja jestem MC Kiełbas — dziś to ja tu robię za gorącą atrakcję.",
+        "U góry tablica wyników: ile masz przepisów, ile szkiców czeka, co grillujesz najczęściej, a co leży i stygnie.",
+        "„Na dziś” — trzech zawodników: śniadanie, obiad, kolacja. Nie podnieca cię? „Coś innego” i losujemy dalej.",
+        "Na dole „Ostatnio dodane”. Świeże mięsko w bibliotece. Mrrr.",
+      ],
+      search: [
+        "Tryb łowów! Wpisz, na co masz ochotę. Kiełbas nie ocenia, Kiełbas rozumie.",
+        "Filtry: posiłek, kuchnia, dieta, wysiłek, charakter i czas. Zaznacz, co cię kręci, i „Pokaż wyniki”.",
+        "Pro tip: „Ze zdjęciem”. Najpierw jemy oczami, kotku.",
+      ],
+      drafts: [
+        "Etap bonusowy: import! Wklej link do przepisu z dowolnej strony i idź się zrelaksować.",
+        "Maszyna przemieli go na szkic, kiedy kuchnia będzie otwarta. Uwierz mi, znam się na mieleniu.",
+        "Gotowe? „Sprawdź szkic”. Nie wyszło? Spróbuj jeszcze raz, odrzuć albo wpisz ręcznie. Ręczna robota też ma swój urok.",
+      ],
+      draft: [
+        "Kontrola jakości! Szkic złożyła maszyna, a maszyna czasem zgaduje. Jak ja, ile mam w sobie mięsa.",
+        "Pola z dopiskiem „zgadywane” sprawdź dwa razy. Potem do pięciu tagów i „Dodaj do biblioteki”.",
+        "Nie pasuje? Odrzuć bez litości. Ponowny import? Bierz tylko te zmiany, które ci smakują.",
+      ],
+      newRecipe: [
+        "Tryb kreatora! Nazwa, porcje, co najmniej jeden składnik i jeden krok — i jedziemy.",
+        "Kroki krótko, jedna czynność na raz. Długie gadanie zostaw mnie.",
+        "Składniki wrzuć hurtem przez „Wklej listę”, posiekam je na pola. Tagów max pięć — nawet kiełbasa zna umiar.",
+        "Masz link? Wklej go zamiast klepać. Szybciej niż ja na grillu.",
+      ],
+      recipe: [
+        "GOTUJ! Plus i minus zmieniają porcje — ilości przeliczą się same, oryginał zostaje nietknięty.",
+        "„Co już masz?” — odhacz, co stoi w lodówce, resztę wyślij jako listę zakupów.",
+        "„Nie gaś ekranu”, żeby telefon nie zasnął w połowie akcji. Nikt nie lubi, jak ktoś zasypia w połowie.",
+        "Brakuje składnika? Zerknij w zamienniki. Skończone? Wal w „Ugotowane!” — combo zaliczone.",
+        "Pod tytułem: edycja, ponowny import i usuwanie. Usunięcie da się na chwilę cofnąć. Mnie jak ktoś zje, to już nie.",
+      ],
+      editRecipe: [
+        "Warsztat! Zmieniaj, co chcesz, i „Zapisz”. Spróbujesz uciec bez zapisu — zatrzymam cię.",
+        "Strzałkami przestawiasz składniki i kroki. Góra, dół — pozycja dowolna.",
+      ],
+      settings: [
+        "Zaplecze dla szefa. Zaproszenia: tworzysz link, kopiujesz, dajesz, komu chcesz. Maili nie wysyłamy — wszystko z ręki do ręki.",
+        "Domownicy to twoja drużyna. Tagi dodajesz i przemianowujesz, ale slug zostaje na zawsze. Jak tatuaż po kawalerskim.",
+        "Na dole kolejka importu: co czeka, co gotowe, a co poległo.",
+      ],
+      lost: ["Zgubiłeś się, kotku? Wracaj na Start, tam cię oprowadzę."],
+    },
   },
 
   /** Plural forms, for the `plural` helper in ./format. Polish needs three. */

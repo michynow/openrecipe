@@ -246,7 +246,7 @@ export function SearchAutocomplete() {
                    */
                   <span
                     aria-hidden
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-input bg-fill font-display text-sm uppercase text-muted/40"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-input bg-fill font-display text-sm uppercase text-muted"
                   >
                     {recipe.title.slice(0, 2)}
                   </span>
@@ -259,7 +259,7 @@ export function SearchAutocomplete() {
                   {/* Joined rather than chips: a suggestion row must never wrap
                       to a second line, and five Tags as chips would. */}
                   {recipe.tagLabels.length > 0 && (
-                    <span className="truncate text-xs text-muted">
+                    <span className="truncate text-sm text-muted">
                       {recipe.tagLabels.join(" · ")}
                     </span>
                   )}
