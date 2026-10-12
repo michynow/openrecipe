@@ -22,6 +22,17 @@
   --color-leaf: #3fae49; /* "ready" — your turn; ink text on it */
   --color-sky: #59b8e8; /* "processing" — the kitchen is on it; ink text on it */
 
+  /*
+   * One colour per Tag Facet, so "Wegańskie" and "Włoska" read as different
+   * kinds of thing at a glance. Ink text on every one, in both modes — they are
+   * stickers, like the sprites, and do not change at night.
+   */
+  --color-facet-meal: #ffc61a; /* gold */
+  --color-facet-cuisine: #59b8e8; /* sky */
+  --color-facet-diet: #6fd36b; /* leaf, lifted for ink text */
+  --color-facet-effort: #ff9a3c; /* orange */
+  --color-facet-vibe: #e3a6ff; /* grape, lifted for ink text */
+
   /* tomato — primary action, ticks, focus rings */
   --color-accent: #c0221a;
   --color-accent-ink: #ffffff;
