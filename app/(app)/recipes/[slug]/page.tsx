@@ -59,7 +59,7 @@ export default async function RecipePage({
       ) : (
         <div
           aria-hidden
-          className="flex aspect-4/3 w-full items-center justify-center rounded-card bg-line"
+          className="flex aspect-4/3 w-full items-center justify-center rounded-card bg-fill"
         >
           <span className="font-display text-6xl uppercase text-muted/40">
             {recipe.title.slice(0, 2)}

@@ -221,7 +221,7 @@ export function SearchAutocomplete() {
                 onClick={() => openRecipe(recipe)}
                 onMouseEnter={() => setActive(index)}
                 className={`flex cursor-pointer items-center gap-3 px-3 py-2 ${
-                  index === active ? "bg-line" : ""
+                  index === active ? "bg-fill" : ""
                 }`}
               >
                 {recipe.imageUrl ? (
@@ -246,7 +246,7 @@ export function SearchAutocomplete() {
                    */
                   <span
                     aria-hidden
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-input bg-line font-display text-sm uppercase text-muted/40"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-input bg-fill font-display text-sm uppercase text-muted/40"
                   >
                     {recipe.title.slice(0, 2)}
                   </span>
