@@ -13,10 +13,18 @@ import { appendLog } from "./draft-queue.ts";
  */
 export async function wakeKitchen(draftId: string): Promise<void> {
   const token = process.env.GITHUB_DISPATCH_TOKEN;
-  const repo = process.env.GITHUB_REPOSITORY;
+  // Vercel names the Git repository it deploys from, so the explicit variable
+  // is only an override — forgetting it used to switch the cloud kitchen off.
+  const owner = process.env.VERCEL_GIT_REPO_OWNER;
+  const slug = process.env.VERCEL_GIT_REPO_SLUG;
+  const repo = process.env.GITHUB_REPOSITORY || (owner && slug ? `${owner}/${slug}` : undefined);
 
   if (!token || !repo) {
-    await appendLog(draftId, "warn", copy.imports.log.wakeOff);
+    await appendLog(
+      draftId,
+      "warn",
+      copy.imports.log.wakeOff(!token ? "GITHUB_DISPATCH_TOKEN" : "GITHUB_REPOSITORY"),
+    );
     return;
   }
 

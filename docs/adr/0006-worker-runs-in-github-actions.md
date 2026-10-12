@@ -32,9 +32,10 @@ keeping the laptop.
   a household's imports many times over.
 - **Secrets live in two places.** GitHub: `CLAUDE_CODE_OAUTH_TOKEN`,
   `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`. Vercel: `GITHUB_DISPATCH_TOKEN`
-  (fine-grained, this repo only, Actions: read and write) and
-  `GITHUB_REPOSITORY`. Without the Vercel pair, the app logs on the Draft that
-  the cloud kitchen is not configured and the cron or the laptop picks it up.
+  (fine-grained, this repo only, Actions: read and write). The repository
+  comes from Vercel's own `VERCEL_GIT_REPO_OWNER`/`_SLUG`; `GITHUB_REPOSITORY`
+  only overrides it. Without the token, the Draft's log says so and the
+  30-minute cron picks it up.
 - **The subscription token expires** (about a year). When it does, model calls
   fail, the worker falls back to page data where it can, and the Draft's log
   carries the SDK's error. Regenerate with `claude setup-token`.
