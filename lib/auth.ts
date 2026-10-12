@@ -89,6 +89,22 @@ export const auth = betterAuth({
 
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
+
+  /**
+   * Every hostname this deployment answers on. Better Auth trusts only baseURL by
+   * default, and the project has more than one production domain
+   * (openrecipe-red.vercel.app as well as the team URL): signing in from the
+   * other one was a flat 403 "Invalid origin" that the form showed as a wrong
+   * password. Vercel's system variables name the domains exactly — no
+   * `*.vercel.app` wildcard, which would trust every app on the platform.
+   */
+  trustedOrigins: [
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_URL,
+  ]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => `https://${host}`),
 });
 
 /** True when Google sign-in can actually be offered. The login screen reads this. */

@@ -31,6 +31,7 @@ export const copy = {
     noSelfReset: "Zapomniałeś hasła? Poproś właściciela o link do zmiany.",
     // Deliberately identical whether or not the address exists — no account enumeration.
     invalidCredentials: "Nieprawidłowy e-mail lub hasło.",
+    tooManyAttempts: "Za dużo prób logowania. Odczekaj minutę i spróbuj ponownie.",
     signingIn: "Logowanie…",
   },
 
