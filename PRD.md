@@ -540,7 +540,7 @@ reach the app.
 
 **App (Vercel):** `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MASTER_EMAIL`, `BLOB_READ_WRITE_TOKEN`,
-`GITHUB_DISPATCH_TOKEN`, `GITHUB_REPOSITORY` (wakes the worker, ADR-0006).
+`GITHUB_DISPATCH_TOKEN` (wakes the worker, ADR-0006; the repo comes from Vercel).
 
 **Worker (GitHub Actions secrets):** `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`,
 `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token` — the subscription, not an API

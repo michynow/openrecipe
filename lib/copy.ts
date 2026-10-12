@@ -256,8 +256,8 @@ export const copy = {
       requeued: "Ponownie w kolejce.",
       reimport: "Ponowny import przepisu — dodany do kolejki.",
       woke: "Kuchnia obudzona (GitHub Actions). Start zwykle w ciągu minuty.",
-      wakeOff:
-        "Kuchnia w chmurze nie jest skonfigurowana — szkic weźmie worker na laptopie.",
+      wakeOff: (missing: string) =>
+        `Nie mogę obudzić kuchni w chmurze (brak ${missing} na Vercelu). Szkic weźmie cron, najpóźniej za 30 minut.`,
       wakeFailed: (detail: string) =>
         `Nie udało się obudzić kuchni (${detail}). Szkic weźmie cron, najpóźniej za 30 minut.`,
       claimed: (where: string) => `Kuchnia przejęła szkic (${where}).`,

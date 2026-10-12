@@ -151,6 +151,9 @@ export async function generateRecipe(
   if (!answer) return { ok: false, reason: "no-answer", detail: first.error };
 
   let parsed = extractJson(answer);
+  // An SDK error (bad auth, rate limit) often arrives as text, which then
+  // "fails to parse" — report the error, not the symptom.
+  if (parsed === null && first.error) return { ok: false, reason: "no-answer", detail: first.error };
   if (parsed === null) return { ok: false, reason: "invalid-json" };
 
   let checked = validate(parsed, allowed);
