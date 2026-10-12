@@ -54,6 +54,8 @@ export function ParkUrlForm() {
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-2">
+      <p className="text-base">{copy.imports.parkIntro}</p>
+
       {/* The section header already says this; the label is here for the input. */}
       <label htmlFor="sourceUrl" className="sr-only">
         {copy.imports.parkTitle}
@@ -84,8 +86,10 @@ export function ParkUrlForm() {
       <p className="text-sm text-muted">{copy.imports.parkHint}</p>
 
       {note && (
-        <p role="status" className="text-sm text-accent">
-          {note}{" "}
+        /* Not accent: next to the error line below it, coral read as "it failed". */
+        <p role="status" className="flex flex-wrap items-center gap-x-2 text-sm font-semibold text-text">
+          <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-line bg-leaf" />
+          {note}
           {existingSlug && (
             <Link
               href={`/recipes/${existingSlug}`}

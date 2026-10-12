@@ -15,7 +15,15 @@ export type ExportLine = {
   quantity: number | null;
   unit: string | null;
   item: string;
+  /** What else will do, so the shop that is out of one can still be shopped. */
+  substitutes?: readonly { item: string }[];
 };
+
+/** "ogórek (albo pomidor, papryka)" — the item, then its Substitutes, if any. */
+const withSubstitutes = (line: ExportLine) =>
+  line.substitutes?.length
+    ? `${line.item} (${copy.recipe.or} ${line.substitutes.map((s) => s.item).join(", ")})`
+    : line.item;
 
 export function buildShoppingExport({
   title,
@@ -40,7 +48,7 @@ export function buildShoppingExport({
   const bullets = wanted
     .map(
       (line) =>
-        `• ${[formatScaledQuantity(line.quantity, factor), line.unit, line.item]
+        `• ${[formatScaledQuantity(line.quantity, factor), line.unit, withSubstitutes(line)]
           .filter(Boolean)
           .join(" ")}`,
     )

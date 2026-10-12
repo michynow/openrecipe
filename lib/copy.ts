@@ -190,6 +190,9 @@ export const copy = {
   /** Parking a link, and the Drafts screen (OR-39, OR-45). */
   imports: {
     parkTitle: "Wklej link",
+    /** What parking a link is for — the Drafts screen is the first place it is met. */
+    parkIntro:
+      "Masz przepis z internetu? Wklej link do strony, na której jest. Kuchnia przeczyta stronę, przetłumaczy przepis na polski, rozpisze składniki i kroki, dobierze tagi i zamienniki, i zrobi z tego szkic. Ty go tylko sprawdzasz i dodajesz do biblioteki.",
     parkHint: "Kuchnia zabiera się za link w ciągu minuty. Postęp widać poniżej.",
     parkAction: "Odłóż na później",
     parked: "Odłożone. Kuchnia już się za to zabiera — postęp widać poniżej.",
@@ -205,6 +208,9 @@ export const copy = {
     approve: "Dodaj do biblioteki",
     guessed: "zgadywane",
     guessedHint: "Tego nie było wprost na stronie — sprawdź.",
+    guessedLegend: "— tego nie było wprost na stronie, model to wywnioskował. Sprawdź te pola przed dodaniem.",
+    untranslated:
+      "Model nie zadziałał, więc to dane prosto ze strony: bez tłumaczenia, tagów i zamienników. Przejrzyj całość.",
     discardConfirm: "Odrzucić ten szkic? Przepis nie powstanie.",
     reimport: "Zaimportuj ponownie",
     reimportQueued: "Odłożone. Sprawdzisz zmiany w Szkicach.",

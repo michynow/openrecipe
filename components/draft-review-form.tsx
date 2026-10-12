@@ -5,9 +5,10 @@ import { useState } from "react";
 
 import { approveDraftAction, discardDraftAction } from "@/app/(app)/drafts/actions";
 import { Icon } from "@/components/icons";
-import { RecipeEditor, type RecipeEditorValue } from "@/components/recipe-editor";
+import { GuessedChip, RecipeEditor, type RecipeEditorValue } from "@/components/recipe-editor";
 import { ReimportDiff } from "@/components/reimport-diff";
 import { copy } from "@/lib/copy";
+import { guessedFields } from "@/lib/inferred";
 import type { FacetGroup } from "@/lib/tags-query";
 
 /**
@@ -38,6 +39,7 @@ export function DraftReviewForm({
   current?: RecipeEditorValue | null;
 }) {
   const reimport = Boolean(recipeId && current);
+  const guessed = guessedFields(reimport ? [] : inferred);
   const router = useRouter();
   const [discarding, setDiscarding] = useState(false);
 
@@ -83,6 +85,18 @@ export function DraftReviewForm({
               {sourceUrl}
             </a>
           </p>
+          {/*
+            The chip's meaning, said once where it can be read. Its title
+            tooltip is no help on a phone, which is where review happens.
+          */}
+          {guessed.fields.size > 0 && (
+            <p className="text-sm">
+              <GuessedChip /> {copy.imports.guessedLegend}
+            </p>
+          )}
+          {guessed.untranslated && (
+            <p className="text-sm font-semibold">{copy.imports.untranslated}</p>
+          )}
           </div>
 
           {reimport && (

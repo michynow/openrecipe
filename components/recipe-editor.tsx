@@ -9,6 +9,7 @@ import { LineListEditor } from "@/components/line-list-editor";
 import { SectionCard } from "@/components/section-card";
 import { TagPicker } from "@/components/tag-picker";
 import { copy } from "@/lib/copy";
+import { guessedFields } from "@/lib/inferred";
 import { firstErrorField, toFieldErrors, type FieldErrors } from "@/lib/form-errors";
 import {
   emptyRecipe,
@@ -85,7 +86,8 @@ export function RecipeEditor({
   submitLabel?: string;
   extraActions?: React.ReactNode;
 }) {
-  const guessed = (field: string) => inferred.includes(field);
+  const guessedSet = guessedFields(inferred).fields;
+  const guessed = (field: string) => guessedSet.has(field);
   const router = useRouter();
   const [value, setValue] = useState<RecipeEditorValue>(initial ?? emptyRecipe);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -432,11 +434,11 @@ export function RecipeEditor({
  * here would read as "this is broken" next to real validation messages, which is
  * the one thing the reviewer must be able to tell apart at a glance.
  */
-function GuessedChip() {
+export function GuessedChip() {
   return (
     <span
       title={copy.imports.guessedHint}
-      className="rounded-input border-2 border-accent bg-surface px-2 py-0.5 text-sm font-extrabold uppercase tracking-wide text-accent"
+      className="inline-flex shrink-0 items-center whitespace-nowrap rounded-input border-2 border-accent bg-surface px-1.5 text-xs font-extrabold uppercase leading-5 tracking-wide text-accent"
     >
       {copy.imports.guessed}
     </span>
@@ -465,23 +467,26 @@ function Field({
       {/*
         Small, tracked, muted labels against full-weight values: the eye should
         land on what the recipe says, not on what the fields are called.
+
+        flex-1 + items-end: side by side in a grid row, labels of different
+        lengths (one wrapping, one carrying the chip) would otherwise push the
+        inputs to different heights. The chip wraps under the label rather than
+        out of a narrow column.
       */}
-      <label
-        htmlFor={id}
-        className="text-sm font-extrabold uppercase tracking-wide text-text"
-      >
-        {label}
-        {hint && !required && (
-          <span className="ml-1 normal-case tracking-normal">
-            ({hint})
-          </span>
-        )}
-        {guessed && (
-          <span className="ml-2 align-middle">
-            <GuessedChip />
-          </span>
-        )}
-      </label>
+      <div className="flex flex-1 flex-wrap items-end gap-x-2 gap-y-1">
+        <label
+          htmlFor={id}
+          className="text-sm font-extrabold uppercase tracking-wide text-text"
+        >
+          {label}
+          {hint && !required && (
+            <span className="ml-1 normal-case tracking-normal">
+              ({hint})
+            </span>
+          )}
+        </label>
+        {guessed && <GuessedChip />}
+      </div>
       {children}
       {error && (
         <p id={`${id}-error`} role="alert" className="text-sm text-accent2">
