@@ -15,6 +15,21 @@ export type Facet = (typeof FACETS)[number];
 
 export type SeedTag = { facet: Facet; slug: string; label: string };
 
+/** A Tag as everything that renders one needs (components/tag-chip.tsx). */
+export type ChipTag = { slug: string; label: string; facet: Facet };
+
+/**
+ * Tags in FACETS order — meal, cuisine, diet, effort, vibe — so like sits with
+ * like on a card or a Recipe page. Stable, so the order within a Facet holds.
+ */
+export function byFacet<T extends { facet: string }>(tags: readonly T[]): T[] {
+  const rank = (facet: string) => {
+    const i = FACETS.indexOf(facet as Facet);
+    return i === -1 ? FACETS.length : i;
+  };
+  return [...tags].sort((a, b) => rank(a.facet) - rank(b.facet));
+}
+
 export const SEED_TAGS: readonly SeedTag[] = [
   // Meal Slot — the only Facet with behaviour attached: it drives Proposals.
   // Polish meal structure puts the main meal at obiad, hence the dinner mapping.

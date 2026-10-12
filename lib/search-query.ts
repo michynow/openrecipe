@@ -2,6 +2,7 @@ import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import type { RecipeCardData } from "../components/recipe-card.tsx";
+import { byFacet, type ChipTag } from "./db/tags.ts";
 
 /**
  * The one search query (OR-35). Everything /search can ask — text, Facet filters,
@@ -195,7 +196,7 @@ export async function searchRecipes(
     title: string;
     imageUrl: string | null;
     totalMinutes: number | null;
-    tagLabels: string[];
+    tags: ChipTag[];
     createdAt: string;
     score: number | null;
   }>(sql`
@@ -210,9 +211,10 @@ export async function searchRecipes(
       -- offset and the cursor lands in the wrong place.
       r.created_at::text as "createdAt",
       ${query ? score(query) : sql`null::real`} as score,
-      coalesce((select array_agg(t.label order by t.label)
+      coalesce((select json_agg(json_build_object('slug', t.slug, 'label', t.label, 'facet', t.facet)
+                                order by t.label)
                   from recipe_tag rt join tag t on t.id = rt.tag_id
-                 where rt.recipe_id = r.id), '{}'::text[]) as "tagLabels"
+                 where rt.recipe_id = r.id), '[]'::json) as tags
     from recipe r
     where ${sql.join(where, sql` and `)}
     ${orderBy}
@@ -230,7 +232,7 @@ export async function searchRecipes(
       title: row.title,
       imageUrl: row.imageUrl,
       totalMinutes: row.totalMinutes,
-      tagLabels: row.tagLabels,
+      tags: byFacet(row.tags),
     })),
     nextCursor:
       rows.rows.length > limit && last

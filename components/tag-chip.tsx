@@ -1,10 +1,14 @@
 import { Icon, type IconName } from "@/components/icons";
-import type { Facet } from "@/lib/db/tags";
+import type { ChipTag, Facet } from "@/lib/db/tags";
+import { PIXEL_SIZE, spriteLayers } from "@/lib/pixel";
+import { TAG_SPRITES } from "@/lib/tag-sprites";
 
 /**
- * A Tag as a sticker: its Facet's colour and icon, then the label. The colour
- * groups (all diets green, all cuisines blue) and the icon says the same for
- * anyone who cannot tell the colours apart — the label carries the meaning.
+ * A Tag as a sticker: its own pixel sprite (a flag, a fried egg, a chili) on
+ * its Facet's colour, then the label. The colour groups — all diets green, all
+ * cuisines blue — and the label carries the meaning; the sprite is decoration.
+ *
+ * A Tag the Master added later has no sprite and shows its Facet's icon.
  */
 const FACET_STYLE: Record<Facet, { icon: IconName; className: string }> = {
   meal_slot: { icon: "cutlery", className: "bg-facet-meal" },
@@ -14,15 +18,37 @@ const FACET_STYLE: Record<Facet, { icon: IconName; className: string }> = {
   vibe: { icon: "heart", className: "bg-facet-vibe" },
 };
 
-export function TagChip({ label, facet }: { label: string; facet: Facet }) {
+const SIZE = {
+  md: { chip: "gap-1.5 px-2 py-0.5 text-sm", art: "size-6" },
+  /** For cards: two rows of these must fit a fixed height. */
+  sm: { chip: "gap-1 px-1.5 text-xs leading-6", art: "size-4" },
+};
+
+export function TagChip({ tag, size = "md" }: { tag: ChipTag; size?: keyof typeof SIZE }) {
   // A Facet added later without a style still renders, just plain.
-  const style = FACET_STYLE[facet] ?? { icon: "tags" as const, className: "bg-fill" };
+  const style = FACET_STYLE[tag.facet] ?? { icon: "tags" as const, className: "bg-fill" };
+  const sprite = TAG_SPRITES[tag.slug];
+  const { chip, art } = SIZE[size];
+
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-input border-2 border-line px-2.5 py-1 text-sm font-extrabold text-ink ${style.className}`}
+      className={`inline-flex max-w-full items-center whitespace-nowrap rounded-input border-2 border-line font-extrabold text-ink ${chip} ${style.className}`}
     >
-      <Icon name={style.icon} className="size-4 shrink-0" />
-      {label}
+      {sprite ? (
+        <svg
+          viewBox={`0 0 ${PIXEL_SIZE} ${PIXEL_SIZE}`}
+          shapeRendering="crispEdges"
+          aria-hidden
+          className={`shrink-0 ${art}`}
+        >
+          {spriteLayers(sprite).map(({ char, d }) => (
+            <path key={char} d={d} style={{ fill: `var(--px-${char})` }} />
+          ))}
+        </svg>
+      ) : (
+        <Icon name={style.icon} className={`shrink-0 ${art}`} />
+      )}
+      <span className="truncate">{tag.label}</span>
     </span>
   );
 }

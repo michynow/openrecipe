@@ -8,7 +8,7 @@
 export const PIXEL_SIZE = 12;
 
 /** Every letter a sprite may use. Mirrors the --px-* custom properties. */
-export const PALETTE = "kwrRoOyYgGbBtpucsS";
+export const PALETTE = "kwrRoOyYgGbBtpucnsS";
 
 /** One `M x y h1 v1 h-1 z` square per pixel of `char`, merged into a single path. */
 export function pixelPath(rows: readonly string[], char: string): string {

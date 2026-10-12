@@ -54,13 +54,13 @@ export function Proposals({ proposals }: { proposals: Proposal[] }) {
             </p>
 
             {proposal.recipe ? (
-              <RecipeCard recipe={proposal.recipe} />
+              <RecipeCard recipe={proposal.recipe} fill="flex-1" />
             ) : (
               /* An empty slot offers the way out of being empty, rather than
                  stating the obvious and leaving the reader there. */
               <Link
                 href="/recipes/new"
-                className="flex flex-col gap-1 rounded-card border border-dashed border-line p-4 text-sm text-muted transition-colors hover:border-muted hover:text-text"
+                className="flex flex-1 flex-col gap-1 rounded-card border border-dashed border-line p-4 text-sm text-muted transition-colors hover:border-muted hover:text-text"
               >
                 {copy.dashboard.slotEmpty}
                 <span className="text-accent underline underline-offset-4">

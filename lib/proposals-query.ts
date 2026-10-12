@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "./db/index.ts";
 import { proposalReroll } from "./db/schema.ts";
 import type { RecipeCardData } from "../components/recipe-card.tsx";
+import { byFacet, type ChipTag } from "./db/tags.ts";
 
 /**
  * Today's Proposals (OR-48).
@@ -82,8 +83,7 @@ type Row = {
   title: string;
   image_url: string | null;
   total_minutes: number | null;
-  /** Polish labels, already resolved — a card renders labels, never slugs. */
-  tag_labels: string[] | null;
+  tags: ChipTag[] | null;
 };
 
 const toCard = (row: Row): RecipeCardData => ({
@@ -91,7 +91,7 @@ const toCard = (row: Row): RecipeCardData => ({
   title: row.title,
   imageUrl: row.image_url,
   totalMinutes: row.total_minutes,
-  tagLabels: row.tag_labels ?? [],
+  tags: byFacet(row.tags ?? []),
 });
 
 /**
@@ -120,7 +120,8 @@ async function pickFor(
 
   const tagged = await db.execute(sql`
     select r.id, r.slug, r.title, r.image_url, r.total_minutes,
-           coalesce(json_agg(t2.label) filter (where t2.id is not null), '[]') as tag_labels
+           coalesce(json_agg(json_build_object('slug', t2.slug, 'label', t2.label, 'facet', t2.facet))
+                    filter (where t2.id is not null), '[]') as tags
       from recipe r
       join recipe_tag rt on rt.recipe_id = r.id
       join tag t on t.id = rt.tag_id and t.slug = ${slot}
@@ -139,7 +140,7 @@ async function pickFor(
   if (row) return { slot, recipe: toCard(row), wildcard: false, id: row.id };
 
   const wildcard = await db.execute(sql`
-    select r.id, r.slug, r.title, r.image_url, r.total_minutes, '[]'::json as tag_labels
+    select r.id, r.slug, r.title, r.image_url, r.total_minutes, '[]'::json as tags
       from recipe r
      where r.deleted_at is null
        and ${notTaken}
