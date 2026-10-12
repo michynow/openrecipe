@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 
 import {
   discardDraft,
@@ -10,6 +11,7 @@ import {
   retryDraft,
   type ParkResult,
 } from "@/lib/draft-queue";
+import { wakeKitchen } from "@/lib/kitchen";
 import type { RecipeInput } from "@/lib/recipe-schema";
 import { createRecipe, updateRecipe, type SaveResult } from "@/lib/recipes";
 import { requireUser } from "@/lib/session";
@@ -29,6 +31,10 @@ export async function parkUrlAction(sourceUrl: string): Promise<ParkResult> {
     revalidatePath("/drafts");
     // The dashboard counts what is waiting (OR-47).
     revalidatePath("/");
+    // A fresh Draft wakes the cloud kitchen, after the response so the form
+    // does not wait on GitHub. An already-queued link was woken for already.
+    const { id, alreadyQueued } = result;
+    if (id && !alreadyQueued) after(() => wakeKitchen(id));
   }
 
   return result;
@@ -47,6 +53,7 @@ export async function reimportAction(recipeId: string): Promise<{ ok: boolean }>
   if (id) {
     revalidatePath("/drafts");
     revalidatePath("/");
+    after(() => wakeKitchen(id));
   }
 
   return { ok: id !== null };
@@ -113,7 +120,9 @@ async function move(
 }
 
 export async function retryDraftAction(id: string): Promise<{ ok: boolean }> {
-  return move(retryDraft, id);
+  const result = await move(retryDraft, id);
+  if (result.ok) after(() => wakeKitchen(id));
+  return result;
 }
 
 export async function discardDraftAction(id: string): Promise<{ ok: boolean }> {

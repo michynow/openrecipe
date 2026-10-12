@@ -1,5 +1,7 @@
 # AI runs on a local worker, not on Vercel
 
+> **Partly superseded by [ADR-0006](0006-worker-runs-in-github-actions.md):** the worker now runs in GitHub Actions. Everything about subscription-only inference below still holds.
+
 All LLM work happens in a script on the owner's laptop, driven by their existing Claude
 subscription through the Claude Agent SDK. The deployed Vercel app holds no model
 credentials and makes no inference calls.

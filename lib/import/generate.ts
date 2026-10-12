@@ -18,7 +18,8 @@ import { buildPrompt, SYSTEM_PROMPT, type TagOption } from "./prompt.ts";
 
 export type GenerateResult =
   | { ok: true; payload: RecipeFormValue; inferred: string[] }
-  | { ok: false; reason: "no-answer" | "invalid-json" | "schema" };
+  /** `detail` is the SDK's own error message, when there was one — for the Draft's log. */
+  | { ok: false; reason: "no-answer" | "invalid-json" | "schema"; detail?: string };
 
 /**
  * No tools: this is a text transformation, not an agent doing work.
@@ -54,8 +55,9 @@ export function extractJson(text: string): unknown {
   }
 }
 
-async function ask(prompt: string): Promise<string> {
+async function ask(prompt: string): Promise<{ answer: string; error?: string }> {
   let answer = "";
+  let failure: string | undefined;
 
   try {
     for await (const message of query({ prompt, options: OPTIONS })) {
@@ -73,10 +75,11 @@ async function ask(prompt: string): Promise<string> {
      * clean `no-answer`, which the Worker can fall back from, rather than a
      * crashed Draft.
      */
-    console.error("  model call failed:", (error as Error).message);
+    failure = (error as Error).message;
+    console.error("  model call failed:", failure);
   }
 
-  return answer.trim();
+  return { answer: answer.trim(), error: failure };
 }
 
 /**
@@ -143,8 +146,9 @@ export async function generateRecipe(
   const allowed = new Set(tags.map((tag) => tag.slug));
   const prompt = buildPrompt(page, sourceUrl, tags);
 
-  let answer = await ask(prompt);
-  if (!answer) return { ok: false, reason: "no-answer" };
+  const first = await ask(prompt);
+  let answer = first.answer;
+  if (!answer) return { ok: false, reason: "no-answer", detail: first.error };
 
   let parsed = extractJson(answer);
   if (parsed === null) return { ok: false, reason: "invalid-json" };
@@ -156,17 +160,18 @@ export async function generateRecipe(
 
   // One retry, with the model's own answer and what was wrong with it. Two
   // failures mean the page is the problem, not the phrasing.
-  answer = await ask(
+  const second = await ask(
     `${prompt}\n\nYour previous answer was rejected:\n${checked.errors
       .map((error) => `- ${error}`)
       .join("\n")}\n\nHere it is again:\n${answer}\n\nReturn the corrected JSON object, nothing else.`,
   );
+  answer = second.answer;
 
   parsed = extractJson(answer);
   if (parsed === null) return { ok: false, reason: "invalid-json" };
 
   checked = validate(parsed, allowed);
-  if (!checked.ok) return { ok: false, reason: "schema" };
+  if (!checked.ok) return { ok: false, reason: "schema", detail: checked.errors.slice(0, 3).join("; ") };
 
   return { ok: true, payload: withSource(checked.payload, sourceUrl), inferred: checked.inferred };
 }

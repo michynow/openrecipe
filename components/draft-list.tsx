@@ -10,7 +10,7 @@ import {
 } from "@/app/(app)/drafts/actions";
 import { copy } from "@/lib/copy";
 import type { DraftRow } from "@/lib/draft-queue";
-import { DRAFT_STAGES } from "@/lib/drafts";
+import { DRAFT_STAGES, type DraftLogEntry } from "@/lib/drafts";
 import { count, formatRelativeDays } from "@/lib/format";
 
 /** How often the list re-asks the server while something is moving. */
@@ -151,7 +151,74 @@ function DraftItem({ draft }: { draft: DraftRow }) {
           {copy.common.somethingFailed}
         </p>
       )}
+
+      {draft.log.length > 0 && <DraftLog entries={draft.log} />}
     </li>
+  );
+}
+
+/** A level's marker colour. Paired with the text, never instead of it. */
+const LEVEL: Record<DraftLogEntry["level"], string> = {
+  info: "bg-leaf",
+  warn: "bg-gold",
+  error: "bg-accent2",
+};
+
+/**
+ * The Draft's log, collapsed by default with the latest line as its summary, so
+ * "what is it doing" is visible at a glance and the full story is one tap away.
+ */
+function DraftLog({ entries }: { entries: DraftLogEntry[] }) {
+  const latest = entries[entries.length - 1];
+  return (
+    <details className="group rounded-input border-2 border-line/30 bg-bg">
+      <summary className="flex min-h-11 items-center gap-2 px-3 text-sm [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="inline-block font-mono transition-transform group-open:rotate-90">▸</span>
+        <span className="font-extrabold uppercase tracking-wide">
+          {copy.imports.log.toggle} ({entries.length})
+        </span>
+        <span className="min-w-0 flex-1 truncate text-muted group-open:hidden">{latest.msg}</span>
+      </summary>
+      <ol className="flex flex-col gap-1.5 border-t-2 border-line/20 px-3 py-2">
+        {entries.map((entry, index) => (
+          <li key={index} className="flex items-baseline gap-2 text-sm">
+            <span aria-hidden className={`size-2.5 shrink-0 translate-y-0.5 rounded-full border border-line ${LEVEL[entry.level]}`} />
+            <time dateTime={entry.at} className="shrink-0 font-mono text-muted tabular-nums">
+              {formatLogTime(entry.at)}
+            </time>
+            <span className="min-w-0 break-words">{linkify(entry.msg)}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+/**
+ * "12.10, 14:03:27" on the household's clock. The zone is pinned rather than
+ * left to the runtime: the server renders in UTC, the phone in Warsaw, and the
+ * two would disagree at hydration.
+ */
+const logTime = new Intl.DateTimeFormat("pl-PL", {
+  timeZone: "Europe/Warsaw",
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+});
+const formatLogTime = (at: string) => logTime.format(new Date(at));
+
+/** URLs in a log line become links — the source page, the Actions run. */
+function linkify(text: string) {
+  return text.split(/(https?:\/\/\S+)/).map((part, index) =>
+    /^https?:\/\//.test(part) ? (
+      <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="break-all text-accent underline">
+        {part}
+      </a>
+    ) : (
+      part
+    ),
   );
 }
 
@@ -165,7 +232,7 @@ const STEPS = ["queued", ...DRAFT_STAGES] as const;
 function Progress({ draft }: { draft: DraftRow }) {
   const current =
     draft.status === "queued" ? 0 : STEPS.indexOf(draft.stage ?? "fetching");
-  const since = draft.status === "queued" ? draft.createdAt : (draft.claimedAt ?? draft.createdAt);
+  const since = draft.status === "queued" ? draft.queuedAt : (draft.claimedAt ?? draft.queuedAt);
   const { steps, step, waiting, working, queuedHint } = copy.imports.progress;
 
   return (

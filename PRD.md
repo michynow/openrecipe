@@ -16,7 +16,7 @@ no SEO, no growth, no monetisation.
 Recipes arrive two ways:
 
 1. **By hand** — a polished editor.
-2. **By import** — park a URL from anywhere; a Worker on the Master's laptop turns it
+2. **By import** — park a URL from anywhere; a Worker in GitHub Actions (ADR-0006) turns it
    into a Draft; a human reviews the Draft and approves it into a Recipe.
 
 Look: snack arcade — a cartoon 2D game you cook from. Words: clean and cheeky. Polish is not optional — every state
@@ -51,7 +51,7 @@ Look: snack arcade — a cartoon 2D game you cook from. Words: clean and cheeky.
 | Auth | Better Auth | [ADR-0003](./docs/adr/0003-better-auth-over-nextauth.md) |
 | Files | Vercel Blob | Owns its images, immune to hotlink rot |
 | Validation | Zod, one schema shared by form, Server Action and Worker | Single source of truth |
-| Worker | Node script, Claude Agent SDK, `sharp`, `cheerio` | Runs on the laptop, writes to Neon |
+| Worker | Node script, Claude Agent SDK, `sharp`, `cheerio` | Runs in GitHub Actions, woken by the app (ADR-0006); the laptop still works. Writes to Neon |
 | No NestJS | — | [ADR-0001](./docs/adr/0001-single-nextjs-app-no-nestjs.md) |
 
 ## 5. Roles and access
@@ -539,10 +539,12 @@ only. With it covering production, invited Members hit Vercel's own SSO login an
 reach the app.
 
 **App (Vercel):** `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
-`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MASTER_EMAIL`, `BLOB_READ_WRITE_TOKEN`.
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MASTER_EMAIL`, `BLOB_READ_WRITE_TOKEN`,
+`GITHUB_DISPATCH_TOKEN`, `GITHUB_REPOSITORY` (wakes the worker, ADR-0006).
 
-**Worker (laptop):** `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, plus whatever the Claude
-CLI already has locally. No model key in either environment.
+**Worker (GitHub Actions secrets):** `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`,
+`CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token` — the subscription, not an API
+key). On the laptop the Claude CLI's own login stands in for the last one.
 
 ## 16. Deliberate omissions
 
