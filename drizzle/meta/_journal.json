@@ -78,6 +78,13 @@
       "when": 1791827884161,
       "tag": "0010_cheerful_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791830098278,
+      "tag": "0011_slow_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

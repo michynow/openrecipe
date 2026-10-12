@@ -12,6 +12,7 @@ import {
   QUEUE_MAX_MS,
   RECLAIM_AFTER_MS,
   sourceUrlSchema,
+  type DraftLogEntry,
   type DraftStage,
   type DraftStatus,
 } from "./drafts.ts";
@@ -37,9 +38,30 @@ export type DraftRow = {
   error: string | null;
   recipeId: string | null;
   createdAt: Date;
-  /** When the Worker picked it up — the progress bar's clock. */
+  /** When it last entered the queue — the "waiting" clock. */
+  queuedAt: Date;
+  /** When the Worker picked it up — the "working" clock. */
   claimedAt: Date | null;
+  /** What happened, oldest first. */
+  log: DraftLogEntry[];
 };
+
+/** One log entry as a jsonb array, ready to be concatenated onto `draft.log`. */
+const logLine = (level: DraftLogEntry["level"], msg: string) =>
+  sql`jsonb_build_array(jsonb_build_object('at', now(), 'level', ${level}::text, 'msg', ${msg}::text))`;
+
+/** Add a line to a Draft's log. Never throws past the caller: a log is not worth a failed import. */
+export async function appendLog(
+  id: string,
+  level: DraftLogEntry["level"],
+  msg: string,
+): Promise<void> {
+  try {
+    await db.execute(sql`update draft set log = log || ${logLine(level, msg)} where id = ${id}`);
+  } catch (error) {
+    console.error("  could not write the draft log:", (error as Error).message);
+  }
+}
 
 /** Statuses that mean "this link is still going somewhere". */
 const OPEN: DraftStatus[] = ["queued", "processing", "ready"];
@@ -92,7 +114,12 @@ export async function parkUrl(
 
   const [row] = await db
     .insert(draft)
-    .values({ sourceUrl: parsed.data, status: "queued", createdBy: userId })
+    .values({
+      sourceUrl: parsed.data,
+      status: "queued",
+      createdBy: userId,
+      log: [{ at: new Date().toISOString(), level: "info", msg: copy.imports.log.parked }],
+    })
     .returning({ id: draft.id });
 
   return { ok: true, id: row.id, alreadyQueued: false };
@@ -138,7 +165,9 @@ export async function getDraftForReview(
     error: row.error,
     recipeId: row.recipeId,
     createdAt: row.createdAt,
+    queuedAt: row.queuedAt,
     claimedAt: row.claimedAt,
+    log: row.log,
     payload,
     inferred: row.inferred ?? [],
     current: existing ? toFormValue(existing) : null,
@@ -180,6 +209,7 @@ export async function parkReimport(
       status: "queued",
       createdBy: userId,
       recipeId,
+      log: [{ at: new Date().toISOString(), level: "info", msg: copy.imports.log.reimport }],
     })
     .returning({ id: draft.id });
 
@@ -227,7 +257,9 @@ export async function listDrafts(): Promise<DraftRow[]> {
       error: draft.error,
       recipeId: draft.recipeId,
       createdAt: draft.createdAt,
+      queuedAt: draft.queuedAt,
       claimedAt: draft.claimedAt,
+      log: draft.log,
     })
     .from(draft)
     // Finished Drafts are noise here: an approved one lives on as its Recipe,
@@ -282,7 +314,14 @@ async function transition(id: string, to: DraftStatus): Promise<boolean> {
       // otherwise sit on the row looking like a fresh failure, and its claim
       // would make the row look like someone else's work in progress.
       ...(to === "queued"
-        ? { error: null, stage: null, claimedAt: null, processedAt: null, queuedAt: new Date() }
+        ? {
+            error: null,
+            stage: null,
+            claimedAt: null,
+            processedAt: null,
+            queuedAt: new Date(),
+            log: sql`${draft.log} || ${logLine("info", copy.imports.log.requeued)}`,
+          }
         : {}),
       ...(to === "discarded" ? { processedAt: new Date() } : {}),
     })
@@ -301,7 +340,8 @@ async function transition(id: string, to: DraftStatus): Promise<boolean> {
 export async function expireStaleQueued(): Promise<number> {
   const result = await db.execute(sql`
     update draft
-       set status = 'failed', error = ${copy.imports.failures.expired}, processed_at = now()
+       set status = 'failed', error = ${copy.imports.failures.expired}, processed_at = now(),
+           log = log || ${logLine("error", copy.imports.log.expired)}
      where status = 'queued'
        and queued_at < now() - (${QUEUE_MAX_MS} || ' milliseconds')::interval
     returning id`);
@@ -321,7 +361,8 @@ export async function expireStaleQueued(): Promise<number> {
 export async function reclaimStale(): Promise<number> {
   const result = await db.execute(sql`
     update draft
-       set status = 'queued', claimed_at = null, stage = null, queued_at = now()
+       set status = 'queued', claimed_at = null, stage = null, queued_at = now(),
+           log = log || ${logLine("warn", copy.imports.log.reclaimed)}
      where status = 'processing'
        and (claimed_at is null
             or claimed_at < now() - (${RECLAIM_AFTER_MS} || ' milliseconds')::interval)
@@ -350,7 +391,7 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
                   order by created_at
                   limit 1
                     for update skip locked)
-    returning id, source_url, status, error, recipe_id, created_at, claimed_at`);
+    returning id, source_url, status, error, recipe_id, created_at, queued_at, claimed_at`);
 
   const row = (result.rows ?? [])[0] as
     | {
@@ -360,6 +401,7 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
         error: string | null;
         recipe_id: string | null;
         created_at: string | Date;
+        queued_at: string | Date;
         claimed_at: string | Date;
       }
     | undefined;
@@ -374,7 +416,9 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
     error: row.error,
     recipeId: row.recipe_id,
     createdAt: new Date(row.created_at),
+    queuedAt: new Date(row.queued_at),
     claimedAt: new Date(row.claimed_at),
+    log: [],
   };
 }
 
@@ -404,6 +448,7 @@ export async function markReady(
       error: null,
       stage: null,
       processedAt: new Date(),
+      log: sql`${draft.log} || ${logLine("info", copy.imports.log.ready)}`,
     })
     .where(eq(draft.id, id));
 }
@@ -416,7 +461,13 @@ export async function markReady(
 export async function markFailed(id: string, error: string): Promise<void> {
   await db
     .update(draft)
-    .set({ status: "failed", error, stage: null, processedAt: new Date() })
+    .set({
+      status: "failed",
+      error,
+      stage: null,
+      processedAt: new Date(),
+      log: sql`${draft.log} || ${logLine("error", error)}`,
+    })
     .where(eq(draft.id, id));
 }
 

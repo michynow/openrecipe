@@ -1,4 +1,5 @@
 import {
+  appendLog,
   claimNextDraft,
   expireStaleQueued,
   markFailed,
@@ -33,26 +34,56 @@ import type { TagOption } from "../lib/import/prompt.ts";
 /** What each failure looks like to whoever opens the Drafts screen. */
 const FAILURE_COPY: Record<ExtractFailure | "needs-a-model" | "invalid", string> = {
   "fetch-blocked": copy.imports.failures.blocked,
+  "not-found": copy.imports.failures.notFound,
   "not-html": copy.imports.failures.notHtml,
   "no-recipe-found": copy.imports.failedFallback,
   "needs-a-model": copy.imports.failures.needsModel,
   invalid: copy.imports.failures.invalid,
 };
 
-/** One Draft, start to finish. Returns what happened, for the log. */
-async function process(
+const L = copy.imports.log;
+
+/**
+ * Where this run is, for the log: a GitHub Actions run links to itself, so
+ * "what happened" is one click from the Drafts screen.
+ */
+const WHERE = process.env.GITHUB_ACTIONS
+  ? `GitHub Actions, ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+  : "laptop";
+
+const seconds = (since: number) => Math.round((Date.now() - since) / 1000);
+
+/** One Draft, start to finish. Returns what happened, for the console. */
+async function importDraft(
   id: string,
   sourceUrl: string,
   tags: TagOption[],
 ): Promise<string> {
+  await appendLog(id, "info", L.claimed(WHERE));
+  await appendLog(id, "info", L.fetching(sourceUrl));
+
   const extracted = await extractRecipeFromUrl(sourceUrl);
 
   if (!extracted.ok) {
+    await appendLog(
+      id,
+      "error",
+      extracted.reason === "no-recipe-found" ? L.noRecipe : L.fetchFailed(extracted.detail ?? extracted.reason),
+    );
     await markFailed(id, FAILURE_COPY[extracted.reason]);
-    return `failed (${extracted.reason})`;
+    return `failed (${extracted.reason}${extracted.detail ? `: ${extracted.detail}` : ""})`;
   }
 
   const page = extracted.page;
+  if (extracted.fetched) {
+    const { status, bytes, ms } = extracted.fetched;
+    await appendLog(id, "info", L.fetched(status, Math.round(bytes / 1024), ms));
+  }
+  await appendLog(
+    id,
+    "info",
+    page.path === "json-ld" ? L.jsonLd(page.ingredients.length) : L.readableText(page.text?.length ?? 0),
+  );
 
   /**
    * The model runs on both paths, not only when structured data is missing: a
@@ -62,7 +93,17 @@ async function process(
    */
   console.log(`  extracted via ${page.path}, asking the model`);
   await setStage(id, "generating");
+  await appendLog(id, "info", L.modelStart);
+  const modelStarted = Date.now();
   const generated = await generateRecipe(page, sourceUrl, tags);
+
+  if (generated.ok) {
+    const { ingredientLines, steps } = generated.payload;
+    await appendLog(id, "info", L.modelOk(seconds(modelStarted), ingredientLines.length, steps.length));
+  } else {
+    const why = generated.detail ? `${generated.reason}: ${generated.detail}` : generated.reason;
+    await appendLog(id, "warn", L.modelFailed(why, seconds(modelStarted)));
+  }
 
   /**
    * The photo is fetched once, here, and stored in our own Blob (OR-43). Done
@@ -73,7 +114,10 @@ async function process(
   const imageUrl = page.imageUrl
     ? await storeImageFromUrl(page.imageUrl, sourceUrl)
     : null;
-  if (page.imageUrl) console.log(`  image ${imageUrl ? "stored" : "skipped"}`);
+  if (page.imageUrl) {
+    console.log(`  image ${imageUrl ? "stored" : "skipped"}`);
+    await appendLog(id, imageUrl ? "info" : "warn", L.image(imageUrl !== null));
+  }
 
   if (generated.ok) {
     const payload = { ...generated.payload, imageUrl };
@@ -90,6 +134,7 @@ async function process(
   const built = buildPayload(page, sourceUrl);
 
   if (built.ok) {
+    await appendLog(id, "warn", L.fallback);
     await markReady(id, { ...built.payload, imageUrl }, ["translation"]);
     return `ready (${page.path}, no model: ${generated.reason})`;
   }
@@ -124,7 +169,7 @@ async function main(): Promise<void> {
     console.log(`claimed ${draft.id} ${draft.sourceUrl}`);
 
     try {
-      console.log(`  ${await process(draft.id, draft.sourceUrl, tags)}`);
+      console.log(`  ${await importDraft(draft.id, draft.sourceUrl, tags)}`);
     } catch (error) {
       /**
        * The catch-all matters more than it looks: without it a thrown step
@@ -133,6 +178,7 @@ async function main(): Promise<void> {
        * the row moved and a Polish reason on it.
        */
       console.error(`  crashed:`, error);
+      await appendLog(draft.id, "error", L.crashed((error as Error).message ?? String(error)));
       await markFailed(draft.id, copy.imports.failures.crashed);
     }
   }

@@ -189,9 +189,9 @@ export const copy = {
   /** Parking a link, and the Drafts screen (OR-39, OR-45). */
   imports: {
     parkTitle: "Wklej link",
-    parkHint: "Zajmiemy się nim, gdy kuchnia będzie otwarta.",
+    parkHint: "Kuchnia zabiera się za link w ciągu minuty. Postęp widać poniżej.",
     parkAction: "Odłóż na później",
-    parked: "Odłożone. Zajmiemy się tym, gdy kuchnia będzie otwarta.",
+    parked: "Odłożone. Kuchnia już się za to zabiera — postęp widać poniżej.",
     alreadyParked: "Ten link już czeka w kolejce.",
     alreadyImported: "Ten przepis już jest w bibliotece.",
     openExisting: "Otwórz go",
@@ -234,7 +234,8 @@ export const copy = {
       "Nie znaleziono przepisu na tej stronie. Spróbuj innego linku albo wpisz ręcznie.",
     /** What the Worker writes on a Draft it could not finish. Shown verbatim. */
     failures: {
-      blocked: "Strona nie chciała się otworzyć. Może zniknęła albo nas blokuje.",
+      blocked: "Strona nie chciała się otworzyć. Może nas blokuje albo nie odpowiada.",
+      notFound: "Pod tym linkiem nie ma strony (404). Sprawdź, czy link jest pełny i poprawny.",
       notHtml: "Ten link nie prowadzi do strony z przepisem.",
       needsModel:
         "Ta strona nie publikuje danych przepisu — trzeba ją przeczytać ze zrozumieniem. Na razie wpisz przepis ręcznie.",
@@ -243,6 +244,45 @@ export const copy = {
       expired:
         "Czekał w kolejce ponad 3 dni i kuchnia go nie ruszyła. Spróbuj jeszcze raz, kiedy worker będzie działał.",
     },
+    /**
+     * A Draft's log (expandable on the Drafts screen). Written by the app and by
+     * the Worker; every line says what happened in plain Polish, with the
+     * technical detail — HTTP status, sizes, timings, the SDK's own error — in it.
+     */
+    log: {
+      toggle: "Logi",
+      parked: "Link dodany do kolejki.",
+      requeued: "Ponownie w kolejce.",
+      reimport: "Ponowny import przepisu — dodany do kolejki.",
+      woke: "Kuchnia obudzona (GitHub Actions). Start zwykle w ciągu minuty.",
+      wakeOff:
+        "Kuchnia w chmurze nie jest skonfigurowana — szkic weźmie worker na laptopie.",
+      wakeFailed: (detail: string) =>
+        `Nie udało się obudzić kuchni (${detail}). Szkic weźmie cron, najpóźniej za 30 minut.`,
+      claimed: (where: string) => `Kuchnia przejęła szkic (${where}).`,
+      reclaimed: "Poprzedni worker zniknął w trakcie pracy — szkic wraca do kolejki.",
+      expired: "Wygasł: czekał w kolejce ponad 3 dni.",
+      fetching: (url: string) => `Pobieram stronę: ${url}`,
+      fetched: (status: number, kb: number, ms: number) =>
+        `Strona pobrana: HTTP ${status}, ${kb} kB, ${ms} ms.`,
+      fetchFailed: (detail: string) => `Nie udało się pobrać strony: ${detail}.`,
+      jsonLd: (ingredients: number) =>
+        `Strona ma dane przepisu (JSON-LD): ${ingredients} składników.`,
+      readableText: (chars: number) =>
+        `Strona nie ma danych przepisu — model przeczyta jej tekst (${chars} znaków).`,
+      noRecipe: "Na stronie nie ma ani danych przepisu, ani tekstu, który dałoby się przeczytać.",
+      modelStart: "Model czyta przepis…",
+      modelOk: (seconds: number, ingredients: number, steps: number) =>
+        `Model gotowy po ${seconds} s: ${ingredients} składników, ${steps} kroków.`,
+      modelFailed: (reason: string, seconds: number) =>
+        `Model nie dał rady po ${seconds} s (${reason}).`,
+      fallback: "Zapisuję dane ze strony bez modelu — bez tłumaczenia, tagów i zamienników.",
+      image: (stored: boolean) =>
+        stored ? "Zdjęcie zapisane." : "Zdjęcia nie udało się zapisać — szkic będzie bez niego.",
+      ready: "Szkic gotowy do sprawdzenia.",
+      crashed: (message: string) => `Worker się wysypał: ${message}`,
+    },
+
     /** The progress bar on a Draft that is queued or being worked on. */
     progress: {
       steps: {
@@ -255,7 +295,7 @@ export const copy = {
       waiting: "czeka",
       working: "w robocie",
       queuedHint:
-        "Kuchnia rusza, gdy na laptopie właściciela działa worker (pnpm worker). Ta strona odświeży się sama. Po 3 dniach czekania link wygasa.",
+        "Kuchnia rusza sama w ciągu minuty. Ta strona odświeży się sama, a w logach widać każdy krok. Po 3 dniach czekania link wygasa.",
       live: "Na żywo",
     },
     status: {
@@ -357,8 +397,8 @@ export const copy = {
       ],
       drafts: [
         "Etap bonusowy: import! Wklej link do przepisu z dowolnej strony i idź się zrelaksować.",
-        "Maszyna przemieli go na szkic, kiedy kuchnia będzie otwarta. Uwierz mi, znam się na mieleniu.",
-        "Gotowe? „Sprawdź szkic”. Nie wyszło? Spróbuj jeszcze raz, odrzuć albo wpisz ręcznie. Ręczna robota też ma swój urok.",
+        "Maszyna przemieli go na szkic w minutę. Uwierz mi, znam się na mieleniu.",
+        "Gotowe? „Sprawdź szkic”. Nie wyszło? Rozwiń „Logi” — tam wszystko jak na tacy. Potem spróbuj jeszcze raz albo wpisz ręcznie. Ręczna robota też ma swój urok.",
       ],
       draft: [
         "Kontrola jakości! Szkic złożyła maszyna, a maszyna czasem zgaduje. Jak ja, ile mam w sobie mięsa.",

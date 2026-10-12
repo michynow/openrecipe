@@ -40,12 +40,17 @@ export type ExtractedPage = {
  */
 export type ExtractFailure =
   | "fetch-blocked"
+  | "not-found"
   | "not-html"
   | "no-recipe-found";
 
+/** How the page fetch went, for the Draft's log. */
+export type FetchInfo = { status: number; bytes: number; ms: number };
+
 export type ExtractResult =
-  | { ok: true; page: ExtractedPage }
-  | { ok: false; reason: ExtractFailure };
+  | { ok: true; page: ExtractedPage; fetched?: FetchInfo }
+  /** `detail` is the technical why — "HTTP 403", "timeout after 20 s" — for the log. */
+  | { ok: false; reason: ExtractFailure; detail?: string };
 
 /* ────────────────────────────── JSON-LD ──────────────────────────────── */
 
@@ -353,8 +358,10 @@ const USER_AGENT =
 const FETCH_TIMEOUT_MS = 20_000;
 
 export async function fetchPage(url: string): Promise<
-  { ok: true; html: string } | { ok: false; reason: ExtractFailure }
+  | { ok: true; html: string; info: FetchInfo }
+  | { ok: false; reason: ExtractFailure; detail: string }
 > {
+  const started = Date.now();
   let response: Response;
 
   try {
@@ -363,24 +370,43 @@ export async function fetchPage(url: string): Promise<
       redirect: "follow",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-  } catch {
-    // Timeout, DNS, TLS, connection refused — from here they are all "the page
-    // would not come".
-    return { ok: false, reason: "fetch-blocked" };
+  } catch (error) {
+    // Timeout, DNS, TLS, connection refused — all "the page would not come",
+    // but the log says which.
+    const name = (error as Error).name;
+    const detail =
+      name === "TimeoutError"
+        ? `brak odpowiedzi przez ${FETCH_TIMEOUT_MS / 1000} s`
+        : `${name}: ${(error as Error).message}`;
+    return { ok: false, reason: "fetch-blocked", detail };
   }
 
-  if (!response.ok) return { ok: false, reason: "fetch-blocked" };
+  // A dead link wants a different next move than a site that refuses us.
+  if (response.status === 404 || response.status === 410) {
+    return { ok: false, reason: "not-found", detail: `HTTP ${response.status}` };
+  }
+  if (!response.ok) {
+    return { ok: false, reason: "fetch-blocked", detail: `HTTP ${response.status} ${response.statusText}`.trim() };
+  }
 
   const type = response.headers.get("content-type") ?? "";
-  if (!type.includes("html")) return { ok: false, reason: "not-html" };
+  if (!type.includes("html")) {
+    return { ok: false, reason: "not-html", detail: `Content-Type: ${type || "brak"}` };
+  }
 
-  return { ok: true, html: await response.text() };
+  const html = await response.text();
+  return {
+    ok: true,
+    html,
+    info: { status: response.status, bytes: Buffer.byteLength(html), ms: Date.now() - started },
+  };
 }
 
 /** Fetch and extract. The Worker's whole use of this module. */
 export async function extractRecipeFromUrl(url: string): Promise<ExtractResult> {
   const fetched = await fetchPage(url);
-  if (!fetched.ok) return { ok: false, reason: fetched.reason };
+  if (!fetched.ok) return fetched;
 
-  return extractFromHtml(fetched.html);
+  const extracted = extractFromHtml(fetched.html);
+  return extracted.ok ? { ...extracted, fetched: fetched.info } : extracted;
 }

@@ -1,0 +1,49 @@
+name: Worker
+
+# The import kitchen in the cloud (ADR-0006). Same `pnpm worker` that runs on
+# the laptop: drain the Draft queue, then exit.
+#
+#   repository_dispatch  the app wakes it the moment a link is parked
+#   schedule             safety net if a wake-up was lost
+#   workflow_dispatch    "Run workflow" button, for when you want it now
+on:
+  repository_dispatch:
+    types: [draft-parked]
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+# One kitchen at a time. Claiming is already safe under concurrency, but two
+# runners draining the same queue only burn minutes. A wake-up that arrives
+# mid-run queues behind it, so a link parked during a run is not missed.
+concurrency:
+  group: worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # Pulls the Linux build of the Claude binary via the Agent SDK's optional
+      # dependencies — nothing else to install.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm worker
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          # From `claude setup-token`: the Master's subscription, no API key.
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

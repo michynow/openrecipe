@@ -49,6 +49,13 @@ export const DRAFT_STAGES = ["fetching", "generating", "image"] as const;
 
 export type DraftStage = (typeof DRAFT_STAGES)[number];
 
+/** One line of a Draft's log. `at` is an ISO timestamp; `msg` is Polish, shown as-is. */
+export type DraftLogEntry = {
+  at: string;
+  level: "info" | "warn" | "error";
+  msg: string;
+};
+
 export function isDraftStage(value: unknown): value is DraftStage {
   return DRAFT_STAGES.includes(value as DraftStage);
 }

@@ -13,6 +13,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import type { DraftLogEntry } from "../drafts.ts";
+
 /**
  * The database schema, in TypeScript. Source of truth for `drizzle-kit generate`.
  *
@@ -364,6 +366,14 @@ export const draft = pgTable(
      * box between "queued" and "ready". Null outside `processing`.
      */
     stage: text("stage"),
+
+    /**
+     * What happened to this Draft, oldest first: parked, woken, fetched, what
+     * the model did, why it failed. Written by the app and the Worker alike and
+     * shown expandable on the Drafts screen, so "Nie wyszło" always comes with
+     * the story. Entries are DraftLogEntry (lib/drafts.ts).
+     */
+    log: jsonb("log").$type<DraftLogEntry[]>().notNull().default([]),
 
     /** Why it failed, in Polish, for the Drafts screen. Null unless failed. */
     error: text("error"),
