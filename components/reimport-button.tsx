@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { reimportAction } from "@/app/(app)/drafts/actions";
+import { Icon } from "@/components/icons";
 import { copy } from "@/lib/copy";
 
 /**
@@ -32,7 +33,7 @@ export function ReimportButton({ recipeId }: { recipeId: string }) {
 
   if (queued) {
     return (
-      <span role="status" className="text-accent">
+      <span role="status" className="inline-flex min-h-11 items-center text-sm font-bold text-accent">
         {copy.imports.reimportQueued}
       </span>
     );
@@ -43,8 +44,9 @@ export function ReimportButton({ recipeId }: { recipeId: string }) {
       type="button"
       onClick={run}
       disabled={pending}
-      className="text-muted underline transition-colors hover:text-accent disabled:opacity-50"
+      className="inline-flex min-h-11 items-center gap-2 rounded-input border border-line px-3 text-sm font-extrabold text-text disabled:opacity-50"
     >
+      <Icon name="refresh" className="size-5" />
       {copy.imports.reimport}
     </button>
   );

@@ -63,7 +63,7 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
       <h1 className="font-display text-3xl uppercase tracking-tight">
         {copy.settings.title}
       </h1>
@@ -105,7 +105,7 @@ export default async function SettingsPage() {
                 key={row.id}
                 className="flex flex-wrap items-center gap-2 rounded-card border border-line bg-surface px-3 py-2 text-sm"
               >
-                <span className="font-mono text-xs text-muted">
+                <span className="font-mono text-sm text-muted">
                   {row.token.slice(0, 10)}…
                 </span>
                 {row.email && <span className="text-muted">{row.email}</span>}
@@ -126,7 +126,7 @@ export default async function SettingsPage() {
                       <input type="hidden" name="id" value={row.id} />
                       <button
                         type="submit"
-                        className="text-xs text-accent2 underline"
+                        className="text-sm text-accent2 underline"
                       >
                         {copy.settings.revoke}
                       </button>
@@ -167,12 +167,12 @@ export default async function SettingsPage() {
 
               <span>{member.name}</span>
               {member.isMaster && (
-                <span className="rounded-input border border-accent px-1.5 py-0.5 text-xs text-accent">
+                <span className="rounded-input border border-accent px-1.5 py-0.5 text-sm text-accent">
                   {copy.settings.master}
                 </span>
               )}
 
-              <span className="text-xs text-muted">
+              <span className="text-sm text-muted">
                 {copy.settings.joined} {formatDate(member.joinedAt)}
               </span>
 
@@ -182,7 +182,7 @@ export default async function SettingsPage() {
                   <input type="hidden" name="id" value={member.id} />
                   <ConfirmButton
                     message={copy.settings.removeMemberConfirm}
-                    className="text-xs text-accent2 underline"
+                    className="text-sm text-accent2 underline"
                   >
                     {copy.settings.remove}
                   </ConfirmButton>
@@ -251,7 +251,7 @@ export default async function SettingsPage() {
 
           return (
             <div key={facet} className="flex flex-col gap-1.5">
-              <p className="font-mono text-xs uppercase tracking-widest text-muted">
+              <p className="text-sm font-extrabold uppercase tracking-wide text-text">
                 {copy.editor.facets[facet]}
               </p>
 
@@ -274,13 +274,13 @@ export default async function SettingsPage() {
                       />
                       <button
                         type="submit"
-                        className="min-h-11 shrink-0 px-2 text-xs text-muted underline transition-colors hover:text-accent"
+                        className="min-h-11 shrink-0 px-2 text-sm text-muted underline transition-colors hover:text-accent"
                       >
                         {copy.settings.rename}
                       </button>
                     </form>
 
-                    <span className="shrink-0 font-mono text-xs text-muted">
+                    <span className="shrink-0 font-mono text-sm text-muted">
                       {row.slug}
                     </span>
 
@@ -294,7 +294,7 @@ export default async function SettingsPage() {
                             ? `${copy.settings.tagInUse} ${count(row.uses, copy.units.recipes)}`
                             : undefined
                         }
-                        className="min-h-11 px-2 text-xs text-accent2 underline disabled:text-muted disabled:no-underline disabled:opacity-50"
+                        className="min-h-11 px-2 text-sm text-accent2 underline disabled:text-muted disabled:no-underline disabled:opacity-50"
                       >
                         {row.uses > 0
                           ? count(row.uses, copy.units.recipes)

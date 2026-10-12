@@ -42,7 +42,7 @@ export default async function SearchPage({
   const groups = await getTagsByFacet();
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
       <h1 className="font-display text-3xl uppercase tracking-tight sm:text-4xl">
         {copy.nav.search}
       </h1>

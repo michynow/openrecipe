@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { CookLogButton } from "@/components/cook-log-button";
 import { CookingPanel } from "@/components/cooking-panel";
 import { DeleteRecipeDialog } from "@/components/delete-recipe-dialog";
+import { Icon } from "@/components/icons";
 import { ReimportButton } from "@/components/reimport-button";
 import WakeLockToggle from "@/components/wake-lock-toggle";
 import { imageSrc } from "@/lib/blob";
@@ -42,7 +43,7 @@ export default async function RecipePage({
   const editedByOther = recipe.lastEditor !== null;
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       {recipe.imageUrl ? (
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-card">
           <Image
@@ -61,7 +62,7 @@ export default async function RecipePage({
           aria-hidden
           className="flex aspect-4/3 w-full items-center justify-center rounded-card bg-fill"
         >
-          <span className="font-display text-6xl uppercase text-muted/40">
+          <span className="font-display text-6xl uppercase text-muted">
             {recipe.title.slice(0, 2)}
           </span>
         </div>
@@ -99,7 +100,7 @@ export default async function RecipePage({
             {recipe.tags.map((tag) => (
               <li
                 key={tag.slug}
-                className="rounded-input border border-line px-2 py-0.5 text-xs text-muted"
+                className="rounded-input border border-line bg-fill px-2 py-0.5 text-sm font-bold text-text"
               >
                 {tag.label}
               </li>
@@ -126,8 +127,10 @@ export default async function RecipePage({
           )}
         </dl>
 
-        <div className="flex flex-wrap gap-3 text-sm">
-          <Link href={`/recipes/${recipe.slug}/edit`} className="text-accent underline">
+        {/* Chunky buttons, not links: these are things you do to the Recipe. */}
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/recipes/${recipe.slug}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-input border border-line px-3 text-sm font-extrabold text-text">
+            <Icon name="edit" className="size-5" />
             {copy.recipe.edit}
           </Link>
           {recipe.sourceUrl && (
@@ -136,8 +139,9 @@ export default async function RecipePage({
                 href={recipe.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted underline"
+                className="inline-flex min-h-11 items-center gap-2 rounded-input border border-line px-3 text-sm font-extrabold text-text"
               >
+                <Icon name="external" className="size-5" />
                 {copy.recipe.openSource}
               </a>
               {/* Only a Recipe that came from somewhere can be fetched again. */}
@@ -159,16 +163,16 @@ export default async function RecipePage({
         lines={recipe.ingredientLines}
       />
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4">
         <h2 className="font-display text-xl uppercase tracking-tight">
           {copy.recipe.steps}
         </h2>
         <ol className="flex flex-col gap-2">
           {recipe.steps.map((step, index) => (
-            <li key={index} className="flex gap-3 text-sm">
+            <li key={index} className="flex gap-3 text-lg leading-relaxed">
               <span
                 aria-hidden
-                className="w-5 shrink-0 text-right font-mono text-muted"
+                className="w-6 shrink-0 text-right font-mono font-bold text-accent"
               >
                 {index + 1}.
               </span>
@@ -184,7 +188,7 @@ export default async function RecipePage({
           <h2 className="font-display text-lg uppercase tracking-tight">
             {copy.recipe.tips}
           </h2>
-          <ul className="flex flex-col gap-1.5 text-sm text-muted">
+          <ul className="flex flex-col gap-2 text-base leading-relaxed">
             {recipe.tips.map((tip, index) => (
               <li key={index}>{tip}</li>
             ))}

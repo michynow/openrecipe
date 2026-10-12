@@ -1,8 +1,10 @@
 import {
   claimNextDraft,
+  expireStaleQueued,
   markFailed,
   markReady,
   reclaimStale,
+  setStage,
 } from "../lib/draft-queue.ts";
 import { copy } from "../lib/copy.ts";
 import { db } from "../lib/db/index.ts";
@@ -59,6 +61,7 @@ async function process(
    * prose to read (see lib/import/prompt.ts).
    */
   console.log(`  extracted via ${page.path}, asking the model`);
+  await setStage(id, "generating");
   const generated = await generateRecipe(page, sourceUrl, tags);
 
   /**
@@ -66,6 +69,7 @@ async function process(
    * after the model rather than before: an import that was going to fail should
    * not leave a stored image behind with nothing pointing at it.
    */
+  if (page.imageUrl) await setStage(id, "image");
   const imageUrl = page.imageUrl
     ? await storeImageFromUrl(page.imageUrl, sourceUrl)
     : null;
@@ -95,6 +99,9 @@ async function process(
 }
 
 async function main(): Promise<void> {
+  const expired = await expireStaleQueued();
+  if (expired > 0) console.log(`expired ${expired} draft(s) that waited too long`);
+
   const reclaimed = await reclaimStale();
   if (reclaimed > 0) console.log(`reclaimed ${reclaimed} stuck draft(s)`);
 

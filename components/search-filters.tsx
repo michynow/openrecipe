@@ -112,7 +112,7 @@ export function SearchFilterPanel({
           <li>
             <Link
               href={searchHref(cleared)}
-              className="px-1.5 py-1 text-xs text-muted underline"
+              className="px-1.5 py-1 text-sm text-muted underline"
             >
               {copy.search.clearFilters}
             </Link>
@@ -130,7 +130,7 @@ export function SearchFilterPanel({
         <summary className="sticky top-0 z-10 flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-card bg-surface px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">
           {copy.search.filters}
           {activeCount > 0 && (
-            <span className="rounded-input bg-accent px-1.5 font-mono text-xs text-accent-ink">
+            <span className="rounded-input bg-accent px-1.5 font-mono text-sm text-accent-ink">
               {activeCount}
             </span>
           )}
@@ -144,7 +144,7 @@ export function SearchFilterPanel({
         <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto border-t border-line p-3 sm:max-h-none">
           {groups.map((group) => (
             <fieldset key={group.facet} className="flex flex-col gap-1.5">
-              <legend className="text-xs uppercase tracking-wide text-muted">
+              <legend className="text-sm font-extrabold uppercase tracking-wide text-text">
                 {copy.editor.facets[group.facet] ?? group.facet}
               </legend>
               <ul className="flex flex-wrap gap-1.5">
@@ -164,7 +164,7 @@ export function SearchFilterPanel({
           ))}
 
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="text-xs uppercase tracking-wide text-muted">
+            <legend className="text-sm font-extrabold uppercase tracking-wide text-text">
               {copy.search.maxTime}
             </legend>
             <ul className="flex flex-wrap gap-1.5">
@@ -214,7 +214,7 @@ function Chip({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       aria-label={`${copy.common.delete}: ${label}`}
-      className="flex min-h-8 items-center gap-1 rounded-input bg-accent2 px-2 py-1 text-xs font-medium text-accent-ink"
+      className="flex min-h-8 items-center gap-1 rounded-input bg-accent2 px-2 py-1 text-sm font-medium text-accent-ink"
     >
       {label} <span aria-hidden>×</span>
     </Link>
@@ -245,9 +245,9 @@ function Option({
 }) {
   return (
     <label
-      className={`flex min-h-8 cursor-pointer items-center gap-1.5 rounded-input border px-2 py-1 text-sm transition-colors ${
-        checked ? "border-accent text-text" : "border-line text-muted"
-      }`}
+      // :has(:checked), not the prop — these inputs are uncontrolled, so the
+      // prop is only the state the page loaded with.
+      className="flex min-h-8 cursor-pointer items-center gap-1.5 rounded-input border border-line px-2 py-1 text-sm font-bold text-text transition-colors hover:bg-fill has-checked:border-accent has-checked:bg-accent has-checked:font-extrabold has-checked:text-accent-ink"
     >
       <input
         type={type}

@@ -74,7 +74,7 @@ export default function WakeLockToggle() {
         {copy.recipe.wakeLock}
       </label>
       {on && (
-        <p role="status" className="text-xs text-muted">
+        <p role="status" className="text-sm text-muted">
           {copy.recipe.wakeLockOn}
         </p>
       )}

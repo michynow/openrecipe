@@ -81,7 +81,7 @@ export function ParkUrlForm() {
         </button>
       </div>
 
-      <p className="text-xs text-muted">{copy.imports.parkHint}</p>
+      <p className="text-sm text-muted">{copy.imports.parkHint}</p>
 
       {note && (
         <p role="status" className="text-sm text-accent">

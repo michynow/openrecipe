@@ -7,6 +7,7 @@ import {
   deleteRecipeAction,
   restoreRecipeAction,
 } from "@/app/(app)/recipes/actions";
+import { Icon } from "@/components/icons";
 import { confirmDelete, copy } from "@/lib/copy";
 
 /**
@@ -98,8 +99,9 @@ export function DeleteRecipeDialog({
         <button
           type="button"
           onClick={() => dialog.current?.showModal()}
-          className="text-accent2 underline"
+          className="inline-flex min-h-11 items-center gap-2 rounded-input border border-line px-3 text-sm font-extrabold text-accent2"
         >
+          <Icon name="remove" className="size-5" />
           {copy.common.delete}
         </button>
       )}

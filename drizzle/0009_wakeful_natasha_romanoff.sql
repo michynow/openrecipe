@@ -1,0 +1,1 @@
+ALTER TABLE "draft" ADD COLUMN "stage" text;

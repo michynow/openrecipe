@@ -41,8 +41,21 @@ export const DRAFT_STATUSES = [
 
 export type DraftStatus = (typeof DRAFT_STATUSES)[number];
 
+/**
+ * Steps inside `processing`, in the order the Worker takes them. Only the
+ * progress bar reads these; nothing branches on them.
+ */
+export const DRAFT_STAGES = ["fetching", "generating", "image"] as const;
+
+export type DraftStage = (typeof DRAFT_STAGES)[number];
+
+export function isDraftStage(value: unknown): value is DraftStage {
+  return DRAFT_STAGES.includes(value as DraftStage);
+}
+
 const NEXT: Record<DraftStatus, readonly DraftStatus[]> = {
-  queued: ["processing", "discarded"],
+  // To failed is the queue timeout; see isQueueExpired below.
+  queued: ["processing", "failed", "discarded"],
   // Back to queued is the reclaim; see isReclaimable below.
   processing: ["ready", "failed", "queued"],
   ready: ["approved", "discarded", "queued"],
@@ -79,6 +92,25 @@ export function assertTransition(from: DraftStatus, to: DraftStatus): void {
  * resolve itself in ten minutes either way.
  */
 export const RECLAIM_AFTER_MS = 10 * 60_000;
+
+/**
+ * How long a Draft may wait in `queued` for a Worker before it gives up.
+ *
+ * The Worker only runs when the Master starts it on their laptop, so a parked
+ * link can otherwise wait forever and look like it is still coming. Three days
+ * covers a weekend away; past that the link fails with a reason, and "try
+ * again" puts it back with a fresh clock.
+ */
+export const QUEUE_MAX_MS = 3 * 24 * 60 * 60_000;
+
+/** Whether a queued Draft has waited past QUEUE_MAX_MS since it was (re)queued. */
+export function isQueueExpired(
+  status: DraftStatus,
+  queuedAt: Date,
+  now: Date = new Date(),
+): boolean {
+  return status === "queued" && now.getTime() - queuedAt.getTime() >= QUEUE_MAX_MS;
+}
 
 /**
  * Whether a claimed Draft has been abandoned. A `processing` row with no

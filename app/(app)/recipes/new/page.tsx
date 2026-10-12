@@ -38,7 +38,7 @@ export default async function NewRecipePage({
         next to the queue it feeds, and duplicating that form here would put two
         competing "add a Recipe" forms on one screen.
       */}
-      <div className="mx-auto w-full max-w-2xl px-4 pt-6 sm:px-6">
+      <div className="mx-auto w-full max-w-4xl px-4 pt-6 sm:px-6">
         <Link
           href="/drafts"
           className="text-sm text-accent underline underline-offset-4"

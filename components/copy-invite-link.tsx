@@ -22,7 +22,7 @@ export function CopyInviteLink({ token }: { token: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="text-xs text-accent underline"
+      className="text-sm text-accent underline"
     >
       {copied ? copy.recipe.copied : copy.recipe.copy}
     </button>

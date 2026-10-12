@@ -1,14 +1,18 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 
+import { copy } from "./copy.ts";
 import { db } from "./db/index.ts";
 import { draft, recipe } from "./db/schema.ts";
 import {
   assertReady,
   assertTransition,
+  isDraftStage,
   isDraftStatus,
   parseDraftPayload,
+  QUEUE_MAX_MS,
   RECLAIM_AFTER_MS,
   sourceUrlSchema,
+  type DraftStage,
   type DraftStatus,
 } from "./drafts.ts";
 import { getRecipeById, toFormValue } from "./recipe-query.ts";
@@ -28,9 +32,13 @@ export type DraftRow = {
   id: string;
   sourceUrl: string;
   status: DraftStatus;
+  /** Where the Worker is, while `processing`. Null otherwise. */
+  stage: DraftStage | null;
   error: string | null;
   recipeId: string | null;
   createdAt: Date;
+  /** When the Worker picked it up — the progress bar's clock. */
+  claimedAt: Date | null;
 };
 
 /** Statuses that mean "this link is still going somewhere". */
@@ -126,9 +134,11 @@ export async function getDraftForReview(
     id: row.id,
     sourceUrl: row.sourceUrl,
     status: "ready",
+    stage: null,
     error: row.error,
     recipeId: row.recipeId,
     createdAt: row.createdAt,
+    claimedAt: row.claimedAt,
     payload,
     inferred: row.inferred ?? [],
     current: existing ? toFormValue(existing) : null,
@@ -201,6 +211,8 @@ export async function markApproved(id: string, recipeId: string): Promise<void> 
  * handful of links a week, so paging this would be machinery for nobody.
  */
 export async function listDrafts(): Promise<DraftRow[]> {
+  await expireStaleQueued();
+
   /**
    * Sorted by what wants attention rather than by time alone: ready first, then
    * failures, then whatever is still the Worker's problem, with the finished
@@ -211,11 +223,16 @@ export async function listDrafts(): Promise<DraftRow[]> {
       id: draft.id,
       sourceUrl: draft.sourceUrl,
       status: draft.status,
+      stage: draft.stage,
       error: draft.error,
       recipeId: draft.recipeId,
       createdAt: draft.createdAt,
+      claimedAt: draft.claimedAt,
     })
     .from(draft)
+    // Finished Drafts are noise here: an approved one lives on as its Recipe,
+    // a discarded one was thrown away on purpose.
+    .where(notInArray(draft.status, ["approved", "discarded"]))
     .orderBy(desc(draft.createdAt))
     .limit(100);
 
@@ -225,6 +242,7 @@ export async function listDrafts(): Promise<DraftRow[]> {
       // The column is plain text; anything unrecognised is treated as failed
       // rather than crashing a screen whose job is to explain failures.
       status: isDraftStatus(row.status) ? row.status : ("failed" as DraftStatus),
+      stage: isDraftStage(row.stage) ? row.stage : null,
     }))
     .sort((a, b) => ATTENTION[a.status] - ATTENTION[b.status]);
 }
@@ -264,13 +282,31 @@ async function transition(id: string, to: DraftStatus): Promise<boolean> {
       // otherwise sit on the row looking like a fresh failure, and its claim
       // would make the row look like someone else's work in progress.
       ...(to === "queued"
-        ? { error: null, claimedAt: null, processedAt: null }
+        ? { error: null, stage: null, claimedAt: null, processedAt: null, queuedAt: new Date() }
         : {}),
       ...(to === "discarded" ? { processedAt: new Date() } : {}),
     })
     .where(eq(draft.id, id));
 
   return true;
+}
+
+/**
+ * Fail every Draft that has waited in the queue longer than QUEUE_MAX_MS.
+ *
+ * Run lazily — when the Drafts screen loads and when a Worker starts — because
+ * there is no scheduler: the app is serverless and the Worker is a laptop. One
+ * statement, so two callers at once cannot double-fail a row.
+ */
+export async function expireStaleQueued(): Promise<number> {
+  const result = await db.execute(sql`
+    update draft
+       set status = 'failed', error = ${copy.imports.failures.expired}, processed_at = now()
+     where status = 'queued'
+       and queued_at < now() - (${QUEUE_MAX_MS} || ' milliseconds')::interval
+    returning id`);
+
+  return (result.rows ?? []).length;
 }
 
 /* ─────────────────────────── The Worker's side ────────────────────────── */
@@ -285,7 +321,7 @@ async function transition(id: string, to: DraftStatus): Promise<boolean> {
 export async function reclaimStale(): Promise<number> {
   const result = await db.execute(sql`
     update draft
-       set status = 'queued', claimed_at = null
+       set status = 'queued', claimed_at = null, stage = null, queued_at = now()
      where status = 'processing'
        and (claimed_at is null
             or claimed_at < now() - (${RECLAIM_AFTER_MS} || ' milliseconds')::interval)
@@ -307,14 +343,14 @@ export async function reclaimStale(): Promise<number> {
 export async function claimNextDraft(): Promise<DraftRow | null> {
   const result = await db.execute(sql`
     update draft
-       set status = 'processing', claimed_at = now()
+       set status = 'processing', claimed_at = now(), stage = 'fetching'
      where id = (select id
                    from draft
                   where status = 'queued'
                   order by created_at
                   limit 1
                     for update skip locked)
-    returning id, source_url, status, error, recipe_id, created_at`);
+    returning id, source_url, status, error, recipe_id, created_at, claimed_at`);
 
   const row = (result.rows ?? [])[0] as
     | {
@@ -324,6 +360,7 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
         error: string | null;
         recipe_id: string | null;
         created_at: string | Date;
+        claimed_at: string | Date;
       }
     | undefined;
 
@@ -333,10 +370,17 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
     id: row.id,
     sourceUrl: row.source_url,
     status: "processing",
+    stage: "fetching",
     error: row.error,
     recipeId: row.recipe_id,
     createdAt: new Date(row.created_at),
+    claimedAt: new Date(row.claimed_at),
   };
+}
+
+/** The Worker moved on to the next step. Feeds the Drafts screen's progress bar. */
+export async function setStage(id: string, stage: DraftStage): Promise<void> {
+  await db.update(draft).set({ stage }).where(eq(draft.id, id));
 }
 
 /**
@@ -358,6 +402,7 @@ export async function markReady(
       payload: recipe,
       inferred,
       error: null,
+      stage: null,
       processedAt: new Date(),
     })
     .where(eq(draft.id, id));
@@ -371,7 +416,7 @@ export async function markReady(
 export async function markFailed(id: string, error: string): Promise<void> {
   await db
     .update(draft)
-    .set({ status: "failed", error, processedAt: new Date() })
+    .set({ status: "failed", error, stage: null, processedAt: new Date() })
     .where(eq(draft.id, id));
 }
 
