@@ -258,9 +258,9 @@ export function SearchAutocomplete() {
                   </span>
                   {/* Joined rather than chips: a suggestion row must never wrap
                       to a second line, and five Tags as chips would. */}
-                  {recipe.tagLabels.length > 0 && (
+                  {recipe.tags.length > 0 && (
                     <span className="truncate text-sm text-muted">
-                      {recipe.tagLabels.join(" · ")}
+                      {recipe.tags.map((tag) => tag.label).join(" · ")}
                     </span>
                   )}
                 </span>

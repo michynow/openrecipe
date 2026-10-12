@@ -121,7 +121,7 @@ export default async function RecipePage({
           <ul className="flex flex-wrap gap-2">
             {recipe.tags.map((tag) => (
               <li key={tag.slug}>
-                <TagChip label={tag.label} facet={tag.facet} />
+                <TagChip tag={tag} />
               </li>
             ))}
           </ul>
