@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Redirect anonymous visitors to /login.
  *
  * This is an OPTIMISTIC check and nothing more: `getSessionCookie` only looks at
- * whether a session cookie is present, it does not validate it. Middleware runs on
+ * whether a session cookie is present, it does not validate it. Proxy runs on
  * every request, so hitting the database here would put a query in front of every
  * navigation — and a forged cookie would still get nowhere, because the pages and
  * Server Actions behind this all re-check the real session themselves
@@ -15,7 +15,7 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 const PUBLIC_PREFIXES = ["/login", "/join"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   /**
