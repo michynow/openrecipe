@@ -401,6 +401,9 @@ export const draft = pgTable(
      * When it last entered `queued` — on park, and again on retry or reclaim.
      * The queue timeout counts from here, not from createdAt, or a retried
      * month-old link would expire the moment it was requeued.
+     *
+     * While `limited`, it is the retry time instead — when the model limit
+     * resets — and the Worker's claim treats it the same way: not before this.
      */
     queuedAt: timestamp("queued_at", { withTimezone: true })
       .notNull()

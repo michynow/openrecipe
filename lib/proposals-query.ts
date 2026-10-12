@@ -77,6 +77,7 @@ export async function bumpReroll(userId: string): Promise<number> {
 }
 
 type Row = {
+  id: string;
   slug: string;
   title: string;
   image_url: string | null;
@@ -100,10 +101,25 @@ const toCard = (row: Row): RecipeCardData => ({
  * cooked on Tuesday is not a suggestion. Recipes carrying no Meal Slot Tag at
  * all form the fallback pool, so a library that nobody has tagged still gets
  * Proposals rather than three empty cards.
+ *
+ * `taken` is what the earlier slots already picked. A Recipe tagged both lunch
+ * and dinner, or one from the untagged pool, would otherwise turn up twice on
+ * the same morning; an empty card is the better answer than a repeat.
  */
-async function pickFor(slot: ProposalSlot, seed: string): Promise<Proposal> {
+async function pickFor(
+  slot: ProposalSlot,
+  seed: string,
+  taken: string[],
+): Promise<Proposal & { id: string | null }> {
+  // A bound-parameter list, as in search-query.ts; `in ()` is a syntax error,
+  // so nothing taken yet means no condition at all.
+  const notTaken =
+    taken.length === 0
+      ? sql`true`
+      : sql`r.id not in (${sql.join(taken.map((id) => sql`${id}::uuid`), sql`, `)})`;
+
   const tagged = await db.execute(sql`
-    select r.slug, r.title, r.image_url, r.total_minutes,
+    select r.id, r.slug, r.title, r.image_url, r.total_minutes,
            coalesce(json_agg(t2.label) filter (where t2.id is not null), '[]') as tag_labels
       from recipe r
       join recipe_tag rt on rt.recipe_id = r.id
@@ -111,6 +127,7 @@ async function pickFor(slot: ProposalSlot, seed: string): Promise<Proposal> {
       left join recipe_tag rt2 on rt2.recipe_id = r.id
       left join tag t2 on t2.id = rt2.tag_id
      where r.deleted_at is null
+       and ${notTaken}
        and not exists (select 1 from cook_log cl
                         where cl.recipe_id = r.id
                           and cl.cooked_at > now() - interval '7 days')
@@ -119,12 +136,13 @@ async function pickFor(slot: ProposalSlot, seed: string): Promise<Proposal> {
      limit 1`);
 
   const row = (tagged.rows ?? [])[0] as Row | undefined;
-  if (row) return { slot, recipe: toCard(row), wildcard: false };
+  if (row) return { slot, recipe: toCard(row), wildcard: false, id: row.id };
 
   const wildcard = await db.execute(sql`
-    select r.slug, r.title, r.image_url, r.total_minutes, '[]'::json as tag_labels
+    select r.id, r.slug, r.title, r.image_url, r.total_minutes, '[]'::json as tag_labels
       from recipe r
      where r.deleted_at is null
+       and ${notTaken}
        and not exists (select 1 from cook_log cl
                         where cl.recipe_id = r.id
                           and cl.cooked_at > now() - interval '7 days')
@@ -140,6 +158,7 @@ async function pickFor(slot: ProposalSlot, seed: string): Promise<Proposal> {
     slot,
     recipe: fallback ? toCard(fallback) : null,
     wildcard: Boolean(fallback),
+    id: fallback?.id ?? null,
   };
 }
 
@@ -148,12 +167,20 @@ async function pickFor(slot: ProposalSlot, seed: string): Promise<Proposal> {
  *
  * The reroll count joins the seed, so rerolling changes what *you* see and
  * nothing about what anyone else does.
+ *
+ * One slot after another rather than all at once, because each one has to
+ * know what the slots before it took.
  */
 export async function getProposals(userId: string): Promise<Proposal[]> {
   const rerolls = await getRerollCount(userId);
   const day = today();
 
-  return Promise.all(
-    PROPOSAL_SLOTS.map((slot) => pickFor(slot, `${day}:${slot}:${rerolls}`)),
-  );
+  const taken: string[] = [];
+  const proposals: Proposal[] = [];
+  for (const slot of PROPOSAL_SLOTS) {
+    const { id, ...proposal } = await pickFor(slot, `${day}:${slot}:${rerolls}`, taken);
+    if (id) taken.push(id);
+    proposals.push(proposal);
+  }
+  return proposals;
 }

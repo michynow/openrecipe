@@ -7,6 +7,7 @@ import {
   canTransition,
   DRAFT_STATUSES,
   isDraftStatus,
+  isRetryDue,
   isQueueExpired,
   isReclaimable,
   parseDraftPayload,
@@ -119,4 +120,20 @@ test("a queued Draft expires after QUEUE_MAX_MS, and only a queued one", () => {
   assert.equal(isQueueExpired("queued", stale, now), true);
   assert.equal(isQueueExpired("processing", stale, now), false);
   assert.equal(canTransition("queued", "failed"), true);
+});
+
+test("a usage limit parks the Draft; the Worker or a human takes it back", () => {
+  assert.equal(canTransition("processing", "limited"), true);
+  assert.equal(canTransition("limited", "processing"), true);
+  assert.equal(canTransition("limited", "queued"), true);
+  assert.equal(canTransition("limited", "discarded"), true);
+  assert.equal(canTransition("limited", "ready"), false);
+  assert.equal(canTransition("queued", "limited"), false);
+});
+
+test("isRetryDue waits for the reset, and only for limited Drafts", () => {
+  const reset = new Date("2026-10-12T21:52:00Z");
+  assert.equal(isRetryDue("limited", reset, new Date("2026-10-12T21:51:59Z")), false);
+  assert.equal(isRetryDue("limited", reset, new Date("2026-10-12T21:52:00Z")), true);
+  assert.equal(isRetryDue("queued", reset, new Date("2026-10-13T00:00:00Z")), false);
 });

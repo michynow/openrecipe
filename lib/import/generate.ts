@@ -3,6 +3,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { recipeSchema, type RecipeFormValue } from "../recipe-schema.ts";
 import type { ExtractedPage } from "./extract.ts";
 import { buildPrompt, SYSTEM_PROMPT, type TagOption } from "./prompt.ts";
+import { usageLimitRetryAt } from "./usage-limit.ts";
 
 /**
  * The model call (OR-42). Runs only on the laptop, through the Claude CLI's own
@@ -19,7 +20,21 @@ import { buildPrompt, SYSTEM_PROMPT, type TagOption } from "./prompt.ts";
 export type GenerateResult =
   | { ok: true; payload: RecipeFormValue; inferred: string[] }
   /** `detail` is the SDK's own error message, when there was one — for the Draft's log. */
-  | { ok: false; reason: "no-answer" | "invalid-json" | "schema"; detail?: string };
+  | { ok: false; reason: "no-answer" | "invalid-json" | "schema"; detail?: string }
+  /** The subscription is out for now; the same call will work after `retryAt`. */
+  | { ok: false; reason: "usage-limit"; detail: string; retryAt: Date };
+
+/**
+ * A usage limit can arrive as the SDK's thrown error or as the answer's text,
+ * depending on the CLI version. Either way it is not an answer.
+ */
+function limitOf(reply: { answer: string; error?: string }): GenerateResult | null {
+  for (const text of [reply.error, reply.answer]) {
+    const retryAt = usageLimitRetryAt(text);
+    if (retryAt && text) return { ok: false, reason: "usage-limit", detail: text, retryAt };
+  }
+  return null;
+}
 
 /**
  * No tools: this is a text transformation, not an agent doing work.
@@ -147,6 +162,8 @@ export async function generateRecipe(
   const prompt = buildPrompt(page, sourceUrl, tags);
 
   const first = await ask(prompt);
+  const firstLimit = limitOf(first);
+  if (firstLimit) return firstLimit;
   let answer = first.answer;
   if (!answer) return { ok: false, reason: "no-answer", detail: first.error };
 
@@ -168,6 +185,8 @@ export async function generateRecipe(
       .map((error) => `- ${error}`)
       .join("\n")}\n\nHere it is again:\n${answer}\n\nReturn the corrected JSON object, nothing else.`,
   );
+  const secondLimit = limitOf(second);
+  if (secondLimit) return secondLimit;
   answer = second.answer;
 
   parsed = extractJson(answer);
