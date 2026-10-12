@@ -29,7 +29,7 @@ function CardPlaceholder({ title }: { title: string }) {
   return (
     <div
       aria-hidden
-      className="flex h-full w-full items-center justify-center bg-line"
+      className="flex h-full w-full items-center justify-center bg-fill"
     >
       <span className="font-display text-3xl uppercase text-muted/40">
         {title.slice(0, 2)}
@@ -90,10 +90,10 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
 export function RecipeCardSkeleton() {
   return (
     <div className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
-      <div className="aspect-4/3 w-full animate-pulse bg-line" />
+      <div className="aspect-4/3 w-full animate-pulse bg-fill" />
       <div className="flex flex-col gap-2 p-3">
-        <div className="h-5 w-3/4 animate-pulse rounded-input bg-line" />
-        <div className="h-4 w-1/2 animate-pulse rounded-input bg-line" />
+        <div className="h-5 w-3/4 animate-pulse rounded-input bg-fill" />
+        <div className="h-4 w-1/2 animate-pulse rounded-input bg-fill" />
       </div>
     </div>
   );

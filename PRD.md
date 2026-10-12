@@ -19,7 +19,7 @@ Recipes arrive two ways:
 2. **By import** — park a URL from anywhere; a Worker on the Master's laptop turns it
    into a Draft; a human reviews the Draft and approves it into a Recipe.
 
-Look: neon-diner. Words: clean and cheeky. Polish is not optional — every state
+Look: bakery sticker — flat 2D food illustration. Words: clean and cheeky. Polish is not optional — every state
 (empty, loading, error, offline, partial) is designed, not defaulted.
 
 ## 2. Non-goals
@@ -350,21 +350,22 @@ Ragu — 6 servings
 (4 of 11 — rest already in the pantry)
 ```
 
-## 10. Theme — "neon diner"
+## 10. Theme — "bakery sticker"
 
 Tailwind tokens only. No hex literal ever appears in a component.
 
 ```
-bg       #08090A    near-black
-surface  #121316    raised cards
-line     #22242A    hairlines
-accent   #C3FF3D    acid green — primary CTA, ticks, focus rings
-accent2  #FF3DDA    magenta — destructive, highlights, active filters
-text     #F2F3F5
-muted    #8B8F98
+bg       #FFF6E5    cream paper
+surface  #FFFDF7    napkin — raised cards
+line     #2B1D14    chocolate ink — outlines, drawn not hairline
+fill     #F6E1BD    pie crust — placeholders, skeletons, active rows
+accent   #D63A1F    tomato — primary CTA, ticks, focus rings
+accent2  #9B2C6F    berry — destructive, highlights, active filters
+text     #2B1D14
+muted    #7A5F4C
 
-display  Anton / Archivo Black — CAPS, tight tracking, big
-body     Inter
+display  Baloo 2 800 — round, chunky, friendly
+body     Nunito
 mono     JetBrains Mono — quantities and units, so numbers align
 
 all three loaded with subsets ['latin', 'latin-ext'] — Polish needs
@@ -372,10 +373,17 @@ all three loaded with subsets ['latin', 'latin-ext'] — Polish needs
 
 motion   snappy, slight overshoot on enter; 150-200ms
          all of it behind prefers-reduced-motion
-radius   sharp-ish: 4px cards, 2px inputs
+radius   soft: 18px cards, 12px inputs
+shadow   outlined cards: hard 4px offset in ink, no blur (sticker look)
 ```
 
-Dark only — a neon diner with a light mode is a lit diner.
+Dark mode follows the OS (prefers-color-scheme), tokens only — "night kitchen":
+bg #1E140E espresso, surface #2A1D15, line #E9CFA3 cream ink, fill #3A2A1E,
+accent #FF6B4A, accent2 #E573B4, text #FBEFDC, muted #C4A88C.
+Text colours clear WCAG AA on bg in both modes.
+
+motion detail: outlined cards pop in (scale .96 → 1, overshoot); linked cards
+lift 2px with a deeper shadow on hover; buttons squish to .96 on press.
 
 ## 11. Language and voice
 

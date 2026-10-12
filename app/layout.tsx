@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Inter, JetBrains_Mono } from "next/font/google";
+import { Baloo_2, JetBrains_Mono, Nunito } from "next/font/google";
 import "./globals.css";
 import { copy } from "@/lib/copy";
 
@@ -13,14 +13,14 @@ import { copy } from "@/lib/copy";
  * latin-ext on all three fonts is not optional: Polish needs ą ć ę ł ń ó ś ź ż,
  * and a display face that silently falls back mid-word would wreck every heading.
  */
-const display = Anton({
+const display = Baloo_2({
   variable: "--font-display",
   subsets: ["latin", "latin-ext"],
-  weight: "400", // Anton ships a single weight
+  weight: "800",
   display: "swap",
 });
 
-const body = Inter({
+const body = Nunito({
   variable: "--font-body",
   subsets: ["latin", "latin-ext"],
   display: "swap",
