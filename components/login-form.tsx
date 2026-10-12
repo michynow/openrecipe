@@ -40,7 +40,16 @@ export function LoginForm({
 
     if (result.error) {
       // Deliberately not surfacing result.error.message — see the note above.
-      setError(copy.auth.invalidCredentials);
+      // Only a 401 means "wrong email or password"; a refused origin or a rate
+      // limit used to show up as the same sentence and send people hunting for
+      // a password that was fine all along.
+      setError(
+        result.error.status === 401
+          ? copy.auth.invalidCredentials
+          : result.error.status === 429
+            ? copy.auth.tooManyAttempts
+            : copy.common.somethingFailed,
+      );
       setPending(null);
       return;
     }

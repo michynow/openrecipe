@@ -42,3 +42,6 @@ next-env.d.ts
 
 # ...but the template belongs in the repo.
 !.env.example
+
+# Local-only admin tool: resets a password straight in the database.
+scripts/reset-password.ts

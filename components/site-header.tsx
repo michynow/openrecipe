@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { HelpButton } from "@/components/help-button";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
+import { SignOutButton } from "@/components/sign-out-button";
 import { copy } from "@/lib/copy";
 
 const links = [
@@ -64,6 +65,7 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
+          <SignOutButton className="ml-auto rounded-input px-3 py-2 font-bold text-ink underline-offset-4 hover:underline disabled:opacity-50 sm:ml-0" />
         </nav>
       </div>
     </header>
