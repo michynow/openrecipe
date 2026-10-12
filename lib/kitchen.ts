@@ -1,18 +1,20 @@
 import { copy } from "./copy.ts";
 import { appendLog } from "./draft-queue.ts";
+import { cleanGithubToken, dispatchFailureHint } from "./github-token.ts";
 
 /**
  * Wake the cloud kitchen: start the Worker in GitHub Actions right now instead
  * of waiting for its cron (ADR-0006).
  *
- * A `repository_dispatch` with a fine-grained token that may only run this
- * repo's Actions. Not configured (no token) is a normal state — local dev, or a
- * Master who prefers the laptop — and the Draft's log says so. Never throws:
+ * A `repository_dispatch` with a fine-grained token scoped to this repo
+ * (Contents: write — what the dispatch API requires). Not configured (no
+ * token) is a normal state — local dev, or a Master who prefers the laptop —
+ * and the Draft's log says so. Never throws:
  * parking a link must not fail because GitHub had a bad minute; the cron is
  * the safety net.
  */
 export async function wakeKitchen(draftId: string): Promise<void> {
-  const token = process.env.GITHUB_DISPATCH_TOKEN;
+  const token = cleanGithubToken(process.env.GITHUB_DISPATCH_TOKEN);
   // Vercel names the Git repository it deploys from, so the explicit variable
   // is only an override — forgetting it used to switch the cloud kitchen off.
   const owner = process.env.VERCEL_GIT_REPO_OWNER;
@@ -44,7 +46,12 @@ export async function wakeKitchen(draftId: string): Promise<void> {
     if (response.status === 204) {
       await appendLog(draftId, "info", copy.imports.log.woke);
     } else {
-      await appendLog(draftId, "warn", copy.imports.log.wakeFailed(`GitHub HTTP ${response.status}`));
+      const hint = dispatchFailureHint(response.status);
+      await appendLog(
+        draftId,
+        "warn",
+        copy.imports.log.wakeFailed(`GitHub HTTP ${response.status}${hint ? `: ${hint}` : ""}`),
+      );
     }
   } catch (error) {
     await appendLog(draftId, "warn", copy.imports.log.wakeFailed((error as Error).message));

@@ -32,7 +32,8 @@ keeping the laptop.
   a household's imports many times over.
 - **Secrets live in two places.** GitHub: `CLAUDE_CODE_OAUTH_TOKEN`,
   `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`. Vercel: `GITHUB_DISPATCH_TOKEN`
-  (fine-grained, this repo only, Actions: read and write). The repository
+  (fine-grained, this repo only, Contents: read and write — what
+  `repository_dispatch` requires; Actions alone gets 403). The repository
   comes from Vercel's own `VERCEL_GIT_REPO_OWNER`/`_SLUG`; `GITHUB_REPOSITORY`
   only overrides it. Without the token, the Draft's log says so and the
   30-minute cron picks it up.
