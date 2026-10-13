@@ -216,9 +216,9 @@ export async function getQueueSummary(): Promise<QueueSummary> {
     rows.find((row) => row.status === status)?.n ?? 0;
 
   return {
-    // Processing counts as queued here: from the Master's side it is the same
-    // "the Worker still owes me something".
-    queued: of("queued") + of("processing"),
+    // Processing and limited count as queued here: from the Master's side it is
+    // the same "the Worker still owes me something".
+    queued: of("queued") + of("processing") + of("limited"),
     ready: of("ready"),
     failed: of("failed"),
   };

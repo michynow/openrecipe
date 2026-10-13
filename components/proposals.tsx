@@ -61,7 +61,7 @@ export function Proposals({
             </p>
 
             {proposal.recipe ? (
-              <RecipeCard recipe={proposal.recipe} />
+              <RecipeCard recipe={proposal.recipe} fill="flex-1" />
             ) : !canAdd ? (
               <p className="rounded-card border border-dashed border-line p-4 text-sm text-muted">
                 {copy.dashboard.slotEmpty}
@@ -71,7 +71,7 @@ export function Proposals({
                  stating the obvious and leaving the reader there. */
               <Link
                 href="/recipes/new"
-                className="flex flex-col gap-1 rounded-card border border-dashed border-line p-4 text-sm text-muted transition-colors hover:border-muted hover:text-text"
+                className="flex flex-1 flex-col gap-1 rounded-card border border-dashed border-line p-4 text-sm text-muted transition-colors hover:border-muted hover:text-text"
               >
                 {copy.dashboard.slotEmpty}
                 <span className="text-accent underline underline-offset-4">

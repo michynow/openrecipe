@@ -11,7 +11,7 @@ import {
 import { copy } from "@/lib/copy";
 import type { DraftRow } from "@/lib/draft-queue";
 import { DRAFT_STAGES, type DraftLogEntry } from "@/lib/drafts";
-import { count, formatRelativeDays } from "@/lib/format";
+import { count, formatClock, formatRelativeDays } from "@/lib/format";
 
 /** How often the list re-asks the server while something is moving. */
 const REFRESH_MS = 2500;
@@ -74,7 +74,7 @@ function DraftItem({ draft }: { draft: DraftRow }) {
   };
 
   /** Only these ever wait on a human; the rest are the Worker's business. */
-  const canRetry = draft.status === "failed" || draft.status === "ready";
+  const canRetry = draft.status === "failed" || draft.status === "ready" || draft.status === "limited";
   const canDiscard = draft.status !== "approved" && draft.status !== "discarded";
   const moving = draft.status === "queued" || draft.status === "processing";
 
@@ -95,6 +95,12 @@ function DraftItem({ draft }: { draft: DraftRow }) {
       <p className="break-all text-base font-semibold">{draft.sourceUrl}</p>
 
       {moving && <Progress draft={draft} />}
+
+      {draft.status === "limited" && (
+        <p className="text-base font-semibold">
+          {copy.imports.limitedHint(formatClock(draft.queuedAt))}
+        </p>
+      )}
 
       {draft.status === "failed" && (
         <p role="alert" className="text-base font-semibold text-accent2">
@@ -302,6 +308,7 @@ function StatusChip({ status }: { status: DraftRow["status"] }) {
     ready: "bg-leaf text-ink",
     processing: "bg-sky text-ink",
     queued: "bg-gold text-ink",
+    limited: "bg-gold text-ink",
     failed: "bg-accent2 text-accent-ink",
     approved: "bg-fill text-text",
     discarded: "bg-fill text-muted",

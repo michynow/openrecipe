@@ -13,12 +13,15 @@ import {
  * the review action — three callers who would drift apart.
  *
  *   queued ──▶ processing ──▶ ready ──▶ approved
- *      ▲            │            │
- *      │            ▼            ▼
- *      └───────── failed ──── discarded
+ *      ▲          │  ▲  │        │
+ *      │          ▼  │  ▼        ▼
+ *      │      limited  failed ── discarded
+ *      └──────────┴─────┘
  *
- * The arrows back into `queued` are retry (from failed or ready) and reclaim
- * (from processing, when the laptop was closed mid-run). `approved` and
+ * The arrows back into `queued` are retry (from failed, ready or limited) and
+ * reclaim (from processing, when the laptop was closed mid-run). `limited` is
+ * the Master's Claude subscription running out mid-import: the Draft waits for
+ * the reset and the Worker claims it again by itself — see isRetryDue. `approved` and
  * `discarded` are terminal: a Draft that became a Recipe is finished, and
  * un-discarding is not a feature anyone asked for.
  */
@@ -35,6 +38,7 @@ export const DRAFT_STATUSES = [
   "processing",
   "ready",
   "failed",
+  "limited",
   "approved",
   "discarded",
 ] as const;
@@ -64,7 +68,10 @@ const NEXT: Record<DraftStatus, readonly DraftStatus[]> = {
   // To failed is the queue timeout; see isQueueExpired below.
   queued: ["processing", "failed", "discarded"],
   // Back to queued is the reclaim; see isReclaimable below.
-  processing: ["ready", "failed", "queued"],
+  processing: ["ready", "failed", "queued", "limited"],
+  // Back to processing is the Worker retrying after the reset; to queued is
+  // "try now" from the Drafts screen.
+  limited: ["processing", "queued", "discarded"],
   ready: ["approved", "discarded", "queued"],
   failed: ["queued", "discarded"],
   approved: [],
@@ -117,6 +124,19 @@ export function isQueueExpired(
   now: Date = new Date(),
 ): boolean {
   return status === "queued" && now.getTime() - queuedAt.getTime() >= QUEUE_MAX_MS;
+}
+
+/**
+ * Whether a `limited` Draft may be claimed again. While limited, `queuedAt`
+ * holds the retry time rather than when it entered the queue: one column for
+ * "the Worker may take this from then on", in either status.
+ */
+export function isRetryDue(
+  status: DraftStatus,
+  queuedAt: Date,
+  now: Date = new Date(),
+): boolean {
+  return status === "limited" && now.getTime() >= queuedAt.getTime();
 }
 
 /**

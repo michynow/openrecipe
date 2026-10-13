@@ -92,3 +92,22 @@ test("Polish plurals on the serving count", () => {
   assert.equal(at(3), "Ragu — 3 porcje");
   assert.equal(at(7), "Ragu — 7 porcji");
 });
+
+test("substitutes ride along in parentheses", () => {
+  const text = buildShoppingExport({
+    title: "Sałatka",
+    servings: 2,
+    factor: 1,
+    lines: [
+      { id: "a", quantity: 1, unit: null, item: "ogórek", substitutes: [{ item: "pomidor" }] },
+      { id: "b", quantity: 100, unit: "g", item: "feta", substitutes: [{ item: "mozzarella" }, { item: "tofu" }] },
+      { id: "c", quantity: null, unit: null, item: "sól", substitutes: [] },
+    ],
+    checked: [],
+  });
+
+  assert.equal(
+    text,
+    ["Sałatka — 2 porcje", "", "• 1 ogórek (albo pomidor)", "• 100 g feta (albo mozzarella, tofu)", "• sól"].join("\n"),
+  );
+});

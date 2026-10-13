@@ -7,6 +7,8 @@ import { CookingPanel } from "@/components/cooking-panel";
 import { DeleteRecipeDialog } from "@/components/delete-recipe-dialog";
 import { Icon } from "@/components/icons";
 import { ReimportButton } from "@/components/reimport-button";
+import { StatTile } from "@/components/stat-tile";
+import { TagChip } from "@/components/tag-chip";
 import WakeLockToggle from "@/components/wake-lock-toggle";
 import { imageSrc } from "@/lib/blob";
 import { getCookLog } from "@/lib/cook-log";
@@ -95,37 +97,35 @@ export default async function RecipePage({
           )}
         </div>
 
+        {/* Servings are not here: the stepper below owns them, and showing the
+            stored count as well would leave two numbers disagreeing on screen.
+            Scoreboard tiles: "how long" and "how heavy" are what decides
+            whether it is tonight's dinner, so they are read before anything. */}
+        {(duration || recipe.kcalPerServing !== null) && (
+          <dl className="flex flex-wrap gap-3">
+            {/* Each of these disappears entirely when null. */}
+            {duration && (
+              <StatTile icon="clock" label={copy.recipe.time} value={duration} />
+            )}
+            {recipe.kcalPerServing !== null && (
+              <StatTile
+                icon="flame"
+                label={copy.recipe.kcalPerServing}
+                value={String(recipe.kcalPerServing)}
+              />
+            )}
+          </dl>
+        )}
+
         {recipe.tags.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5">
+          <ul className="flex flex-wrap gap-2">
             {recipe.tags.map((tag) => (
-              <li
-                key={tag.slug}
-                className="rounded-input border border-line bg-fill px-2 py-0.5 text-sm font-bold text-text"
-              >
-                {tag.label}
+              <li key={tag.slug}>
+                <TagChip tag={tag} />
               </li>
             ))}
           </ul>
         )}
-
-        {/* Servings are not here: the stepper below owns them, and showing the
-            stored count as well would leave two numbers disagreeing on screen. */}
-        <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-          {/* Each of these disappears entirely when null. */}
-          {duration && (
-            <div className="flex gap-2">
-              <dt className="text-muted">{copy.recipe.time}</dt>
-              <dd className="font-mono">{duration}</dd>
-            </div>
-          )}
-
-          {recipe.kcalPerServing !== null && (
-            <div className="flex gap-2">
-              <dt className="text-muted">{copy.recipe.kcalPerServing}</dt>
-              <dd className="font-mono">{recipe.kcalPerServing}</dd>
-            </div>
-          )}
-        </dl>
 
         {/* Chunky buttons, not links: these are things you do to the Recipe.
             Members are read-only: they keep the source link and nothing else. */}

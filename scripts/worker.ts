@@ -3,12 +3,14 @@ import {
   claimNextDraft,
   expireStaleQueued,
   markFailed,
+  markLimited,
   markReady,
   reclaimStale,
   setStage,
 } from "../lib/draft-queue.ts";
 import { copy } from "../lib/copy.ts";
 import { db } from "../lib/db/index.ts";
+import { formatClock } from "../lib/format.ts";
 import { tag } from "../lib/db/schema.ts";
 import { extractRecipeFromUrl, type ExtractFailure } from "../lib/import/extract.ts";
 import { generateRecipe } from "../lib/import/generate.ts";
@@ -53,12 +55,15 @@ const WHERE = process.env.GITHUB_ACTIONS
 
 const seconds = (since: number) => Math.round((Date.now() - since) / 1000);
 
-/** One Draft, start to finish. Returns what happened, for the console. */
+/**
+ * One Draft, start to finish. Returns what happened, for the console, and
+ * whether the rest of the queue should wait for another run.
+ */
 async function importDraft(
   id: string,
   sourceUrl: string,
   tags: TagOption[],
-): Promise<string> {
+): Promise<{ summary: string; stop?: boolean }> {
   await appendLog(id, "info", L.claimed(WHERE));
   await appendLog(id, "info", L.fetching(sourceUrl));
 
@@ -71,7 +76,7 @@ async function importDraft(
       extracted.reason === "no-recipe-found" ? L.noRecipe : L.fetchFailed(extracted.detail ?? extracted.reason),
     );
     await markFailed(id, FAILURE_COPY[extracted.reason]);
-    return `failed (${extracted.reason}${extracted.detail ? `: ${extracted.detail}` : ""})`;
+    return { summary: `failed (${extracted.reason}${extracted.detail ? `: ${extracted.detail}` : ""})` };
   }
 
   const page = extracted.page;
@@ -106,6 +111,17 @@ async function importDraft(
   }
 
   /**
+   * The subscription ran out. Not a failure: the same link imports fine after
+   * the reset, and a page-data fallback now would be an untranslated Draft the
+   * Master has to fix by hand for want of a few hours. Checked before the image
+   * so a Draft that is coming back later does not store its photo twice.
+   */
+  if (!generated.ok && generated.reason === "usage-limit") {
+    await markLimited(id, generated.retryAt, L.limited(formatClock(generated.retryAt)));
+    return { summary: `limited (retry after ${generated.retryAt.toISOString()})`, stop: true };
+  }
+
+  /**
    * The photo is fetched once, here, and stored in our own Blob (OR-43). Done
    * after the model rather than before: an import that was going to fail should
    * not leave a stored image behind with nothing pointing at it.
@@ -123,7 +139,9 @@ async function importDraft(
     const payload = { ...generated.payload, imageUrl };
     await markReady(id, payload, generated.inferred);
     const { ingredientLines, steps, tagSlugs } = payload;
-    return `ready (${page.path} + model, ${ingredientLines.length} ingredients, ${steps.length} steps, tags: ${tagSlugs.join(", ") || "none"}${imageUrl ? ", image" : ""})`;
+    return {
+      summary: `ready (${page.path} + model, ${ingredientLines.length} ingredients, ${steps.length} steps, tags: ${tagSlugs.join(", ") || "none"}${imageUrl ? ", image" : ""})`,
+    };
   }
 
   /**
@@ -136,11 +154,11 @@ async function importDraft(
   if (built.ok) {
     await appendLog(id, "warn", L.fallback);
     await markReady(id, { ...built.payload, imageUrl }, ["translation"]);
-    return `ready (${page.path}, no model: ${generated.reason})`;
+    return { summary: `ready (${page.path}, no model: ${generated.reason})` };
   }
 
   await markFailed(id, FAILURE_COPY[built.reason]);
-  return `failed (model ${generated.reason}, then ${built.reason})`;
+  return { summary: `failed (model ${generated.reason}, then ${built.reason})` };
 }
 
 async function main(): Promise<void> {
@@ -169,7 +187,17 @@ async function main(): Promise<void> {
     console.log(`claimed ${draft.id} ${draft.sourceUrl}`);
 
     try {
-      console.log(`  ${await importDraft(draft.id, draft.sourceUrl, tags)}`);
+      const { summary, stop } = await importDraft(draft.id, draft.sourceUrl, tags);
+      console.log(`  ${summary}`);
+      /**
+       * A usage limit is the subscription's, not the page's: every Draft after
+       * this one would hit it too and land in `limited` for nothing. They stay
+       * queued for the next run — the cron after the reset, or a wake-up.
+       */
+      if (stop) {
+        console.log("  usage limit hit, leaving the rest of the queue for the next run");
+        break;
+      }
     } catch (error) {
       /**
        * The catch-all matters more than it looks: without it a thrown step

@@ -38,7 +38,7 @@ export type DraftRow = {
   error: string | null;
   recipeId: string | null;
   createdAt: Date;
-  /** When it last entered the queue — the "waiting" clock. */
+  /** When it last entered the queue — the "waiting" clock. While limited: when it is retried. */
   queuedAt: Date;
   /** When the Worker picked it up — the "working" clock. */
   claimedAt: Date | null;
@@ -64,7 +64,7 @@ export async function appendLog(
 }
 
 /** Statuses that mean "this link is still going somewhere". */
-const OPEN: DraftStatus[] = ["queued", "processing", "ready"];
+const OPEN: DraftStatus[] = ["queued", "processing", "limited", "ready"];
 
 export type ParkResult =
   | { ok: true; id: string; alreadyQueued: boolean }
@@ -285,6 +285,7 @@ const ATTENTION: Record<DraftStatus, number> = {
   failed: 1,
   queued: 2,
   processing: 2,
+  limited: 2,
   approved: 3,
   discarded: 3,
 };
@@ -379,6 +380,10 @@ export async function reclaimStale(): Promise<number> {
  * blocking on it or claiming it twice. The whole thing is one statement because
  * the Neon HTTP driver has no multi-statement transaction (see lib/recipes.ts).
  *
+ * A `limited` Draft whose retry time has come is claimed like a queued one, so
+ * the cron that runs after a usage limit resets picks it up with nobody
+ * pressing anything.
+ *
  * Returns null when the queue is empty, which is the Worker's cue to exit.
  */
 export async function claimNextDraft(): Promise<DraftRow | null> {
@@ -388,6 +393,7 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
      where id = (select id
                    from draft
                   where status = 'queued'
+                     or (status = 'limited' and queued_at <= now())
                   order by created_at
                   limit 1
                     for update skip locked)
@@ -471,7 +477,26 @@ export async function markFailed(id: string, error: string): Promise<void> {
     .where(eq(draft.id, id));
 }
 
-/** "Try that link again" — failed, or a ready Draft nobody liked. */
+/**
+ * The model's usage limit ran out. The Draft goes back on the shelf until
+ * `retryAt` (stored in `queued_at`, see the schema) and the Worker claims it
+ * again by itself; nothing about the page was wrong, so there is no error.
+ */
+export async function markLimited(id: string, retryAt: Date, msg: string): Promise<void> {
+  await db
+    .update(draft)
+    .set({
+      status: "limited",
+      error: null,
+      stage: null,
+      claimedAt: null,
+      queuedAt: retryAt,
+      log: sql`${draft.log} || ${logLine("warn", msg)}`,
+    })
+    .where(eq(draft.id, id));
+}
+
+/** "Try that link again" — failed, limited, or a ready Draft nobody liked. */
 export async function retryDraft(id: string): Promise<boolean> {
   return transition(id, "queued");
 }

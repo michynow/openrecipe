@@ -190,6 +190,9 @@ export const copy = {
   /** Parking a link, and the Drafts screen (OR-39, OR-45). */
   imports: {
     parkTitle: "Wklej link",
+    /** What parking a link is for — the Drafts screen is the first place it is met. */
+    parkIntro:
+      "Masz przepis z internetu? Wklej link do strony, na której jest. Kuchnia przeczyta stronę, przetłumaczy przepis na polski, rozpisze składniki i kroki, dobierze tagi i zamienniki, i zrobi z tego szkic. Ty go tylko sprawdzasz i dodajesz do biblioteki.",
     parkHint: "Kuchnia zabiera się za link w ciągu minuty. Postęp widać poniżej.",
     parkAction: "Odłóż na później",
     parked: "Odłożone. Kuchnia już się za to zabiera — postęp widać poniżej.",
@@ -205,6 +208,9 @@ export const copy = {
     approve: "Dodaj do biblioteki",
     guessed: "zgadywane",
     guessedHint: "Tego nie było wprost na stronie — sprawdź.",
+    guessedLegend: "— tego nie było wprost na stronie, model to wywnioskował. Sprawdź te pola przed dodaniem.",
+    untranslated:
+      "Model nie zadziałał, więc to dane prosto ze strony: bez tłumaczenia, tagów i zamienników. Przejrzyj całość.",
     discardConfirm: "Odrzucić ten szkic? Przepis nie powstanie.",
     reimport: "Zaimportuj ponownie",
     reimportQueued: "Odłożone. Sprawdzisz zmiany w Szkicach.",
@@ -282,6 +288,8 @@ export const copy = {
         stored ? "Zdjęcie zapisane." : "Zdjęcia nie udało się zapisać — szkic będzie bez niego.",
       ready: "Szkic gotowy do sprawdzenia.",
       crashed: (message: string) => `Worker się wysypał: ${message}`,
+      limited: (at: string) =>
+        `Skończył się limit subskrypcji Claude. Szkic poczeka i kuchnia sama spróbuje ponownie po ${at}.`,
     },
 
     /** The progress bar on a Draft that is queued or being worked on. */
@@ -299,11 +307,15 @@ export const copy = {
         "Kuchnia rusza sama w ciągu minuty. Ta strona odświeży się sama, a w logach widać każdy krok. Po 3 dniach czekania link wygasa.",
       live: "Na żywo",
     },
+    /** A Draft parked by a usage limit. `at` is the retry time, household clock. */
+    limitedHint: (at: string) =>
+      `Skończył się limit subskrypcji Claude. Kuchnia spróbuje sama po ${at} — możesz też kliknąć „Spróbuj jeszcze raz”, kiedy limit się odnowi.`,
     status: {
       queued: "Czeka w kolejce",
       processing: "W robocie",
       ready: "Gotowy do sprawdzenia",
       failed: "Nie wyszło",
+      limited: "Czeka na limit Claude",
       approved: "Dodany do biblioteki",
       discarded: "Odrzucony",
     },

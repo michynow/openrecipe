@@ -3,6 +3,7 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "./db/index.ts";
 import type { RecipeFormValue } from "./recipe-schema.ts";
 import { ingredientLine, recipe, recipeTag, tag, user } from "./db/schema.ts";
+import { byFacet, type ChipTag, type Facet } from "./db/tags.ts";
 
 /**
  * Reading a single Recipe.
@@ -35,7 +36,8 @@ export type RecipeDetail = {
     note: string | null;
     substitutes: { item: string; note: string | null }[];
   }[];
-  tags: { slug: string; label: string }[];
+  /** In Facet order — meal, cuisine, diet, effort, vibe — so like sits with like. */
+  tags: ChipTag[];
 };
 
 export async function getRecipeBySlug(
@@ -62,7 +64,7 @@ export async function getRecipeBySlug(
       .where(eq(ingredientLine.recipeId, row.id))
       .orderBy(asc(ingredientLine.position)),
     db
-      .select({ slug: tag.slug, label: tag.label })
+      .select({ slug: tag.slug, label: tag.label, facet: tag.facet })
       .from(recipeTag)
       .innerJoin(tag, eq(tag.id, recipeTag.tagId))
       .where(eq(recipeTag.recipeId, row.id)),
@@ -98,7 +100,7 @@ export async function getRecipeBySlug(
       note: line.note,
       substitutes: line.substitutes,
     })),
-    tags,
+    tags: byFacet(tags.map((t) => ({ ...t, facet: t.facet as Facet }))),
   };
 }
 
