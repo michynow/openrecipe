@@ -2,15 +2,15 @@ import { and, asc, count, eq, isNull, ne, sql } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { account, draft, recipeTag, session, tag, user } from "./db/schema.ts";
-import { isMasterEmail } from "./roles.ts";
+import { effectiveRole, isMasterEmail, type Role } from "./roles.ts";
 import type { Facet } from "./db/tags.ts";
 
 /**
  * The Master's screen (OR-50): who is in, what the taxonomy holds, what the
  * queue is doing.
  *
- * Every function here is Master-only at the call site — the Server Actions call
- * `requireMaster()` — and none of them takes the caller's word for anything else.
+ * Every function here is admin-only at the call site — the Server Actions call
+ * `requireAdmin()` — and none of them takes the caller's word for anything else.
  */
 
 /* ───────────────────────────── Members ───────────────────────────────── */
@@ -20,6 +20,7 @@ export type Member = {
   name: string;
   email: string;
   image: string | null;
+  role: Role;
   isMaster: boolean;
   joinedAt: Date;
 };
@@ -31,6 +32,7 @@ export async function listMembers(): Promise<Member[]> {
       name: user.name,
       email: user.email,
       image: user.image,
+      storedRole: user.role,
       joinedAt: user.createdAt,
     })
     .from(user)
@@ -38,7 +40,34 @@ export async function listMembers(): Promise<Member[]> {
     .orderBy(asc(user.createdAt));
 
   // Master is decided by MASTER_EMAIL, never by the stored column (OR-12).
-  return rows.map((row) => ({ ...row, isMaster: isMasterEmail(row.email) }));
+  return rows.map(({ storedRole, ...row }) => {
+    const role = effectiveRole(row.email, storedRole);
+    return { ...row, role, isMaster: role === "master" };
+  });
+}
+
+/**
+ * Grant or take away admin. Only "admin" and "member" are accepted — Master is
+ * not grantable — and the Master's own row is refused, so nobody can demote them.
+ */
+export async function setMemberRole(
+  id: string,
+  role: string,
+): Promise<RemoveResult> {
+  if (role !== "admin" && role !== "member") return { ok: false, reason: "missing" };
+
+  const [row] = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(and(eq(user.id, id), isNull(user.removedAt)))
+    .limit(1);
+
+  if (!row) return { ok: false, reason: "missing" };
+  if (isMasterEmail(row.email)) return { ok: false, reason: "master" };
+
+  await db.update(user).set({ role }).where(eq(user.id, id));
+
+  return { ok: true };
 }
 
 export type RemoveResult = { ok: true } | { ok: false; reason: "master" | "missing" };

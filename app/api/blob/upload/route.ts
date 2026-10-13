@@ -20,9 +20,9 @@ export async function POST(request: Request): Promise<Response> {
       request,
       body,
       onBeforeGenerateToken: async () => {
-        // Signed-in only. This is a public endpoint that hands out write access.
+        // Admins only. This is a public endpoint that hands out write access.
         const user = await getCurrentUser();
-        if (!user) throw new Error("Unauthorised");
+        if (!user?.isAdmin) throw new Error("Unauthorised");
 
         return {
           allowedContentTypes: [...IMAGE_RULES.mimeTypes],

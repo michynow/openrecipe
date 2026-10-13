@@ -16,7 +16,14 @@ import type { Proposal } from "@/lib/proposals-query";
  * count it bumps lives in the database — that is what makes a reroll survive a
  * refresh and follow you from the laptop to the phone.
  */
-export function Proposals({ proposals }: { proposals: Proposal[] }) {
+export function Proposals({
+  proposals,
+  canAdd,
+}: {
+  proposals: Proposal[];
+  /** Members are read-only: their empty slot is just a label. */
+  canAdd: boolean;
+}) {
   const [pending, startTransition] = useTransition();
 
   const anything = proposals.some((proposal) => proposal.recipe !== null);
@@ -55,6 +62,10 @@ export function Proposals({ proposals }: { proposals: Proposal[] }) {
 
             {proposal.recipe ? (
               <RecipeCard recipe={proposal.recipe} />
+            ) : !canAdd ? (
+              <p className="rounded-card border border-dashed border-line p-4 text-sm text-muted">
+                {copy.dashboard.slotEmpty}
+              </p>
             ) : (
               /* An empty slot offers the way out of being empty, rather than
                  stating the obvious and leaving the reader there. */

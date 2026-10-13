@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { auth } from "./auth.ts";
 import { db } from "./db/index.ts";
 import { user as userTable } from "./db/schema.ts";
-import { isMasterEmail, type Role } from "./roles.ts";
+import { effectiveRole, isMasterEmail, type Role } from "./roles.ts";
 
 /**
  * Session helpers for Server Components, Server Actions and Route Handlers.
@@ -23,6 +23,8 @@ export type CurrentUser = {
   image: string | null;
   role: Role;
   isMaster: boolean;
+  /** Master or admin: may change anything shared. Members only read. */
+  isAdmin: boolean;
 };
 
 /**
@@ -74,6 +76,7 @@ async function devMaster(): Promise<CurrentUser | null> {
     // Still derived from MASTER_EMAIL, exactly as in the real path (OR-12).
     role: isMasterEmail(email) ? "master" : "member",
     isMaster: isMasterEmail(email),
+    isAdmin: isMasterEmail(email),
   };
 }
 
@@ -89,7 +92,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
    * both stop here.
    */
   const [row] = await db
-    .select({ removedAt: userTable.removedAt })
+    .select({ removedAt: userTable.removedAt, role: userTable.role })
     .from(userTable)
     .where(eq(userTable.id, session.user.id))
     .limit(1);
@@ -98,18 +101,19 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { user } = session;
   /**
-   * Master is decided by MASTER_EMAIL, not by the stored column. A tampered or
-   * stale `role` value cannot promote anyone.
+   * Read from the row, not the session: a role change applies on the next
+   * request. Master is still decided by MASTER_EMAIL alone (effectiveRole).
    */
-  const isMaster = isMasterEmail(user.email);
+  const role = effectiveRole(user.email, row.role);
 
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     image: user.image ?? null,
-    role: isMaster ? "master" : "member",
-    isMaster,
+    role,
+    isMaster: role === "master",
+    isAdmin: role !== "member",
   };
 }
 
@@ -121,12 +125,12 @@ export async function requireUser(): Promise<CurrentUser> {
 }
 
 /**
- * The single Master check. Master-only Server Actions call this; Master-only
- * routes call it and render a 404 rather than a 403, so the route does not
- * advertise its own existence (OR-16).
+ * The single write check. Every Server Action that changes shared data calls
+ * this; admin-only routes check `isAdmin` and render a 404 rather than a 403, so
+ * the route does not advertise its own existence (OR-16).
  */
-export async function requireMaster(): Promise<CurrentUser> {
+export async function requireAdmin(): Promise<CurrentUser> {
   const user = await requireUser();
-  if (!user.isMaster) throw new Error("Forbidden: master only");
+  if (!user.isAdmin) throw new Error("Forbidden: admin only");
   return user;
 }

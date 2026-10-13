@@ -31,9 +31,12 @@ export default async function Home() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
-      <StatWidgets stats={stats} />
+      {/* Members cannot open Drafts, so they are not told any are waiting. */}
+      <StatWidgets
+        stats={user.isAdmin ? stats : { ...stats, draftsWaiting: 0 }}
+      />
 
-      <Proposals proposals={proposals} />
+      <Proposals proposals={proposals} canAdd={user.isAdmin} />
 
       <div className="flex items-baseline justify-between gap-4">
         <h1 className="font-display text-3xl uppercase tracking-tight sm:text-4xl">

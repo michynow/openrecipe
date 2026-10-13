@@ -7,23 +7,24 @@ import {
   deleteTag,
   removeMember,
   renameTag,
+  setMemberRole,
 } from "@/lib/admin-query";
 import { mintInvite, revokeInvite } from "@/lib/invites";
-import { requireMaster } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import type { Facet } from "@/lib/db/tags";
 
 /**
- * Master-only. Each action re-checks on the server — hiding a button is not
+ * Admin-only. Each action re-checks on the server — hiding a button is not
  * authorisation, and these are Server Actions, reachable by anyone who can craft
  * a request.
  */
 
 export async function mintInviteAction(formData: FormData) {
-  const master = await requireMaster();
+  const admin = await requireAdmin();
   const email = String(formData.get("email") ?? "").trim();
 
   await mintInvite({
-    createdById: master.id,
+    createdById: admin.id,
     email: email === "" ? null : email,
   });
 
@@ -31,7 +32,7 @@ export async function mintInviteAction(formData: FormData) {
 }
 
 export async function revokeInviteAction(formData: FormData) {
-  await requireMaster();
+  await requireAdmin();
   await revokeInvite(String(formData.get("id") ?? ""));
   revalidatePath("/settings");
 }
@@ -39,20 +40,31 @@ export async function revokeInviteAction(formData: FormData) {
 /* ──────────────────── Members and Tags (OR-50) ───────────────────────── */
 
 /**
- * Every action below re-checks Master server-side. The screen 404s for a Member,
+ * Every action below re-checks admin server-side. The screen 404s for a Member,
  * but a Server Action is an HTTP endpoint and hiding a button is not a check.
  */
 
 export async function removeMemberAction(
   formData: FormData,
 ): Promise<void> {
-  await requireMaster();
+  await requireAdmin();
   await removeMember(String(formData.get("id") ?? ""));
   revalidatePath("/settings");
 }
 
+export async function setMemberRoleAction(
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin();
+  await setMemberRole(
+    String(formData.get("id") ?? ""),
+    String(formData.get("role") ?? ""),
+  );
+  revalidatePath("/settings");
+}
+
 export async function addTagAction(formData: FormData): Promise<void> {
-  await requireMaster();
+  await requireAdmin();
 
   await addTag(
     String(formData.get("facet") ?? "") as Facet,
@@ -68,7 +80,7 @@ export async function addTagAction(formData: FormData): Promise<void> {
 }
 
 export async function renameTagAction(formData: FormData): Promise<void> {
-  await requireMaster();
+  await requireAdmin();
 
   await renameTag(
     String(formData.get("id") ?? ""),
@@ -80,7 +92,7 @@ export async function renameTagAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteTagAction(formData: FormData): Promise<void> {
-  await requireMaster();
+  await requireAdmin();
   await deleteTag(String(formData.get("id") ?? ""));
   revalidatePath("/settings");
 }

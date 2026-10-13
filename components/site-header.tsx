@@ -4,21 +4,31 @@ import { HelpButton } from "@/components/help-button";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { SignOutButton } from "@/components/sign-out-button";
 import { copy } from "@/lib/copy";
-
-const links = [
-  { href: "/", label: copy.nav.dashboard },
-  { href: "/search", label: copy.nav.search },
-  { href: "/drafts", label: copy.nav.drafts },
-] as const;
+import { getCurrentUser } from "@/lib/session";
 
 /**
  * The app shell's header. Lives in the root layout for now; the (auth) route
  * group will get its own layout without it once /login exists (OR-13, OR-16).
  *
- * The account slot is a placeholder until Better Auth lands (OR-11) — there is
- * no session to read yet.
+ * Members are read-only, so they get no add button, Drafts or Settings — the
+ * routes 404 for them anyway. Hiding is cosmetic; the actions check for real.
  */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const user = await getCurrentUser();
+  const isAdmin = user?.isAdmin ?? false;
+
+  const links = [
+    // No "Start" link: the wordmark already goes home.
+    { href: "/search", label: copy.nav.search },
+    ...(isAdmin
+      ? [
+          { href: "/drafts", label: copy.nav.drafts },
+          { href: "/settings", label: copy.nav.settings },
+        ]
+      : []),
+    { href: "/account", label: copy.nav.account },
+  ];
+
   return (
     <header className="border-b-4 border-line bg-gold text-ink">
       {/*
@@ -38,12 +48,14 @@ export function SiteHeader() {
         {/* Pushes itself and the add button right on the narrow layout. */}
         <HelpButton className="order-2 ml-auto sm:order-4 sm:ml-0" />
 
-        <Link
-          href="/recipes/new"
-          className="order-2 rounded-input bg-accent px-3 py-2 text-sm font-medium text-accent-ink sm:order-4"
-        >
-          {copy.nav.add}
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/recipes/new"
+            className="order-2 rounded-input bg-accent px-3 py-2 text-sm font-medium text-accent-ink sm:order-4"
+          >
+            {copy.nav.add}
+          </Link>
+        )}
 
         {/*
           Its own full-width row below sm — a search box narrow enough to share a
@@ -55,7 +67,7 @@ export function SiteHeader() {
           <SearchAutocomplete />
         </div>
 
-        <nav className="order-3 -mx-3 flex w-full items-center gap-1 text-sm sm:order-2 sm:mx-0 sm:w-auto">
+        <nav className="order-3 -mx-3 flex w-full flex-wrap items-center gap-1 text-sm sm:order-2 sm:mx-0 sm:w-auto">
           {links.map((link) => (
             <Link
               key={link.href}

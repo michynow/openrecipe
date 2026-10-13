@@ -32,7 +32,7 @@ export default async function RecipePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await requireUser();
+  const { isAdmin } = await requireUser();
 
   const { slug } = await params;
   const recipe = await getRecipeBySlug(slug);
@@ -127,12 +127,15 @@ export default async function RecipePage({
           )}
         </dl>
 
-        {/* Chunky buttons, not links: these are things you do to the Recipe. */}
+        {/* Chunky buttons, not links: these are things you do to the Recipe.
+            Members are read-only: they keep the source link and nothing else. */}
         <div className="flex flex-wrap gap-2">
-          <Link href={`/recipes/${recipe.slug}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-input border border-line px-3 text-sm font-extrabold text-text">
-            <Icon name="edit" className="size-5" />
-            {copy.recipe.edit}
-          </Link>
+          {isAdmin && (
+            <Link href={`/recipes/${recipe.slug}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-input border border-line px-3 text-sm font-extrabold text-text">
+              <Icon name="edit" className="size-5" />
+              {copy.recipe.edit}
+            </Link>
+          )}
           {recipe.sourceUrl && (
             <>
               <a
@@ -145,11 +148,12 @@ export default async function RecipePage({
                 {copy.recipe.openSource}
               </a>
               {/* Only a Recipe that came from somewhere can be fetched again. */}
-              <ReimportButton recipeId={recipe.id} />
+              {isAdmin && <ReimportButton recipeId={recipe.id} />}
             </>
           )}
-          {/* Free-for-all, per PRD §5 — the dialog is the only gate. */}
-          <DeleteRecipeDialog recipeId={recipe.id} title={recipe.title} />
+          {isAdmin && (
+            <DeleteRecipeDialog recipeId={recipe.id} title={recipe.title} />
+          )}
         </div>
       </header>
 
@@ -197,11 +201,13 @@ export default async function RecipePage({
       )}
 
       {/* Last thing on the page, because it is the last thing you do. */}
-      <CookLogButton
-        recipeId={recipe.id}
-        times={cookLog.times}
-        lastCookedAt={cookLog.lastCookedAt}
-      />
+      {isAdmin && (
+        <CookLogButton
+          recipeId={recipe.id}
+          times={cookLog.times}
+          lastCookedAt={cookLog.lastCookedAt}
+        />
+      )}
     </main>
   );
 }
