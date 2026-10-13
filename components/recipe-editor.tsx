@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { ImageField } from "@/components/image-field";
 import { IngredientLinesEditor } from "@/components/ingredient-lines-editor";
@@ -231,7 +231,7 @@ export function RecipeEditor({
           />
         </Field>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
           <Field
             id="servings"
             guessed={guessed("servings")}
@@ -435,12 +435,29 @@ export function RecipeEditor({
  * the one thing the reviewer must be able to tell apart at a glance.
  */
 export function GuessedChip() {
+  const tipId = useId();
   return (
-    <span
-      title={copy.imports.guessedHint}
-      className="inline-flex shrink-0 items-center whitespace-nowrap rounded-input border-2 border-accent bg-surface px-1.5 text-xs font-extrabold uppercase leading-5 tracking-wide text-accent"
-    >
-      {copy.imports.guessed}
+    /*
+      A button so it can take focus: hover shows the why on a desktop, a tap
+      (focus) shows it on a phone. The text stays in the DOM and is wired up as
+      the description, so a screen reader hears it without opening anything.
+    */
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-describedby={tipId}
+        className="inline-flex items-center gap-1 rounded-full border-2 border-accent bg-surface px-2 py-0.5 text-[0.8rem] font-extrabold uppercase leading-none tracking-wide text-accent"
+      >
+        <span aria-hidden>?</span>
+        {copy.imports.guessed}
+      </button>
+      <span
+        id={tipId}
+        role="tooltip"
+        className="pointer-events-none invisible absolute right-0 top-full z-30 mt-2 w-64 rounded-input border-2 border-line bg-surface p-3 text-sm font-semibold normal-case leading-snug tracking-normal text-text opacity-0 shadow-[3px_3px_0_var(--color-line)] transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+      >
+        {copy.imports.guessedHint}
+      </span>
     </span>
   );
 }
@@ -467,27 +484,33 @@ function Field({
       {/*
         Small, tracked, muted labels against full-weight values: the eye should
         land on what the recipe says, not on what the fields are called.
-
-        flex-1 + items-end: side by side in a grid row, labels of different
-        lengths (one wrapping, one carrying the chip) would otherwise push the
-        inputs to different heights. The chip wraps under the label rather than
-        out of a narrow column.
       */}
-      <div className="flex flex-1 flex-wrap items-end gap-x-2 gap-y-1">
-        <label
-          htmlFor={id}
-          className="text-sm font-extrabold uppercase tracking-wide text-text"
-        >
-          {label}
-          {hint && !required && (
-            <span className="ml-1 normal-case tracking-normal">
-              ({hint})
-            </span>
-          )}
-        </label>
-        {guessed && <GuessedChip />}
-      </div>
-      {children}
+      <label
+        htmlFor={id}
+        className="text-sm font-extrabold uppercase tracking-wide text-text"
+      >
+        {label}
+        {hint && !required && (
+          <span className="ml-1.5 font-semibold normal-case tracking-normal text-muted">
+            {hint}
+          </span>
+        )}
+      </label>
+      {/*
+        A guessed value carries its chip inside the field, at the right edge,
+        with an accent border — not in the label, where it wrapped the label onto
+        a second line and knocked the field out of line with its neighbours.
+      */}
+      {guessed ? (
+        <div className="relative min-w-0 [&>input]:w-full [&>input]:border-accent [&>input]:pr-36">
+          {children}
+          <span className="absolute right-2 top-1/2 -translate-y-1/2">
+            <GuessedChip />
+          </span>
+        </div>
+      ) : (
+        children
+      )}
       {error && (
         <p id={`${id}-error`} role="alert" className="text-sm text-accent2">
           {error}

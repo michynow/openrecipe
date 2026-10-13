@@ -207,7 +207,8 @@ export const copy = {
       "Szkic zrobiła maszyna. Popraw, co trzeba, i dopiero wtedy dodaj do biblioteki.",
     approve: "Dodaj do biblioteki",
     guessed: "zgadywane",
-    guessedHint: "Tego nie było wprost na stronie — sprawdź.",
+    guessedHint:
+      "Tej wartości nie było wprost na stronie — model ją oszacował. Sprawdź, zanim dodasz przepis.",
     guessedLegend: "— tego nie było wprost na stronie, model to wywnioskował. Sprawdź te pola przed dodaniem.",
     untranslated:
       "Model nie zadziałał, więc to dane prosto ze strony: bez tłumaczenia, tagów i zamienników. Przejrzyj całość.",
