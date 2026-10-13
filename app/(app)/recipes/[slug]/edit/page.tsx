@@ -22,7 +22,8 @@ export default async function EditRecipePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await requireUser();
+  // Members are read-only; 404 rather than 403, like Settings.
+  if (!(await requireUser()).isAdmin) notFound();
 
   const { slug } = await params;
   const [recipe, tagGroups] = await Promise.all([

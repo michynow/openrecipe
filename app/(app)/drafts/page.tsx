@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import { DraftList } from "@/components/draft-list";
 import { ParkUrlForm } from "@/components/park-url-form";
 import { SectionCard } from "@/components/section-card";
@@ -14,7 +16,8 @@ import { requireUser } from "@/lib/session";
  * they are the same activity seen a minute apart.
  */
 export default async function DraftsPage() {
-  await requireUser();
+  // Members are read-only; 404 rather than 403, like Settings.
+  if (!(await requireUser()).isAdmin) notFound();
 
   const drafts = await listDrafts();
 

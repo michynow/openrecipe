@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { NewRecipeForm } from "@/components/new-recipe-form";
 import { copy } from "@/lib/copy";
@@ -13,7 +14,8 @@ export default async function NewRecipePage({
 }) {
   // Proxy redirects anonymous visitors, but this page also refuses on its
   // own — the proxy guard is a redirect, not authorisation.
-  await requireUser();
+  // Members are read-only; 404 rather than 403, like Settings.
+  if (!(await requireUser()).isAdmin) notFound();
 
   // Read on the server so the picker ships with its options already in the HTML.
   const tagGroups = await getTagsByFacet();

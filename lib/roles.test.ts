@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { isMasterEmail, roleFor } from "./roles.ts";
+import { effectiveRole, isMasterEmail, roleFor } from "./roles.ts";
 
 const MASTER = "michy.now@gmail.com";
 
@@ -42,4 +42,14 @@ test("a near-miss address is not Master", () => {
   assert.equal(isMasterEmail("michy.now@gmail.co", MASTER), false);
   assert.equal(isMasterEmail("michy.now+alias@gmail.com", MASTER), false);
   assert.equal(isMasterEmail("michynow@gmail.com", MASTER), false);
+});
+
+test("the stored column grants admin, never master", () => {
+  assert.equal(effectiveRole("kasia@example.com", "admin", MASTER), "admin");
+  assert.equal(effectiveRole("kasia@example.com", "member", MASTER), "member");
+  // A stale or forged "master" in the column is just a member.
+  assert.equal(effectiveRole("kasia@example.com", "master", MASTER), "member");
+  assert.equal(effectiveRole("kasia@example.com", null, MASTER), "member");
+  // MASTER_EMAIL wins whatever the column says.
+  assert.equal(effectiveRole(MASTER, "member", MASTER), "master");
 });

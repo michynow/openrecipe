@@ -23,17 +23,18 @@ import {
   removeMemberAction,
   renameTagAction,
   revokeInviteAction,
+  setMemberRoleAction,
 } from "./actions";
 
 /**
- * The Master's screen (OR-49, OR-50): Invites, Members, the Tag taxonomy and
- * what the import queue is doing.
+ * The admins' screen (OR-49, OR-50): Invites, Members and their roles, the Tag
+ * taxonomy and what the import queue is doing.
  *
  * 404 rather than 403 for a Member: a 403 confirms the route exists.
  */
 export default async function SettingsPage() {
   const user = await getCurrentUser();
-  if (!user?.isMaster) notFound();
+  if (!user?.isAdmin) notFound();
 
   /**
    * Expiry is decided by Postgres, not by comparing against `Date.now()` here.
@@ -148,6 +149,7 @@ export default async function SettingsPage() {
         <h2 className="font-display text-xl uppercase tracking-tight">
           {copy.settings.members}
         </h2>
+        <p className="text-sm text-muted">{copy.settings.rolesHint}</p>
 
         <ul className="flex flex-col gap-2">
           {members.map((member) => (
@@ -176,9 +178,33 @@ export default async function SettingsPage() {
                 {copy.settings.joined} {formatDate(member.joinedAt)}
               </span>
 
-              {/* The Master cannot remove themselves — enforced server-side too. */}
+              {/* The Master cannot be demoted or removed — enforced server-side too. */}
               {!member.isMaster && (
-                <form action={removeMemberAction} className="ml-auto">
+                <form
+                  action={setMemberRoleAction}
+                  className="ml-auto flex items-center gap-2"
+                >
+                  <input type="hidden" name="id" value={member.id} />
+                  <select
+                    name="role"
+                    defaultValue={member.role}
+                    aria-label={`${copy.settings.role}: ${member.name}`}
+                    className="min-h-11 rounded-input border border-line bg-bg px-2 text-sm"
+                  >
+                    <option value="member">{copy.account.roles.member}</option>
+                    <option value="admin">{copy.account.roles.admin}</option>
+                  </select>
+                  <button
+                    type="submit"
+                    className="min-h-11 px-2 text-sm text-muted underline transition-colors hover:text-accent"
+                  >
+                    {copy.settings.saveRole}
+                  </button>
+                </form>
+              )}
+
+              {!member.isMaster && (
+                <form action={removeMemberAction}>
                   <input type="hidden" name="id" value={member.id} />
                   <ConfirmButton
                     message={copy.settings.removeMemberConfirm}

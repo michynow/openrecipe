@@ -40,7 +40,10 @@ export const user = pgTable("user", {
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
 
-  /** 'master' | 'member'. Never grantable through the UI. */
+  /**
+   * 'master' | 'admin' | 'member'. Admins grant 'admin' from Settings; 'master'
+   * is stamped at sign-up and only ever honoured for MASTER_EMAIL (lib/roles.ts).
+   */
   role: text("role").notNull().default("member"),
 
   /**

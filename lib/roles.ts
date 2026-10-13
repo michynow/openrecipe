@@ -7,11 +7,17 @@
  * is not a thing that exists — you would have to redeploy with a different
  * environment variable.
  *
- * The `role` column is a denormalisation, kept in step at sign-up so that queries
- * and displayed labels agree with reality. It is never the thing that is checked.
+ * The `role` column is checked for one thing only: "admin", which admins grant
+ * each other from Settings. It can never make anyone Master — see effectiveRole.
  */
 
-export type Role = "master" | "member";
+/**
+ * - master: MASTER_EMAIL. Implicitly an admin, and the only role nobody can grant
+ *   or take away.
+ * - admin: granted by an admin from Settings. Can do everything the Master can.
+ * - member: read-only — browses and cooks from Recipes, changes nothing shared.
+ */
+export type Role = "master" | "admin" | "member";
 
 /** Emails compare case-insensitively and ignore surrounding whitespace. */
 function normalise(email: string | null | undefined): string {
@@ -39,4 +45,18 @@ export function roleFor(
   masterEmail?: string | null,
 ): Role {
   return isMasterEmail(email, masterEmail) ? "master" : "member";
+}
+
+/**
+ * The role that actually applies. Master still comes from MASTER_EMAIL only; the
+ * stored column can grant "admin" and nothing more, so a stale or tampered
+ * "master" in the column is just a member.
+ */
+export function effectiveRole(
+  email: string | null | undefined,
+  storedRole: string | null | undefined,
+  masterEmail?: string | null,
+): Role {
+  if (isMasterEmail(email, masterEmail)) return "master";
+  return storedRole === "admin" ? "admin" : "member";
 }

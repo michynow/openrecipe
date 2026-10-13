@@ -183,7 +183,7 @@ export function SearchAutocomplete() {
         // room in the header for a visible one above the field.
         aria-label={copy.search.placeholder}
         placeholder={copy.search.placeholder}
-        className="w-full rounded-input border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted"
+        className="w-full rounded-input border border-line bg-surface px-3 py-2 text-sm text-text placeholder:text-muted"
       />
 
       {/*
@@ -204,7 +204,7 @@ export function SearchAutocomplete() {
       </p>
 
       {expanded && (
-        <div className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-card border border-line bg-surface">
+        <div className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-card border border-line bg-surface text-text">
           <ul id={listId} role="listbox" aria-label={copy.search.suggestions}>
             {items.map((recipe, index) => (
               <li

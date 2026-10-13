@@ -309,6 +309,27 @@ export const copy = {
     },
   },
 
+  account: {
+    title: "Konto",
+    profile: "Profil",
+    save: "Zapisz",
+    saved: "Zapisane.",
+    nameRequired: "Podaj imię.",
+    currentPassword: "Obecne hasło",
+    currentPasswordHint:
+      "Logujesz się tylko przez Google? Zostaw puste, żeby ustawić pierwsze hasło.",
+    newPassword: "Nowe hasło",
+    changePassword: "Zmień hasło",
+    passwordChanged: "Hasło zmienione. Inne urządzenia zostały wylogowane.",
+    passwordTooShort: "Hasło musi mieć co najmniej 8 znaków.",
+    passwordFailed: "Nie udało się zmienić hasła. Sprawdź obecne hasło.",
+    roles: {
+      master: "Właściciel",
+      admin: "Administrator",
+      member: "Tylko przeglądanie",
+    },
+  },
+
   settings: {
     title: "Ustawienia",
     invites: "Zaproszenia",
@@ -326,6 +347,10 @@ export const copy = {
     queueFailed: "nie wyszło",
     membersEmpty: "Na razie tylko ty.",
     master: "Właściciel",
+    role: "Rola",
+    rolesHint:
+      "Administrator może wszystko co właściciel. Pozostali tylko przeglądają przepisy.",
+    saveRole: "Zmień",
     joined: "Dołączył",
     removeMemberConfirm: "Usunąć tę osobę? Jej przepisy zostaną.",
     tagSlug: "slug (po angielsku)",

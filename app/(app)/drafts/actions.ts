@@ -14,7 +14,7 @@ import {
 import { wakeKitchen } from "@/lib/kitchen";
 import type { RecipeInput } from "@/lib/recipe-schema";
 import { createRecipe, updateRecipe, type SaveResult } from "@/lib/recipes";
-import { requireUser } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 /**
  * Server Actions for the import queue (OR-39, OR-45).
@@ -24,7 +24,7 @@ import { requireUser } from "@/lib/session";
  */
 
 export async function parkUrlAction(sourceUrl: string): Promise<ParkResult> {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const result = await parkUrl(sourceUrl, user.id);
 
   if (result.ok) {
@@ -47,7 +47,7 @@ export async function parkUrlAction(sourceUrl: string): Promise<ParkResult> {
  * review diff against the Recipe instead of offering a blank slate.
  */
 export async function reimportAction(recipeId: string): Promise<{ ok: boolean }> {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const id = await parkReimport(recipeId, user.id);
 
   if (id) {
@@ -80,7 +80,7 @@ export async function approveDraftAction(
    */
   recipeId?: string,
 ): Promise<SaveResult> {
-  const user = await requireUser();
+  const user = await requireAdmin();
 
   const result = recipeId
     ? await updateRecipe(recipeId, input, user.id)
@@ -108,7 +108,7 @@ async function move(
   action: (id: string) => Promise<boolean>,
   id: string,
 ): Promise<{ ok: boolean }> {
-  await requireUser();
+  await requireAdmin();
 
   try {
     const ok = await action(id);

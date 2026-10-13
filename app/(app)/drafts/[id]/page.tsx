@@ -16,7 +16,8 @@ export default async function DraftReviewPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireUser();
+  // Members are read-only; 404 rather than 403, like Settings.
+  if (!(await requireUser()).isAdmin) notFound();
 
   const { id } = await params;
   const draft = await getDraftForReview(id);

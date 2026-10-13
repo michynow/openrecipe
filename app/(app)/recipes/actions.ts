@@ -12,23 +12,23 @@ import {
   updateRecipe,
   type SaveResult,
 } from "@/lib/recipes";
-import { requireUser } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 /**
  * Server Actions for the editor.
  *
- * Each one calls `requireUser()` itself. The proxy guard is a redirect for
+ * Each one calls `requireAdmin()` itself. The proxy guard is a redirect for
  * convenience, not authorisation — a Server Action is an HTTP endpoint and has to
  * defend itself.
  *
- * Free-for-all editing (PRD §5): any signed-in user may edit any Recipe, so there
- * is no ownership check here. That is deliberate, not an omission.
+ * Members are read-only. Any admin may edit any Recipe, so there is no
+ * ownership check here. That is deliberate, not an omission.
  */
 
 export async function createRecipeAction(
   input: RecipeInput,
 ): Promise<SaveResult> {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const result = await createRecipe(input, user.id);
 
   if (result.ok) {
@@ -44,7 +44,7 @@ export async function updateRecipeAction(
   recipeId: string,
   input: RecipeInput,
 ): Promise<SaveResult> {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const result = await updateRecipe(recipeId, input, user.id);
 
   if (result.ok) {
@@ -66,7 +66,7 @@ export async function updateRecipeAction(
  * does that once the save commits, so a cancelled edit keeps its picture.
  */
 export async function deleteImageAction(url: string): Promise<void> {
-  await requireUser();
+  await requireAdmin();
   await deleteBlob(url);
 }
 
@@ -79,7 +79,7 @@ export async function deleteImageAction(url: string): Promise<void> {
 export async function deleteRecipeAction(
   recipeId: string,
 ): Promise<{ ok: boolean }> {
-  await requireUser();
+  await requireAdmin();
   const slug = await deleteRecipe(recipeId);
 
   if (slug) {
@@ -95,7 +95,7 @@ export async function deleteRecipeAction(
 export async function restoreRecipeAction(
   recipeId: string,
 ): Promise<{ ok: boolean }> {
-  await requireUser();
+  await requireAdmin();
   const slug = await restoreRecipe(recipeId);
 
   if (slug) {
@@ -117,7 +117,7 @@ export async function restoreRecipeAction(
 export async function logCookedAction(
   recipeId: string,
 ): Promise<{ entryId: string }> {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const entryId = await logCooked(recipeId, user.id);
 
   revalidatePath("/");
@@ -128,7 +128,7 @@ export async function logCookedAction(
 export async function undoCookedAction(
   entryId: string,
 ): Promise<{ ok: boolean }> {
-  const user = await requireUser();
+  const user = await requireAdmin();
   const ok = await undoCooked(entryId, user.id);
 
   if (ok) revalidatePath("/");

@@ -60,12 +60,19 @@ only way an account comes into existence. Minted by the Master and delivered by 
 _Avoid_: invitation code, signup link
 
 **Master**:
-The single owner of the instance, identified by a seeded email. Sole holder of global
-settings, invites, and destructive powers.
-_Avoid_: admin, owner, superuser
+The single owner of the instance, identified by a seeded email. The one role that can
+never be granted or taken away; otherwise holds the same powers as an Admin.
+_Avoid_: owner, superuser
+
+**Admin**:
+A Member the Master or another Admin has promoted. Can do everything the Master can —
+edit Recipes, run imports, mint Invites, manage Tags and roles — except demote or
+remove the Master.
+_Avoid_: moderator, editor
 
 **Member**:
-Anyone who joined via an Invite.
+Anyone who joined via an Invite. Read-only unless promoted to Admin: browses and
+cooks from Recipes, changes nothing shared.
 _Avoid_: guest, invitee, regular user
 
 **Draft**:
