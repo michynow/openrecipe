@@ -13,7 +13,7 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * Treat this as a redirect for convenience, never as authorisation.
  */
-const PUBLIC_PREFIXES = ["/login", "/join"];
+const PUBLIC_PREFIXES = ["/login", "/join", "/app"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

@@ -134,6 +134,37 @@ is what makes them work, not a nicety on top.
   it from the Firebase console, Android app `app.openrecipe.android`. It is not a secret and
   is committed. The Worker's half is `FIREBASE_SERVICE_ACCOUNT` (see The Worker).
 
+### Releasing
+
+Cut a release by pushing a tag; `.github/workflows/mobile-release.yml` builds the signed
+APK and attaches it to a GitHub Release as `openrecipe.apk`:
+
+```sh
+git tag mobile-v1.0.0 && git push origin mobile-v1.0.0
+```
+
+The tag gives `versionName` (1.0.0); the run number gives `versionCode`. The stable link
+(also behind the public `/app` page) is
+`https://github.com/michynow/openrecipe/releases/latest/download/openrecipe.apk`.
+
+One-time setup, in GitHub > Settings > Secrets and variables > Actions:
+
+- Secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
+  `ANDROID_KEY_PASSWORD`.
+- Variable: `EXPO_PUBLIC_API_URL` = the production URL (the build fails if it is empty).
+
+Generate the keystore once, then base64 it for the secret (macOS):
+
+```sh
+keytool -genkeypair -v -storetype PKCS12 -keystore openrecipe-release.keystore \
+  -alias openrecipe -keyalg RSA -keysize 2048 -validity 10000
+base64 -i openrecipe-release.keystore | pbcopy
+```
+
+**Lose the keystore and installed apps can never be updated** (Android refuses a different
+signature). Keep a backup outside the repo and never commit it (`*.keystore` and `*.jks`
+are gitignored).
+
 ## Where the build is
 
 Phases 0 to 5 from PRD §14 are built. What that means in practice: sign in, type a

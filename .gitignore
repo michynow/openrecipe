@@ -52,3 +52,7 @@ next-env.d.ts
 
 # Local-only admin tool: resets a password straight in the database.
 apps/web/scripts/reset-password.ts
+
+# release signing
+*.keystore
+*.jks
