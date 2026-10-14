@@ -1,16 +1,20 @@
-import { copy } from "@openrecipe/core/copy";
+import type { RecipeDetail } from "@openrecipe/core/api";
+import { confirmDelete, copy } from "@openrecipe/core/copy";
 import { formatDate, formatDuration } from "@openrecipe/core/format";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Linking, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 
 import { CookingPanel } from "../../components/recipe/cooking-panel";
 import { CookLog } from "../../components/recipe/cook-log";
 import { KeepAwakeToggle } from "../../components/recipe/keep-awake-toggle";
 import { ArcadeButton } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
+import { Icon } from "../../components/ui/pixel";
 import { TagChip } from "../../components/ui/tag-chip";
-import { ApiError } from "../../lib/api";
+import { showToast } from "../../components/ui/toast";
+import { ApiError, useMe } from "../../lib/api";
+import { useDeleteRecipe, useReimport, useRestoreRecipe } from "../../lib/hooks/editor";
 import { useRecipe } from "../../lib/hooks/recipe";
 import { recipeImage } from "../../lib/image";
 
@@ -19,6 +23,7 @@ export default function RecipeScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { data, error, isPending, refetch, fetchStatus } = useRecipe(slug);
+  const isAdmin = useMe().data?.isAdmin === true;
 
   if (!data) {
     if (isPending) {
@@ -51,7 +56,9 @@ export default function RecipeScreen() {
 
   return (
     <ScrollView className="flex-1 bg-bg" contentContainerClassName="gap-5 px-4 py-4 pb-12">
-      <Stack.Screen options={{ title: recipe.title }} />
+      <Stack.Screen
+        options={{ title: recipe.title, headerRight: isAdmin ? () => <AdminActions recipe={recipe} /> : undefined }}
+      />
 
       {stale && <Text className="text-sm text-muted">{copy.common.offline}</Text>}
 
@@ -129,6 +136,85 @@ function Stat({ label, value }: { label: string; value: string }) {
     <View>
       <Text className="text-xs uppercase text-muted">{label}</Text>
       <Text className="text-lg font-bold text-text">{value}</Text>
+    </View>
+  );
+}
+
+function HeaderButton({ icon, label, onPress }: { icon: "edit" | "refresh" | "remove"; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      className="size-11 items-center justify-center"
+    >
+      <Icon name={icon} size={22} tone="ink" />
+    </Pressable>
+  );
+}
+
+/** Admin-only: edit, import again, delete (with an undo toast, like the web). */
+function AdminActions({ recipe }: { recipe: RecipeDetail }) {
+  const router = useRouter();
+  const del = useDeleteRecipe();
+  const restore = useRestoreRecipe();
+  const reimport = useReimport();
+
+  function confirmDeleteRecipe() {
+    Alert.alert(confirmDelete(recipe.title), undefined, [
+      { text: copy.editor.cancel, style: "cancel" },
+      {
+        text: copy.common.delete,
+        style: "destructive",
+        onPress: () =>
+          del
+            .mutateAsync(recipe.id)
+            .then(() => {
+              router.back();
+              showToast({
+                message: copy.common.deleted,
+                action: {
+                  label: copy.common.undo,
+                  // Fails quietly once the server's grace window has closed.
+                  onPress: () =>
+                    restore
+                      .mutateAsync(recipe.id)
+                      .then((r) => r.ok && router.push({ pathname: "/recipe/[slug]", params: { slug: recipe.slug } }))
+                      .catch(() => {}),
+                },
+              });
+            })
+            .catch(() => Alert.alert(copy.common.somethingFailed)),
+      },
+    ]);
+  }
+
+  function confirmReimport() {
+    Alert.alert(copy.imports.reimport, copy.imports.reimportConfirm, [
+      { text: copy.editor.cancel, style: "cancel" },
+      {
+        text: copy.imports.reimport,
+        onPress: () =>
+          reimport
+            .mutateAsync(recipe.id)
+            .then(() => {
+              showToast({ message: copy.imports.reimportQueued, kielbas: true });
+              router.push("/drafts");
+            })
+            .catch(() => Alert.alert(copy.common.somethingFailed)),
+      },
+    ]);
+  }
+
+  return (
+    <View className="flex-row">
+      <HeaderButton
+        icon="edit"
+        label={copy.editor.editTitle}
+        onPress={() => router.push({ pathname: "/editor/[slug]", params: { slug: recipe.slug } })}
+      />
+      {recipe.sourceUrl ? <HeaderButton icon="refresh" label={copy.imports.reimport} onPress={confirmReimport} /> : null}
+      <HeaderButton icon="remove" label={copy.common.delete} onPress={confirmDeleteRecipe} />
     </View>
   );
 }
