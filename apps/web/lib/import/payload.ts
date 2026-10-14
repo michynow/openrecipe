@@ -1,4 +1,4 @@
-import { parseIngredientBlock } from "@openrecipe/core/parse-ingredient";
+import { parseIngredientLine } from "@openrecipe/core/parse-ingredient";
 import { recipeSchema, type RecipeFormValue } from "@openrecipe/core/recipe-schema";
 import type { ExtractedPage } from "./extract.ts";
 
@@ -77,9 +77,12 @@ export function buildPayload(
     return { ok: false, reason: "needs-a-model" };
   }
 
-  const ingredientLines = parseIngredientBlock(page.ingredients.join("\n")).map(
-    (line) => ({ ...line, substitutes: [] }),
-  );
+  // The page's Section headings ride along; the schema keeps them contiguous.
+  const ingredientLines = page.ingredients.map((entry) => ({
+    ...parseIngredientLine(entry.text),
+    section: entry.section,
+    substitutes: [],
+  }));
 
   const steps = page.instructions.flatMap((line) => toShortLines(line));
 

@@ -20,11 +20,14 @@ import * as cheerio from "cheerio";
 
 export type ExtractPath = "json-ld" | "readable-text";
 
+/** One published ingredient, and the Section heading the page put it under (ADR-0008). */
+export type ExtractedIngredient = { text: string; section: string | null };
+
 export type ExtractedPage = {
   path: ExtractPath;
   title: string | null;
   imageUrl: string | null;
-  ingredients: string[];
+  ingredients: ExtractedIngredient[];
   instructions: string[];
   servings: number | null;
   totalMinutes: number | null;
@@ -184,6 +187,126 @@ export function caloriesToNumber(value: unknown): number | null {
   return kcal >= 0 && kcal <= 10_000 ? kcal : null;
 }
 
+/* ───────────────────────── Ingredient Sections ───────────────────────── */
+
+/**
+ * A heading's text as a Section name, or null for a heading that only says
+ * "ingredients". "Składniki na ciasto" is the Section "Ciasto"; "Składniki na 4
+ * porcje" is no Section at all.
+ */
+export function sectionName(raw: string): string | null {
+  const text = raw
+    .replace(/^[\s\-=*#_~•–—]+|[\s\-=*#_~•–—:]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text || /^(składniki|ingredients?)$/i.test(text)) return null;
+
+  const named = /^(?:składniki|ingredients?)\s+(?:na|do|dla|for)\s+(.+)$/i.exec(text);
+  if (named) {
+    const rest = named[1].trim();
+    return /^\d/.test(rest) ? null : rest.charAt(0).toUpperCase() + rest.slice(1);
+  }
+  return text.length > 60 ? null : text;
+}
+
+/**
+ * Whether a `recipeIngredient` entry is really a heading. Sites with grouped
+ * ingredients and no field for groups (schema.org has none) smuggle the group
+ * names into the list: "Sos:", "--- Sos ---", "<strong>Sos</strong>", "SOS".
+ */
+function inlineHeading(raw: string, cleaned: string): string | null {
+  // A heading carries no quantity; "<b>1 cebula</b>" is an ingredient in bold.
+  if (/\d/.test(cleaned)) return null;
+  const bold = /^\s*<(strong|b|h[1-6])[^>]*>[^<]+<\/\1>\s*$/i.test(raw);
+  const colon = /:\s*$/.test(cleaned);
+  const ruled = /^[-=*#_~]{2,}.+[-=*#_~]{2,}$/.test(cleaned);
+  const shouting =
+    /\p{L}{3}/u.test(cleaned) && cleaned === cleaned.toUpperCase() && cleaned !== cleaned.toLowerCase();
+  return bold || colon || ruled || shouting ? sectionName(cleaned) ?? "" : null;
+}
+
+/** Ingredient strings to entries, inline headings turned into Sections. */
+export function ingredientEntries(raw: readonly unknown[]): ExtractedIngredient[] {
+  const out: ExtractedIngredient[] = [];
+  let section: string | null = null;
+
+  for (const value of raw) {
+    if (typeof value !== "string") continue;
+    const text = stripTags(value);
+    if (!text) continue;
+
+    const heading = inlineHeading(value, text);
+    // "" is a heading that names no Section ("Składniki:") — it ends the current one.
+    if (heading !== null) section = heading || null;
+    else out.push({ text, section });
+  }
+  return out;
+}
+
+const squash = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+
+/**
+ * Section headings from the page's own markup, for JSON-LD that lists the
+ * ingredients flat while the page shows them grouped (WP Recipe Maker, Tasty
+ * Recipes, hand-built blogs alike).
+ *
+ * Walks headings and list items in document order. Each ingredient is matched,
+ * in order, to the next <li> containing its text, and takes the last heading
+ * seen before that <li>. Ingredients no <li> matched inherit their predecessor's
+ * Section. One Section over every line is the page's title or a "Składniki"
+ * variant, not a grouping, and counts as none.
+ */
+export function sectionsFromMarkup(html: string, ingredients: readonly string[]): (string | null)[] {
+  const $ = cheerio.load(html);
+  $("script,style,noscript,nav,header,footer,aside,form").remove();
+
+  const out: (string | null)[] = ingredients.map(() => null);
+  const keys = ingredients.map(squash);
+  const matched = ingredients.map(() => false);
+  const matchedItems = new Set<unknown>();
+  let heading: string | null = null;
+  let next = 0;
+
+  const HEADINGS =
+    "h2,h3,h4,h5,h6,[class*='group-name'],[class*='group-title'],[class*='section-title'],p > strong,p > b,li > strong,li > b";
+
+  $(`${HEADINGS},li`).each((_, element) => {
+    if (next >= ingredients.length) return false;
+    const el = $(element);
+    const tag = element.tagName?.toLowerCase();
+
+    if (tag === "li") {
+      const text = squash(el.text());
+      // A small lookahead, so one ingredient the markup words differently does
+      // not stall every match after it.
+      for (let i = next; i < Math.min(next + 4, ingredients.length); i++) {
+        if (keys[i].length >= 2 && text.includes(keys[i])) {
+          out[i] = heading;
+          matched[i] = true;
+          matchedItems.add(element);
+          next = i + 1;
+          break;
+        }
+      }
+      return;
+    }
+
+    // <strong> counts as a heading only when it is the whole of its paragraph or
+    // item — and that item is not itself an ingredient set in bold.
+    if (tag === "strong" || tag === "b") {
+      const parent = el.parent();
+      if (parent.text().trim() !== el.text().trim() || matchedItems.has(parent.get(0))) return;
+    }
+    heading = sectionName(el.text());
+  });
+
+  if (!matched.some(Boolean)) return out;
+  for (let i = 1; i < out.length; i++) if (!matched[i]) out[i] = out[i - 1];
+
+  const distinct = new Set(out);
+  return distinct.size === 1 ? out.map(() => null) : out;
+}
+
 function fromJsonLd(html: string): ExtractedPage | null {
   const $ = cheerio.load(html);
 
@@ -203,11 +326,14 @@ function fromJsonLd(html: string): ExtractedPage | null {
     const node = findRecipeNode(parsed);
     if (!node) continue;
 
-    const ingredients = (
-      Array.isArray(node.recipeIngredient) ? node.recipeIngredient : []
-    )
-      .map((line) => (typeof line === "string" ? stripTags(line) : null))
-      .filter((line): line is string => Boolean(line));
+    let ingredients = ingredientEntries(
+      Array.isArray(node.recipeIngredient) ? node.recipeIngredient : [],
+    );
+    // No headings inside the list: the page's markup may still show groups.
+    if (ingredients.every((entry) => entry.section === null)) {
+      const sections = sectionsFromMarkup(html, ingredients.map((entry) => entry.text));
+      ingredients = ingredients.map((entry, i) => ({ ...entry, section: sections[i] }));
+    }
 
     const instructions = instructionLines(node.recipeInstructions);
 

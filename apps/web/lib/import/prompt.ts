@@ -38,7 +38,12 @@ Rules, in order of importance:
    Pick the ones you would actually filter by; fewer is better than padded.
 7. Substitutes: 2 or 3 per ingredient line where a sensible one exists, each
    with a one-line Polish note saying how it differs. None at all is better than
-   a bad one — do not force them onto salt or water.`;
+   a bad one — do not force them onto salt or water.
+8. Sections: when the source groups its ingredients under headings ("For the
+   sauce", "Ciasto", "Do podania"), give each line its group's heading as
+   "section" — short, Polish, in the source's order. Lines outside any group get
+   null. Never invent groups: a single plain list has every "section" null, and
+   a heading that only says "Ingredients" is not a section.`;
 
 /** The exact JSON shape wanted back, described once. */
 const SHAPE = `{
@@ -51,6 +56,7 @@ const SHAPE = `{
       "unit": string or null,
       "item": string,
       "note": string or null,
+      "section": string or null,
       "substitutes": [ { "item": string, "note": string or null } ] }
   ],
   "steps": [ string ],
@@ -58,6 +64,18 @@ const SHAPE = `{
   "tagSlugs": [ string ],
   "inferred": [ string ]
 }`;
+
+/** The published ingredients, with a "## Section" line wherever the Section changes. */
+export function ingredientList(page: ExtractedPage): string {
+  let current: string | null = null;
+  return page.ingredients
+    .flatMap((entry) => {
+      const heading = entry.section !== current ? [`## ${entry.section ?? "(bez nagłówka)"}`] : [];
+      current = entry.section;
+      return [...heading, `- ${entry.text}`];
+    })
+    .join("\n");
+}
 
 /**
  * `inferred` is the model's own account of what it worked out rather than read.
@@ -84,8 +102,9 @@ Servings: ${page.servings ?? "(none given)"}
 Total minutes: ${page.totalMinutes ?? "(none given)"}
 Kcal per serving: ${page.kcalPerServing ?? "(none given)"}
 
-Ingredients, one per line:
-${page.ingredients.map((line) => `- ${line}`).join("\n")}
+Ingredients, one per line, under the page's own section headings (## name)
+where it has them:
+${ingredientList(page)}
 
 Instructions, in order:
 ${page.instructions.map((line) => `- ${line}`).join("\n")}`

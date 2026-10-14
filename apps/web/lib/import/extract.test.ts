@@ -9,6 +9,8 @@ import {
   instructionLines,
   isoDurationToMinutes,
   readableText,
+  sectionName,
+  sectionsFromMarkup,
   yieldToServings,
 } from "./extract.ts";
 
@@ -35,7 +37,12 @@ test("finds a Recipe nested in an @graph, even when @type is an array", () => {
   assert.equal(page.kcalPerServing, 540);
   // No totalTime on this one: prep + cook is 20 + 70.
   assert.equal(page.totalMinutes, 90);
-  assert.deepEqual(page.ingredients, ["1 kg ziemniaków", "2 jajka", "1 cebula"]);
+  // A plain list: no Sections invented.
+  assert.deepEqual(page.ingredients, [
+    { text: "1 kg ziemniaków", section: null },
+    { text: "2 jajka", section: null },
+    { text: "1 cebula", section: null },
+  ]);
   assert.equal(page.instructions.length, 3);
   assert.equal(page.instructions[0], "Zetrzyj ziemniaki.");
 });
@@ -50,6 +57,14 @@ test("skips a malformed block and flattens HowToSection groups", () => {
   assert.equal(page.imageUrl, "https://example.test/zupa.jpg");
   assert.equal(page.servings, 4, "takes the first number of '4-6 porcji'");
   assert.equal(page.totalMinutes, 45);
+  // Headings smuggled into recipeIngredient become Sections, not ingredients.
+  assert.deepEqual(page.ingredients, [
+    { text: "sól", section: null },
+    { text: "500 g dyni", section: "Baza" },
+    { text: "1 l bulionu", section: "Baza" },
+    { text: "100 ml śmietanki", section: "Do podania" },
+    { text: "pestki dyni", section: "Posypka" },
+  ]);
   // Section headings are not instructions; their steps are, in order.
   assert.deepEqual(page.instructions, [
     "Podsmaż dynię.",
@@ -124,4 +139,35 @@ test("findRecipeNode ignores non-Recipe nodes around it", () => {
 test("readableText caps its output", () => {
   const long = `<body><main><p>${"słowo ".repeat(5000)}</p></main></body>`;
   assert.equal(readableText(long, 100).length, 100);
+});
+
+test("reads ingredient Sections from the page's markup when JSON-LD is flat", () => {
+  const result = extractFromHtml(fixture("html-ingredient-groups.html"));
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.deepEqual(
+    result.page.ingredients.map((entry) => [entry.section, entry.text]),
+    [
+      ["Bułki", "500 g mąki"],
+      ["Bułki", "7 g drożdży"],
+      ["Kotlety", "500 g wołowiny"],
+      // Bold, but an ingredient: it does not start a Section of its own.
+      ["Kotlety", "sól"],
+      ["Surówka", "1 ogórek"],
+      ["Surówka", "2 łyżki majonezu"],
+    ],
+  );
+});
+
+test("one heading over every line is not a grouping", () => {
+  const html = "<h2>Zupa</h2><ul><li>woda</li><li>sól</li></ul>";
+  assert.deepEqual(sectionsFromMarkup(html, ["woda", "sól"]), [null, null]);
+});
+
+test("section names: 'Składniki na X' is X, bare 'Składniki' is nothing", () => {
+  assert.equal(sectionName("Składniki na ciasto:"), "Ciasto");
+  assert.equal(sectionName("Składniki na 4 porcje"), null);
+  assert.equal(sectionName("SKŁADNIKI"), null);
+  assert.equal(sectionName("--- Sos ---"), "Sos");
 });

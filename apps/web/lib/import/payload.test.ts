@@ -34,12 +34,30 @@ test("a JSON-LD page becomes a valid Draft payload with no model", () => {
     unit: "kg",
     item: "ziemniaków",
     note: null,
+    section: null,
     substitutes: [],
   });
 
   // Nothing invents a Tag, and no image is hotlinked from the source (OR-43).
   assert.deepEqual(payload.tagSlugs, []);
   assert.equal(payload.imageUrl, null);
+});
+
+test("the page's Sections reach the payload, contiguous", () => {
+  const built = buildPayload(pageFrom("html-ingredient-groups.html"), "https://example.test/p");
+  assert.equal(built.ok, true);
+  if (!built.ok) return;
+  assert.deepEqual(
+    built.payload.ingredientLines.map((line) => [line.section, line.item]),
+    [
+      ["Bułki", "mąki"],
+      ["Bułki", "drożdży"],
+      ["Kotlety", "wołowiny"],
+      ["Kotlety", "sól"],
+      ["Surówka", "ogórek"],
+      ["Surówka", "majonezu"],
+    ],
+  );
 });
 
 test("a page with only prose is handed to the model instead", () => {

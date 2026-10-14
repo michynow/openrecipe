@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { extractJson, validate } from "./generate.ts";
+import { ingredientList } from "./prompt.ts";
 
 /**
  * The model call itself is not tested — it needs the laptop's Claude
@@ -84,4 +85,33 @@ test("an answer that is not an object is a schema failure, not a crash", () => {
   assert.equal(validate(null, ALLOWED).ok, false);
   assert.equal(validate("żurek", ALLOWED).ok, false);
   assert.equal(validate([1, 2, 3], ALLOWED).ok, false);
+});
+
+test("the model's Sections survive validation, regrouped contiguous", () => {
+  const line = (item: string, section: string | null) => ({ quantity: null, unit: null, item, note: null, section, substitutes: [] });
+  const result = validate(
+    answer({ ingredientLines: [line("mąka", "Ciasto"), line("pomidory", "Sos"), line("jajko", "Ciasto")] }),
+    ALLOWED,
+  );
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.deepEqual(
+    result.payload.ingredientLines.map((l) => [l.section, l.item]),
+    [
+      ["Ciasto", "mąka"],
+      ["Ciasto", "jajko"],
+      ["Sos", "pomidory"],
+    ],
+  );
+});
+
+test("the prompt shows the page's Sections as headings", () => {
+  const text = ingredientList({
+    ingredients: [
+      { text: "sól", section: null },
+      { text: "500 g mąki", section: "Ciasto" },
+      { text: "1 jajko", section: "Ciasto" },
+    ],
+  } as Parameters<typeof ingredientList>[0]);
+  assert.equal(text, "- sól\n## Ciasto\n- 500 g mąki\n- 1 jajko");
 });
