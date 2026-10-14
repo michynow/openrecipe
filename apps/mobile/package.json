@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"lib/**/*.test.ts\"",
-    "build:android": "expo prebuild --clean && JAVA_HOME=$(/usr/libexec/java_home -v 17) expo run:android"
+    "build:android": "expo prebuild --clean --platform android && JAVA_HOME=$(/usr/libexec/java_home -v 17) expo run:android"
   },
   "dependencies": {
     "@better-auth/expo": "1.6.25",
