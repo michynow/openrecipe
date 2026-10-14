@@ -4,11 +4,21 @@ import { useRef, useState } from "react";
 
 import { IngredientSprite } from "@/components/pixel-sprite";
 import { GripButton, RowButton } from "@/components/section-card";
-import { reorder, useSortable } from "@/components/use-sortable";
+import { useSortable } from "@/components/use-sortable";
 import { copy } from "@openrecipe/core/copy";
 import type { FieldErrors } from "@openrecipe/core/form-errors";
 import { parseIngredientBlock } from "@openrecipe/core/parse-ingredient";
 import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
+import {
+  addSection,
+  cleanSection,
+  groupSections,
+  moveLine,
+  removeSection,
+  renameSection,
+  sectionNames,
+  setLineSection,
+} from "@openrecipe/core/sections";
 
 type Line = RecipeFormValue["ingredientLines"][number];
 
@@ -43,9 +53,11 @@ export function IngredientLinesEditor({
 }) {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
+  const [sectionOpen, setSectionOpen] = useState(false);
+  const [sectionDraft, setSectionDraft] = useState("");
   const focusRow = useRef<number | null>(null);
   const { list, dragging, handleProps } = useSortable((from, to) =>
-    onChange(reorder(values, from, to)),
+    onChange(moveLine(values, from, to)),
   );
 
   function update(index: number, patch: Partial<Line>) {
@@ -55,6 +67,22 @@ export function IngredientLinesEditor({
   function add() {
     focusRow.current = values.length;
     onChange([...values, { ...blankLine }]);
+  }
+
+  /** A blank line at the end of `name`'s group; focus lands on its item field. */
+  function addToSection(name: string) {
+    const next = addSection(values, name, blankLine);
+    const clean = cleanSection(name);
+    focusRow.current = next.findLastIndex((line) => line.section === clean);
+    onChange(next);
+  }
+
+  function confirmSection() {
+    const name = sectionDraft.trim();
+    if (!name) return;
+    addToSection(name);
+    setSectionDraft("");
+    setSectionOpen(false);
   }
 
   function remove(index: number) {
@@ -79,6 +107,14 @@ export function IngredientLinesEditor({
   }
 
   /** A number input's value, or null for blank — blank means "do smaku". */
+  const names = sectionNames(values);
+  /** Index of the first line of each named group → that group's name. */
+  const headings = new Map(
+    groupSections(values).flatMap((group) =>
+      group.section === null ? [] : [[group.items[0].index, group.section] as const],
+    ),
+  );
+
   const numberOrNull = (raw: string) => (raw === "" ? null : Number(raw));
 
   return (
@@ -112,6 +148,14 @@ export function IngredientLinesEditor({
                 dragging === index ? "rounded-input bg-fill" : ""
               }`}
             >
+              {headings.has(index) && (
+                <SectionHeading
+                  name={headings.get(index)!}
+                  onRename={(next) => onChange(renameSection(values, headings.get(index)!, next))}
+                  onRemove={() => onChange(removeSection(values, headings.get(index)!))}
+                  onAdd={() => addToSection(headings.get(index)!)}
+                />
+              )}
               <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:items-end">
                 <GripButton
                   label={`${copy.editor.reorder}: ${line.item || index + 1}`}
@@ -195,6 +239,24 @@ export function IngredientLinesEditor({
                 </span>
               </div>
 
+              <label className="flex items-center gap-2 pl-1 text-sm text-muted sm:pl-12">
+                {copy.editor.moveToSection}
+                <select
+                  value={line.section ?? ""}
+                  onChange={(event) =>
+                    onChange(setLineSection(values, index, event.target.value || null))
+                  }
+                  className="min-w-0 rounded-input border border-line bg-bg px-2 py-1 text-text"
+                >
+                  <option value="">{copy.editor.noSection}</option>
+                  {names.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               {(itemError || quantityError) && (
                 <p role="alert" className="text-sm text-accent2">
                   {itemError ?? quantityError}
@@ -221,12 +283,48 @@ export function IngredientLinesEditor({
         </button>
         <button
           type="button"
+          onClick={() => setSectionOpen((open) => !open)}
+          className="rounded-input border border-line px-3 py-1.5 text-sm font-bold text-text"
+        >
+          {copy.editor.addSection}
+        </button>
+        <button
+          type="button"
           onClick={() => setPasteOpen((open) => !open)}
           className="rounded-input border border-line px-3 py-1.5 text-sm font-bold text-text"
         >
           {copy.editor.pasteBlock}
         </button>
       </div>
+
+      {names.length === 0 && !sectionOpen && (
+        <p className="text-sm text-muted">{copy.editor.sectionsHint}</p>
+      )}
+
+      {sectionOpen && (
+        <div className="flex gap-2">
+          <input
+            autoFocus
+            aria-label={copy.editor.sectionName}
+            value={sectionDraft}
+            placeholder={copy.editor.sectionPlaceholder}
+            onChange={(event) => setSectionDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault(); // inside the recipe form: Enter must not submit it
+              confirmSection();
+            }}
+            className="min-w-0 flex-1 rounded-input border border-line bg-bg px-3 py-2 font-bold"
+          />
+          <button
+            type="button"
+            onClick={confirmSection}
+            className="rounded-input bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink"
+          >
+            {copy.editor.addSection}
+          </button>
+        </div>
+      )}
 
       {pasteOpen && (
         <div className="flex flex-col gap-2 rounded-card border border-line bg-bg p-3">
@@ -284,6 +382,53 @@ function Labelled({
         {caption}
       </span>
       {children}
+    </div>
+  );
+}
+
+/** The heading over a Section's first line: rename on blur/Enter, remove, add a line. */
+function SectionHeading({
+  name,
+  onRename,
+  onRemove,
+  onAdd,
+}: {
+  name: string;
+  onRename: (next: string) => void;
+  onRemove: () => void;
+  onAdd: () => void;
+}) {
+  return (
+    <div className="mb-2 flex items-center gap-2 rounded-input bg-fill px-2 py-1">
+      <input
+        key={name}
+        aria-label={copy.editor.sectionName}
+        defaultValue={name}
+        onBlur={(event) => {
+          if (event.target.value !== name) onRename(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          event.currentTarget.blur();
+        }}
+        className="min-w-0 flex-1 rounded-input border border-line bg-bg px-2 py-1 font-display text-lg uppercase tracking-wide"
+      />
+      <button
+        type="button"
+        onClick={onAdd}
+        className="shrink-0 rounded-input border border-line px-2 py-1 text-sm font-bold text-text"
+      >
+        + {copy.editor.addIngredient}
+      </button>
+      <span title={copy.editor.removeSectionHint}>
+        <RowButton
+          icon="remove"
+          label={`${copy.editor.removeSection}: ${name}`}
+          onClick={onRemove}
+          destructive
+        />
+      </span>
     </div>
   );
 }

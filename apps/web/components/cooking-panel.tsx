@@ -16,6 +16,8 @@ import {
 } from "@/lib/pantry";
 import { formatScaledQuantity } from "@openrecipe/core/quantity";
 import type { RecipeDetail } from "@/lib/recipe-query";
+import { AddToShoppingList } from "@/components/add-to-shopping-list";
+import { groupSections } from "@openrecipe/core/sections";
 import { buildShoppingExport } from "@openrecipe/core/shopping-export";
 
 type Line = RecipeDetail["ingredientLines"][number];
@@ -35,7 +37,9 @@ export function CookingPanel({
   title,
   servings: storedServings,
   lines,
+  shoppingListServings,
 }: {
+  shoppingListServings: number | null;
   recipeId: string;
   title: string;
   servings: number;
@@ -132,8 +136,13 @@ export function CookingPanel({
         <legend className="pb-1 text-sm text-muted">
           {copy.recipe.pantryCheck}
         </legend>
+        {groupSections(lines).map((group) => (
+        <div key={group.section ?? ""} className="flex flex-col">
+          {group.section && (
+            <h3 className="pt-2 font-display text-lg uppercase tracking-wide">{group.section}</h3>
+          )}
         <ul className="flex flex-col">
-          {lines.map((line) => {
+          {group.items.map(({ line }) => {
             const isChecked = checked.includes(line.id);
             const amount = formatScaledQuantity(line.quantity, factor);
             const measure = [amount, line.unit].filter(Boolean).join(" ");
@@ -203,6 +212,8 @@ export function CookingPanel({
             );
           })}
         </ul>
+        </div>
+        ))}
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -226,6 +237,13 @@ export function CookingPanel({
           </p>
         )}
       </div>
+
+      <AddToShoppingList
+        recipeId={recipeId}
+        servings={servings}
+        checked={checked}
+        onList={shoppingListServings}
+      />
 
       <SubstitutesSheet
         line={openLine}

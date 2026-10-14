@@ -23,6 +23,7 @@ export async function SiteHeader() {
     // Hidden below sm, where the search box sits right under it and five links
     // do not fit one row.
     { href: "/search", label: copy.nav.search, className: "hidden sm:block" },
+    ...(user ? [{ href: "/shopping-list", label: copy.nav.shoppingList }] : []),
     ...(isAdmin
       ? [
           { href: "/drafts", label: copy.nav.drafts },

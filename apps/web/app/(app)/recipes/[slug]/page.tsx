@@ -12,6 +12,7 @@ import { TagChip } from "@/components/tag-chip";
 import WakeLockToggle from "@/components/wake-lock-toggle";
 import { imageSrc } from "@openrecipe/core/blob";
 import { getCookLog } from "@/lib/cook-log";
+import { getShoppingListServings } from "@/lib/shopping-list";
 import { copy } from "@openrecipe/core/copy";
 import { formatDate, formatDuration } from "@openrecipe/core/format";
 import { getRecipeBySlug } from "@/lib/recipe-query";
@@ -40,7 +41,10 @@ export default async function RecipePage({
   const recipe = await getRecipeBySlug(slug);
   if (!recipe) notFound();
 
-  const cookLog = await getCookLog(recipe.id);
+  const [cookLog, shoppingListServings] = await Promise.all([
+    getCookLog(recipe.id),
+    getShoppingListServings(recipe.id),
+  ]);
   const duration = formatDuration(recipe.totalMinutes);
   const editedByOther = recipe.lastEditor !== null;
 
@@ -165,6 +169,7 @@ export default async function RecipePage({
         title={recipe.title}
         servings={recipe.servings}
         lines={recipe.ingredientLines}
+        shoppingListServings={shoppingListServings}
       />
 
       <section className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4">
