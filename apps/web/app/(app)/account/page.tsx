@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AccountForms } from "@/components/account-forms";
 import { copy } from "@openrecipe/core/copy";
 import { requireUser } from "@/lib/session";
@@ -18,6 +20,10 @@ export default async function AccountPage() {
       </div>
 
       <AccountForms name={user.name} />
+
+      <Link href="/app" className="text-sm font-bold text-accent underline">
+        {copy.appDownload.title}
+      </Link>
     </main>
   );
 }

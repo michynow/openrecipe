@@ -373,6 +373,25 @@ export const copy = {
     ask: "Chcesz usłyszeć gwizdek, gdy szkic będzie gotowy? Zaraz zapytam telefon o zgodę na powiadomienia.",
   },
 
+  /** The Android APK: the public /app page, the account links and the share sheet text. */
+  appDownload: {
+    title: "Aplikacja na Androida",
+    pitch: "MC Kiełbas w kieszeni. Przepisy, gotowanie i szkice prosto z telefonu, bez sklepu z aplikacjami.",
+    download: "Pobierz APK",
+    iconAlt: "Ikona OpenRecipe",
+    stepsTitle: "Jak to zainstalować",
+    steps: [
+      "Pobierz plik APK przyciskiem powyżej.",
+      "Gdy Android zapyta, zezwól przeglądarce na „instalowanie nieznanych aplikacji”. To tylko ten jeden raz.",
+      "Otwórz pobrany plik i dotknij „Zainstaluj”.",
+      "Zaloguj się swoim kontem OpenRecipe. Nie masz konta? Poproś właściciela o zaproszenie.",
+    ],
+    share: "Udostępnij",
+    shareApp: "Udostępnij aplikację",
+    shareMessage: "Ściągaj OpenRecipe na Androida, kuchnia już czeka:",
+    linkCopied: "Link skopiowany!",
+  },
+
   /** Sharing a page from another app (the phone's share sheet) into the park form. */
   share: {
     announce: "Mam twój link! Dotknij „Odłóż na później”, a kuchnia się nim zajmie.",

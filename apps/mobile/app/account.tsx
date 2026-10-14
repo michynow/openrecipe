@@ -1,6 +1,6 @@
 import { copy } from "@openrecipe/core/copy";
 import { useCallback, useEffect, useState } from "react";
-import { AppState, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { AppState, Pressable, ScrollView, Share, Switch, Text, View } from "react-native";
 
 import { AccountScreenBody } from "../components/account/forms";
 import { ArcadeButton } from "../components/ui/button";
@@ -76,6 +76,14 @@ export default function Account() {
         <AccountScreenBody name={me.data?.name ?? ""} />
         <ThemeChoice />
         {me.data?.isAdmin === true ? <PushChoice /> : null}
+        <ArcadeButton
+          label={copy.appDownload.shareApp}
+          tone="surface"
+          onPress={() => {
+            const url = `${process.env.EXPO_PUBLIC_API_URL}/app`;
+            Share.share({ message: `${copy.appDownload.shareMessage} ${url}`, url });
+          }}
+        />
         <ArcadeButton label={copy.nav.signOut} tone="surface" onPress={() => signOut()} />
       </ScrollView>
     </Screen>
