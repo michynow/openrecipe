@@ -14,12 +14,15 @@ export const pantryKey = (recipeId: string) => KEY_PREFIX + recipeId;
 /**
  * The local calendar day, "2026-07-27".
  *
- * sv-SE because its locale format happens to be the ISO one; `toISOString` would
- * give the UTC day, which in Poland rolls over two hours early and would wipe a
- * late-evening shopping list before the shopping happened.
+ * Built by hand from the local date parts. `toISOString` would give the UTC day,
+ * which in Poland rolls over two hours early and would wipe a late-evening
+ * shopping list before the shopping happened; a locale trick ("sv-SE") depends
+ * on ICU data the phone's Hermes engine may not ship.
  */
 export function today(): string {
-  return new Date().toLocaleDateString("sv-SE");
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 /**
