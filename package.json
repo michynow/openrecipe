@@ -13,6 +13,7 @@
     "db:generate": "pnpm --filter web db:generate",
     "db:migrate": "pnpm --filter web db:migrate",
     "db:seed": "pnpm --filter web db:seed",
-    "bootstrap-master": "pnpm --filter web bootstrap-master"
+    "bootstrap-master": "pnpm --filter web bootstrap-master",
+    "build-mobile": "pnpm --filter mobile build:android"
   }
 }
