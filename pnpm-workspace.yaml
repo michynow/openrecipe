@@ -5,3 +5,11 @@ packages:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+
+# react-native-css-interop's babel preset (NativeWind) names this plugin but
+# doesn't declare it, so it only resolved through pnpm's hoisting, which a clean
+# CI install doesn't guarantee. Declaring it makes the release bundle reliable.
+packageExtensions:
+  react-native-css-interop:
+    dependencies:
+      "@babel/plugin-transform-react-jsx": "^7.28.6"
