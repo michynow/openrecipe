@@ -1,6 +1,7 @@
 import type { RecipeDetail } from "@openrecipe/core/api";
 import { copy } from "@openrecipe/core/copy";
 import { count } from "@openrecipe/core/format";
+import { groupSections } from "@openrecipe/core/sections";
 import { formatScaledQuantity } from "@openrecipe/core/quantity";
 import { buildShoppingExport } from "@openrecipe/core/shopping-export";
 import * as Haptics from "expo-haptics";
@@ -12,13 +13,14 @@ import { useTokens } from "../../lib/theme";
 import { ArcadeButton } from "../ui/button";
 import { Card } from "../ui/card";
 import { Icon, IngredientSprite } from "../ui/pixel";
+import { AddToShoppingList } from "./add-to-shopping-list";
 import { SubstitutesSheet } from "./substitutes-sheet";
 
 /**
  * Servings stepper, Pantry Check, Shopping Export and Substitutes. All display
  * state: the Recipe is never rewritten, and the ticks stay on this phone (ADR-0004).
  */
-export function CookingPanel({ recipe }: { recipe: RecipeDetail }) {
+export function CookingPanel({ recipe, shoppingListServings }: { recipe: RecipeDetail; shoppingListServings: number | null }) {
   const { px } = useTokens();
   const [servings, setServings] = useState(recipe.servings);
   const [openLineId, setOpenLineId] = useState<string | null>(null);
@@ -47,7 +49,14 @@ export function CookingPanel({ recipe }: { recipe: RecipeDetail }) {
         {copy.recipe.pantryCheck} {checked.length > 0 && `(${checked.length}/${lines.length})`}
       </Text>
       <View>
-        {lines.map((line, i) => {
+        {groupSections(lines).map((group) => (
+          <View key={group.section ?? ""}>
+            {group.section !== null && (
+              <Text accessibilityRole="header" className="pb-1 pt-3 font-display text-lg uppercase text-text">
+                {group.section}
+              </Text>
+            )}
+            {group.items.map(({ line }, i) => {
           const isChecked = checked.includes(line.id);
           const measure = measureOf(line);
           return (
@@ -83,7 +92,9 @@ export function CookingPanel({ recipe }: { recipe: RecipeDetail }) {
               )}
             </View>
           );
-        })}
+            })}
+          </View>
+        ))}
       </View>
 
       <ArcadeButton
@@ -95,6 +106,8 @@ export function CookingPanel({ recipe }: { recipe: RecipeDetail }) {
           }).catch(() => {})
         }
       />
+
+      <AddToShoppingList recipeId={recipe.id} servings={servings} checked={checked} onList={shoppingListServings} />
 
       <SubstitutesSheet
         line={openLine}

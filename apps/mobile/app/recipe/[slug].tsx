@@ -49,7 +49,7 @@ export default function RecipeScreen() {
     );
   }
 
-  const { recipe, cookLog } = data;
+  const { recipe, cookLog, shoppingListServings } = data;
   const duration = formatDuration(recipe.totalMinutes);
   const image = recipeImage(recipe.imageUrl);
   // Cached copy on screen, but the server could not be reached.
@@ -109,7 +109,7 @@ export default function RecipeScreen() {
 
       <KeepAwakeToggle />
 
-      <CookingPanel key={recipe.id} recipe={recipe} />
+      <CookingPanel key={recipe.id} recipe={recipe} shoppingListServings={shoppingListServings} />
 
       <Card className="gap-2 p-4">
         <Text className="font-display text-xl uppercase text-text">{copy.recipe.steps}</Text>

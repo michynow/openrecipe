@@ -75,6 +75,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen name="search" options={{ title: copy.nav.search, tabBarIcon: tabIcon("tags"), headerRight: help("search") }} />
+      <Tabs.Screen
+        name="shopping-list"
+        options={{ title: copy.nav.shoppingListShort, tabBarIcon: tabIcon("cart"), headerRight: help("shoppingList") }}
+      />
       {/* Members never see these; the server refuses them anyway. */}
       <Tabs.Screen
         name="drafts"
