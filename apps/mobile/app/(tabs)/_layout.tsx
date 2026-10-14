@@ -1,8 +1,10 @@
 import { copy } from "@openrecipe/core/copy";
 import type { IconName } from "@openrecipe/core/icons";
+import type { HelpTopic } from "@openrecipe/core/help";
 import { Tabs, useRouter, type Href } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { HelpButton } from "../../components/ui/help-button";
 import { Icon } from "../../components/ui/pixel";
 import { useIsAdmin } from "../../lib/hooks/admin";
 import { useTokens } from "../../lib/theme";
@@ -12,11 +14,18 @@ const tabIcon = (name: IconName) =>
     return <Icon name={name} size={24} tone={focused ? "accent" : "muted"} />;
   };
 
+const help = (topic: HelpTopic) => () => (
+  <View className="mr-3">
+    <HelpButton topic={topic} />
+  </View>
+);
+
 /** Home's header: add a Recipe (admin) and the account screen (everyone). */
 function HomeHeaderRight({ admin }: { admin: boolean }) {
   const router = useRouter();
   return (
     <View className="mr-3 flex-row items-center gap-2">
+      <HelpButton topic="dashboard" />
       {admin ? (
         <Pressable
           accessibilityRole="button"
@@ -32,7 +41,7 @@ function HomeHeaderRight({ admin }: { admin: boolean }) {
         accessibilityRole="button"
         accessibilityLabel={copy.nav.account}
         onPress={() => router.push("/account" as Href)}
-        className="min-h-11 justify-center rounded-input border-2 border-line bg-surface px-3"
+        className="min-h-11 justify-center rounded-input border-2 border-ink bg-gold px-3"
       >
         <Text className="font-bold text-sm text-ink">{copy.nav.account}</Text>
       </Pressable>
@@ -65,15 +74,15 @@ export default function TabsLayout() {
           headerRight: () => <HomeHeaderRight admin={admin} />,
         }}
       />
-      <Tabs.Screen name="search" options={{ title: copy.nav.search, tabBarIcon: tabIcon("tags") }} />
+      <Tabs.Screen name="search" options={{ title: copy.nav.search, tabBarIcon: tabIcon("tags"), headerRight: help("search") }} />
       {/* Members never see these; the server refuses them anyway. */}
       <Tabs.Screen
         name="drafts"
-        options={{ title: copy.nav.drafts, tabBarIcon: tabIcon("link"), href: admin ? undefined : null }}
+        options={{ title: copy.nav.drafts, tabBarIcon: tabIcon("link"), href: admin ? undefined : null, headerRight: help("drafts") }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: copy.nav.settings, tabBarIcon: tabIcon("basics"), href: admin ? undefined : null }}
+        options={{ title: copy.nav.settings, tabBarIcon: tabIcon("basics"), href: admin ? undefined : null, headerRight: help("settings") }}
       />
     </Tabs>
   );

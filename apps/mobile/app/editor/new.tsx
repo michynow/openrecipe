@@ -2,10 +2,11 @@ import { copy } from "@openrecipe/core/copy";
 import { emptyRecipe, httpUrlSchema } from "@openrecipe/core/recipe-schema";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 
 import { ParkForm } from "../../components/drafts/park-form";
 import { RecipeEditor } from "../../components/editor/recipe-editor";
+import { HelpButton } from "../../components/ui/help-button";
 import { AdminGateView, useAdminGate } from "../../components/ui/admin-gate";
 import { StateView } from "../../components/ui/state-view";
 import { useCreateRecipe } from "../../lib/hooks/editor";
@@ -31,7 +32,7 @@ export default function NewRecipe() {
 
   return (
     <>
-      <Stack.Screen options={{ title: copy.editor.newTitle }} />
+      <Stack.Screen options={{ title: copy.editor.newTitle, headerRight: () => <View className="mr-1"><HelpButton topic="newRecipe" /></View> }} />
       <RecipeEditor
         heading={copy.editor.newTitle}
         tagGroups={tags.data}

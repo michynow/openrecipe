@@ -271,6 +271,13 @@ export const copy = {
       expired:
         "Czekał w kolejce ponad 3 dni i kuchnia go nie ruszyła. Spróbuj jeszcze raz, kiedy worker będzie działał.",
     },
+    /** Android push when the Worker finishes a Draft. MC Kiełbas, one beat. */
+    push: {
+      readyTitle: "Szkic gotowy do degustacji!",
+      readyBody: (title: string) => `„${title}” czeka na Twój werdykt. Do dzieła, szefie!`,
+      failedTitle: "Kuchnia się przypaliła",
+      failedBody: "Ten link nie dał rady. Zerknij, co poszło nie tak.",
+    },
     /**
      * A Draft's log (expandable on the Drafts screen). Written by the app and by
      * the Worker; every line says what happened in plain Polish, with the
@@ -353,6 +360,7 @@ export const copy = {
 
   account: {
     title: "Konto",
+    theme: { title: "Motyw", system: "Jak w systemie", light: "Jasny", dark: "Ciemny" },
     profile: "Profil",
     save: "Zapisz",
     saved: "Zapisane.",

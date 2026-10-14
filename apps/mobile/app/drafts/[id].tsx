@@ -8,6 +8,7 @@ import { Alert, Linking, Text, View } from "react-native";
 import { GuessedChip } from "../../components/editor/fields";
 import { RecipeEditor } from "../../components/editor/recipe-editor";
 import { ReimportDiff } from "../../components/editor/reimport-diff";
+import { HelpButton } from "../../components/ui/help-button";
 import { AdminGateView, useAdminGate } from "../../components/ui/admin-gate";
 import { StateView } from "../../components/ui/state-view";
 import { ArcadeButton } from "../../components/ui/button";
@@ -60,7 +61,9 @@ export default function DraftReview() {
 
   return (
     <>
-      <Stack.Screen options={{ title: reimport ? copy.imports.reviewChangesTitle : copy.imports.reviewTitle }} />
+      <Stack.Screen
+        options={{ title: reimport ? copy.imports.reviewChangesTitle : copy.imports.reviewTitle, headerRight: () => <View className="mr-1"><HelpButton topic="draft" /></View> }}
+      />
       <RecipeEditor
         heading={reimport ? copy.imports.reviewChangesTitle : copy.imports.reviewTitle}
         tagGroups={tags}

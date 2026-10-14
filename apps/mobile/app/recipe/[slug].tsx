@@ -8,6 +8,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Text, View } 
 import { CookingPanel } from "../../components/recipe/cooking-panel";
 import { CookLog } from "../../components/recipe/cook-log";
 import { KeepAwakeToggle } from "../../components/recipe/keep-awake-toggle";
+import { HelpButton } from "../../components/ui/help-button";
 import { ArcadeButton } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Icon } from "../../components/ui/pixel";
@@ -57,7 +58,12 @@ export default function RecipeScreen() {
   return (
     <ScrollView className="flex-1 bg-bg" contentContainerClassName="gap-5 px-4 py-4 pb-12">
       <Stack.Screen
-        options={{ title: recipe.title, headerRight: isAdmin ? () => <AdminActions recipe={recipe} /> : undefined }}
+        options={{ title: recipe.title, headerRight: () => (
+            <View className="flex-row items-center gap-2">
+              <HelpButton topic="recipe" />
+              {isAdmin ? <AdminActions recipe={recipe} /> : null}
+            </View>
+          ), }}
       />
 
       {stale && <Text className="text-sm text-muted">{copy.common.offline}</Text>}

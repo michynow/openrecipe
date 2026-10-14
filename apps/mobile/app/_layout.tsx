@@ -23,6 +23,7 @@ import { useIsAdmin } from "../lib/hooks/admin";
 import { authClient, getCookie } from "../lib/auth";
 import { persistOptions, queryClient } from "../lib/query-client";
 import { cssVars, useTokens } from "../lib/theme";
+import { applyStoredTheme } from "../lib/theme-pref";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -89,6 +90,11 @@ export default function RootLayout() {
   const [fontsReady, fontError] = useFonts({ Baloo2_800ExtraBold, Nunito_600SemiBold, Nunito_800ExtraBold });
   const { scheme } = useTokens();
   const offline = useNetworkState().isConnected === false;
+
+  // The saved Light/Dark/System choice overrides the OS appearance; useTokens follows it.
+  useEffect(() => {
+    applyStoredTheme();
+  }, []);
 
   // Polling and refetches pause in the background.
   useEffect(() => {

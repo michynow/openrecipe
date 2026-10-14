@@ -3,6 +3,8 @@ import { toFormValue } from "@openrecipe/core/recipe-schema";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 
 import { RecipeEditor } from "../../components/editor/recipe-editor";
+import { View } from "react-native";
+import { HelpButton } from "../../components/ui/help-button";
 import { AdminGateView, useAdminGate } from "../../components/ui/admin-gate";
 import { NotFound, StateView } from "../../components/ui/state-view";
 import { ApiError } from "../../lib/api";
@@ -32,7 +34,7 @@ export default function EditRecipe() {
 
   return (
     <>
-      <Stack.Screen options={{ title: copy.editor.editTitle }} />
+      <Stack.Screen options={{ title: copy.editor.editTitle, headerRight: () => <View className="mr-1"><HelpButton topic="editRecipe" /></View> }} />
       <RecipeEditor
         key={recipe.data.recipe.id}
         heading={copy.editor.editTitle}
