@@ -1,7 +1,11 @@
 import { copy } from "@openrecipe/core/copy";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 
+import { ArcadeButton } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Kielbas } from "../components/ui/kielbas";
+import { Screen } from "../components/ui/screen";
 import { authClient } from "../lib/auth";
 
 export default function Login() {
@@ -27,45 +31,49 @@ export default function Login() {
     // On success useSession() updates and the layout gate redirects.
   }
 
+  const input =
+    "min-h-11 rounded-input border-2 border-line bg-surface px-3 py-2 font-body text-base text-text";
+
   return (
-    <View className="flex-1 justify-center gap-4 bg-bg p-6">
-      <Text className="text-3xl font-bold uppercase text-text">{copy.auth.title}</Text>
+    <Screen>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 justify-center p-6">
+        <View className="items-center">
+          <Kielbas size={96} />
+        </View>
+        <Text className="mb-4 text-center font-display text-3xl uppercase text-text">{copy.auth.title}</Text>
+        <Card className="gap-3 p-4">
+          <Text className="font-bold text-sm text-text">{copy.auth.email}</Text>
+          <TextInput
+            className={input}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+          />
 
-      <Text className="text-sm text-muted">{copy.auth.email}</Text>
-      <TextInput
-        className="rounded-input border-2 border-line bg-surface px-3 py-2 text-text"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-      />
+          <Text className="font-bold text-sm text-text">{copy.auth.password}</Text>
+          <TextInput
+            className={input}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="password"
+          />
 
-      <Text className="text-sm text-muted">{copy.auth.password}</Text>
-      <TextInput
-        className="rounded-input border-2 border-line bg-surface px-3 py-2 text-text"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoComplete="password"
-      />
+          {error ? <Text className="font-bold text-accent">{error}</Text> : null}
 
-      {error ? <Text className="text-accent">{error}</Text> : null}
+          <ArcadeButton
+            label={pending ? copy.auth.signingIn : copy.auth.signIn}
+            onPress={submit}
+            disabled={pending}
+            tone="accent"
+          />
 
-      <Pressable
-        onPress={submit}
-        disabled={pending}
-        className="items-center rounded-input border-2 border-line bg-accent py-3"
-      >
-        <Text className="font-bold text-accent-ink">
-          {pending ? copy.auth.signingIn : copy.auth.signIn}
-        </Text>
-      </Pressable>
-
-      {/* TODO(phase2): Google via authClient.signIn.social({ provider: "google", callbackURL: "/" }) */}
-      <Pressable disabled className="items-center rounded-input border-2 border-line bg-fill py-3 opacity-50">
-        <Text className="text-text">{copy.auth.google}</Text>
-      </Pressable>
-    </View>
+          {/* TODO(phase2): Google via authClient.signIn.social({ provider: "google", callbackURL: "/" }) */}
+          <ArcadeButton label={copy.auth.google} onPress={() => {}} tone="surface" disabled />
+        </Card>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }

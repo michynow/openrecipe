@@ -1,28 +1,38 @@
 /**
- * Palette tokens mirror apps/web/app/globals.css (Snack Arcade, light mode).
- * Hex lives only here; components use the names. Phase 2 does dark mode and the look.
+ * Tokens come from lib/palette.js. Colours that change at night are CSS variables
+ * set on the root view (`vars()` in app/_layout.tsx); the rest are fixed.
  */
+const { fixed, facet } = require("./lib/palette.js");
+
+const themed = (name) => `rgb(var(--color-${name}) / <alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./app/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
-        bg: "#fff1c9",
-        surface: "#fffaf0",
-        line: "#1d1033",
-        fill: "#ffe0a3",
-        gold: "#ffc61a",
-        ink: "#1d1033",
-        sausage: "#c0492b",
-        leaf: "#3fae49",
-        sky: "#59b8e8",
-        accent: "#c0221a",
-        "accent-ink": "#ffffff",
-        accent2: "#7a2bc9",
-        text: "#1d1033",
-        muted: "#5b4a6e",
+        ...fixed,
+        bg: themed("bg"),
+        surface: themed("surface"),
+        line: themed("line"),
+        fill: themed("fill"),
+        accent: themed("accent"),
+        "accent-ink": themed("accent-ink"),
+        accent2: themed("accent2"),
+        text: themed("text"),
+        muted: themed("muted"),
+        "facet-meal": facet.meal,
+        "facet-cuisine": facet.cuisine,
+        "facet-diet": facet.diet,
+        "facet-effort": facet.effort,
+        "facet-vibe": facet.vibe,
+      },
+      fontFamily: {
+        display: ["Baloo2_800ExtraBold"],
+        body: ["Nunito_600SemiBold"],
+        bold: ["Nunito_800ExtraBold"],
       },
       borderRadius: { card: "20px", input: "14px" },
     },

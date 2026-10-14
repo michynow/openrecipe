@@ -1,7 +1,8 @@
 import type { Api, ApiErrorCode, Endpoint } from "@openrecipe/core/api";
 import { useQuery } from "@tanstack/react-query";
 
-import { API_URL, authClient, getCookie } from "./auth";
+import { API_URL, getCookie } from "./auth";
+import { signOut } from "./sign-out";
 import { buildUrl } from "./url";
 
 export class ApiError extends Error {
@@ -37,7 +38,7 @@ export async function api<E extends Endpoint>(
   if (!res.ok) {
     const json = (await res.json().catch(() => null)) as { error?: ApiErrorCode } | null;
     // Dead session: clearing it lets the layout gate send the user to /login.
-    if (res.status === 401) await authClient.signOut().catch(() => {});
+    if (res.status === 401) await signOut();
     throw new ApiError(res.status, json?.error ?? null);
   }
   return (await res.json()) as Api[E]["res"];
