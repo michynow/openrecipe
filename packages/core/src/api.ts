@@ -197,6 +197,13 @@ export type Api = {
   "DELETE /api/v1/cook-log/:entryId": { body: never; res: Ok };
   /** admin. Re-import from the Recipe's Source URL (OR-46). */
   "POST /api/v1/recipes/:id/reimport": { body: never; res: Ok };
+  /**
+   * admin. Upload a Recipe image: the body is the raw bytes (not JSON), with
+   * Content-Type image/jpeg|png|webp, at most IMAGE_RULES.maxBytes. Returns the
+   * Blob URL to put in the form's `imageUrl`. The phone calls it with its own
+   * fetch, not `api()`, which always sends JSON.
+   */
+  "POST /api/v1/images": { body: never; res: { url: string } };
   /** admin. Drop an uploaded-then-abandoned blob. */
   "POST /api/v1/images/delete": { body: { url: string }; res: Ok };
 
