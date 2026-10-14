@@ -25,9 +25,10 @@ import { shoppingListSchemas as s } from "@/lib/shopping-list-schemas";
  * screen re-renders the truth instead of an error page.
  */
 
-/** The Recipe page is dynamic and reads its "on the list" state per request; only the list is cached. */
+/** The list, and every Recipe page — each shows whether it is on the list. */
 async function done(ok: boolean): Promise<ShoppingListResult> {
   revalidatePath("/shopping-list");
+  revalidatePath("/recipes/[slug]", "page");
   return { ok, list: await getShoppingList() };
 }
 
@@ -62,18 +63,12 @@ export async function removeFromShoppingListAction(recipeId: string): Promise<Sh
   return done(await removeFromShoppingList(recipeId));
 }
 
-export async function tickShoppingItemAction(input: {
-  key: string;
-  quantity: number | null;
-  ticked: boolean;
-}): Promise<ShoppingListResult> {
+export async function tickShoppingItemAction(input: { key: string; ticked: boolean }): Promise<ShoppingListResult> {
   const user = await requireUser();
   const parsed = s.tick.safeParse(input);
   if (!parsed.success) return done(false);
 
-  const { key, quantity, ticked } = parsed.data;
-  await tickShoppingItem(key, quantity, ticked, user.id);
-  return done(true);
+  return done(await tickShoppingItem(parsed.data.key, parsed.data.ticked, user.id));
 }
 
 export async function clearShoppingListAction(scope: "ticked" | "all"): Promise<ShoppingListResult> {

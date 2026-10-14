@@ -18,6 +18,10 @@ instance, stored in Postgres, shared by everyone signed in.
   are summed after scaling; the same item in different units stays as separate rows
   under one product heading (no unit conversion — PRD §2); null-quantity ("do smaku")
   lines of one item merge into one unquantified row. Each row lists its Recipes.
+- A tick is refused unless its key is a row of the current list, and it stores
+  the server's merged quantity, not the client's. Ticks no row needs are pruned
+  when a Recipe is removed or the list is cleared, so the table stays the size
+  of the list.
 - A tick holds while the needed quantity is no more than what was ticked. Adding a
   second Recipe that needs more milk un-ticks the milk — you bought 500 ml, you now
   need a litre.
@@ -31,6 +35,9 @@ The Shopping List is a second exception: it is household logistics, not library
 content. Nothing a Member does to it changes a Recipe, a Tag or anyone's account,
 and the person doing the shopping is as likely to be a Member as an Admin. Every
 Shopping List action and endpoint uses `requireUser` / `guard("user")`.
+That includes "Wyczyść wszystko", which empties the list for everyone: it sits
+behind a confirm that says so, and a household that shares a fridge can
+re-add a Recipe in two taps. Not worth an Admin-only carve-out.
 
 ## Pantry Check: only unticked lines go on the list
 

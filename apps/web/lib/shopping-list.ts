@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { ingredientLine, recipe, shoppingListEntry, shoppingListTick } from "./db/schema.ts";
@@ -128,41 +128,65 @@ export async function setShoppingListServings(recipeId: string, servings: number
   return rows.length > 0;
 }
 
-/** False when it was not on the list. */
+/** False when it was not on the list. Ticks only it needed go with it. */
 export async function removeFromShoppingList(recipeId: string): Promise<boolean> {
   const rows = await db
     .delete(shoppingListEntry)
     .where(eq(shoppingListEntry.recipeId, recipeId))
     .returning({ id: shoppingListEntry.id });
+  if (rows.length > 0) await pruneTicks(await getShoppingList());
   return rows.length > 0;
 }
 
+const liveKeys = (list: ShoppingList) => list.groups.flatMap((group) => group.rows.map((row) => row.key));
+
 /**
- * Tick or untick a Shopping List Item. `quantity` is what the row showed —
- * the tick holds until the list needs more than that. Last write wins.
+ * Drop ticks no row of the list needs any more, so the tick table stays the
+ * size of the list. Called where rows can disappear (remove, clear), never on
+ * read — a GET stays a read.
  */
-export async function tickShoppingItem(
-  key: string,
-  quantity: number | null,
-  ticked: boolean,
-  userId: string,
-): Promise<void> {
+async function pruneTicks(list: ShoppingList): Promise<void> {
+  const keys = liveKeys(list);
+  await db
+    .delete(shoppingListTick)
+    .where(keys.length === 0 ? undefined : notInArray(shoppingListTick.key, keys));
+}
+
+/**
+ * Tick or untick a Shopping List Item. The quantity stored is the server's own
+ * merge of the row, not the client's word: the tick holds until the list needs
+ * more than that. False when no row of the current list has this key — a stale
+ * screen, or a key made up — so nothing is stored. Last write wins.
+ */
+export async function tickShoppingItem(key: string, ticked: boolean, userId: string): Promise<boolean> {
+  const row = (await getShoppingList()).groups
+    .flatMap((group) => group.rows)
+    .find((candidate) => candidate.key === key);
+  if (!row) return false;
+
   if (!ticked) {
     await db.delete(shoppingListTick).where(eq(shoppingListTick.key, key));
-    return;
+    return true;
   }
 
-  const value = { quantity: quantity === null ? null : String(quantity), tickedById: userId, tickedAt: new Date() };
+  const value = {
+    quantity: row.quantity === null ? null : String(row.quantity),
+    tickedById: userId,
+    tickedAt: new Date(),
+  };
   await db
     .insert(shoppingListTick)
     .values({ key, ...value })
     .onConflictDoUpdate({ target: shoppingListTick.key, set: value });
+  return true;
 }
 
 /**
  * "Wyczyść odhaczone": every ticked row leaves the list — its key joins the
- * `excluded` of each Recipe it came from — and the ticks go. "all" empties both
- * tables. One batch, so a half-cleared list cannot happen.
+ * `excluded` of each Recipe it came from — and the ticks go, orphans included.
+ * The keys are merged into `excluded` inside the UPDATE, never read and written
+ * back, so a concurrent add cannot be overwritten. "all" empties both tables.
+ * One batch either way, so a half-cleared list cannot happen.
  */
 export async function clearShoppingList(scope: "ticked" | "all"): Promise<void> {
   if (scope === "all") {
@@ -172,7 +196,8 @@ export async function clearShoppingList(scope: "ticked" | "all"): Promise<void> 
 
   const list = await getShoppingList();
   const done = list.groups.flatMap((group) => group.rows.filter((row) => row.ticked));
-  if (done.length === 0) return;
+  const doneKeys = new Set(done.map((row) => row.key));
+  const keep = liveKeys(list).filter((key) => !doneKeys.has(key));
 
   const byRecipe = new Map<string, string[]>();
   for (const row of done) {
@@ -181,19 +206,22 @@ export async function clearShoppingList(scope: "ticked" | "all"): Promise<void> 
     }
   }
 
-  const entries = await db
-    .select({ recipeId: shoppingListEntry.recipeId, excluded: shoppingListEntry.excluded })
-    .from(shoppingListEntry)
-    .where(inArray(shoppingListEntry.recipeId, [...byRecipe.keys()]));
-
   await runAtomically([
-    ...entries.map((entry) =>
+    ...[...byRecipe].map(([recipeId, keys]) =>
       db
         .update(shoppingListEntry)
-        .set({ excluded: [...new Set([...entry.excluded, ...(byRecipe.get(entry.recipeId) ?? [])])] })
-        .where(eq(shoppingListEntry.recipeId, entry.recipeId)),
+        .set({
+          excluded: sql`(
+            select coalesce(jsonb_agg(distinct k), '[]'::jsonb)
+            from jsonb_array_elements_text(${shoppingListEntry.excluded} || ${JSON.stringify(keys)}::jsonb) as k
+          )`,
+        })
+        .where(eq(shoppingListEntry.recipeId, recipeId)),
     ),
-    db.delete(shoppingListTick).where(inArray(shoppingListTick.key, done.map((row) => row.key))),
+    // The ticked rows' ticks, and any tick no remaining row needs.
+    db
+      .delete(shoppingListTick)
+      .where(keep.length === 0 ? undefined : notInArray(shoppingListTick.key, keep)),
   ]);
 }
 

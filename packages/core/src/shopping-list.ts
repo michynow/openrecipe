@@ -171,3 +171,20 @@ export function buildShoppingListText(list: ShoppingList): string {
 
   return `${header}\n\n${bullets}${basket}${forWhat}`;
 }
+
+/** The list with one row's tick flipped — the optimistic update both clients show. */
+export function withTick(list: ShoppingList, key: string, ticked: boolean): ShoppingList {
+  return {
+    ...list,
+    groups: list.groups.map((group) => ({
+      ...group,
+      rows: group.rows.map((row) => (row.key === key ? { ...row, ticked } : row)),
+    })),
+  };
+}
+
+/** A row's amount as shown: "450 ml", "2", or "do smaku". */
+export const rowAmount = (row: Pick<ShoppingListItem, "quantity" | "unit">): string =>
+  row.quantity === null
+    ? copy.shoppingList.toTaste
+    : [formatScaledQuantity(row.quantity, 1), row.unit].filter(Boolean).join(" ");

@@ -12,6 +12,7 @@ export async function POST(request: Request) {
 
   const added = await addToShoppingList(body.recipeId, body.servings, body.excludedLineIds, user.id);
   revalidatePath("/shopping-list");
+  revalidatePath("/recipes/[slug]", "page");
 
   return ok("POST /api/v1/shopping-list/recipes", { ok: added, list: await getShoppingList() });
 }

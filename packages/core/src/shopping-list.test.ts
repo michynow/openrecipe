@@ -5,7 +5,9 @@ import {
   buildShoppingListText,
   mergeShoppingList,
   normalizeItem,
+  rowAmount,
   rowKey,
+  withTick,
   type ShoppingListSource,
 } from "./shopping-list.ts";
 
@@ -123,4 +125,17 @@ test("text export: empty and all-ticked lists say so", () => {
     buildShoppingListText(list),
     "Lista zakupów — 1 przepis\n\nWszystko w koszyku. Do kasy!\n\nNa: Ragu (4 porcje)",
   );
+});
+
+test("withTick flips one row only; rowAmount formats or says do smaku", () => {
+  const list = mergeShoppingList([ragu], []);
+  const key = list.groups[0].rows[0].key;
+  const next = withTick(list, key, true);
+  assert.equal(next.groups[0].rows[0].ticked, true);
+  assert.equal(next.groups[1].rows[0].ticked, false);
+  assert.equal(list.groups[0].rows[0].ticked, false, "the input is not mutated");
+
+  assert.equal(rowAmount({ quantity: 1.5, unit: "szklanki" }), "1½ szklanki");
+  assert.equal(rowAmount({ quantity: 2, unit: null }), "2");
+  assert.equal(rowAmount({ quantity: null, unit: null }), "do smaku");
 });

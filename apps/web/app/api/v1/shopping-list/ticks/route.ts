@@ -10,8 +10,8 @@ export async function POST(request: Request) {
   const body = await jsonBody(request, shoppingListSchemas.tick);
   if (body instanceof Response) return body;
 
-  await tickShoppingItem(body.key, body.quantity, body.ticked, user.id);
+  const ticked = await tickShoppingItem(body.key, body.ticked, user.id);
   revalidatePath("/shopping-list");
 
-  return ok("POST /api/v1/shopping-list/ticks", { ok: true, list: await getShoppingList() });
+  return ok("POST /api/v1/shopping-list/ticks", { ok: ticked, list: await getShoppingList() });
 }

@@ -15,9 +15,9 @@ export const shoppingListSchemas = {
   }),
   servings: z.object({ servings }),
   tick: z.object({
-    // A row key is item + unit; items are at most 80 chars, units 20.
+    // A row key is item + unit; items are at most 80 chars, units 20. Checked
+    // against the current list server-side; the quantity is the server's own.
     key: z.string().min(1).max(200),
-    quantity: z.number().min(0).max(10_000_000).nullable(),
     ticked: z.boolean(),
   }),
   clear: z.object({ scope: z.enum(["ticked", "all"]) }),

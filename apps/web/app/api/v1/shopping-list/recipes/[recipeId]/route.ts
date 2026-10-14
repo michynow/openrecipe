@@ -17,6 +17,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
   const changed = await setShoppingListServings(recipeId, body.servings);
   revalidatePath("/shopping-list");
+  revalidatePath("/recipes/[slug]", "page");
 
   return ok("PATCH /api/v1/shopping-list/recipes/:recipeId", { ok: changed, list: await getShoppingList() });
 }
@@ -30,6 +31,7 @@ export async function DELETE(request: Request, { params }: Ctx) {
 
   const removed = await removeFromShoppingList(recipeId);
   revalidatePath("/shopping-list");
+  revalidatePath("/recipes/[slug]", "page");
 
   return ok("DELETE /api/v1/shopping-list/recipes/:recipeId", { ok: removed, list: await getShoppingList() });
 }

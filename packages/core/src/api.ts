@@ -280,9 +280,12 @@ export type Api = {
   };
   "PATCH /api/v1/shopping-list/recipes/:recipeId": { body: { servings: number }; res: ShoppingListResult };
   "DELETE /api/v1/shopping-list/recipes/:recipeId": { body: never; res: ShoppingListResult };
-  /** `key` and `quantity` straight from the ShoppingListItem on screen. */
+  /**
+   * `key` from the ShoppingListItem on screen. The server stores its own merged
+   * quantity with the tick; `ok: false` = no current row has that key.
+   */
   "POST /api/v1/shopping-list/ticks": {
-    body: { key: string; quantity: number | null; ticked: boolean };
+    body: { key: string; ticked: boolean };
     res: ShoppingListResult;
   };
   /** "ticked": drop ticked rows from the list; "all": empty it. */

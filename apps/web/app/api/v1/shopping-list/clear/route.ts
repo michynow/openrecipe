@@ -12,6 +12,7 @@ export async function POST(request: Request) {
 
   await clearShoppingList(body.scope);
   revalidatePath("/shopping-list");
+  revalidatePath("/recipes/[slug]", "page");
 
   return ok("POST /api/v1/shopping-list/clear", { ok: true, list: await getShoppingList() });
 }
