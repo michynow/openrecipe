@@ -16,7 +16,12 @@ import type { DraftLogEntry, DraftPulse, DraftStage, DraftStatus } from "./draft
 import type { RecipeFormValue, RecipeInput } from "./recipe-schema.ts";
 import type { ChipTag, Facet } from "./tags.ts";
 
-export type Iso = string;
+/**
+ * An ISO 8601 timestamp. Branded so the server-side `Wire<T>` can widen exactly
+ * these fields to `Date` and leave every other string alone. Still a string at
+ * runtime and assignable to `string`; `new Date(iso)` reads it.
+ */
+export type Iso = string & { readonly __brand: "Iso" };
 
 export type ApiErrorCode = "unauthorised" | "forbidden" | "not-found" | "bad-request";
 export type ApiError = { error: ApiErrorCode; issues?: unknown };
