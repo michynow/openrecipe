@@ -63,3 +63,6 @@ export function imageSrc(url: string | null): string | null {
 
   return `/api/image/${pathname.split("/").map(encodeURIComponent).join("/")}`;
 }
+
+/** PRD §8 uses 1200w for the Worker's images; hand- and phone-uploaded ones match. */
+export const MAX_IMAGE_WIDTH = 1200;

@@ -179,9 +179,8 @@ Guessed fields: `guessedFields(inferred)` marks fields with the
    This uses the Android system photo picker, so no permission is needed. A
    camera option is welcome but optional; if you add one, tell B the
    permission string to put in `app.json`.
-2. Resize with `expo-image-manipulator`: fit to 1200 px wide (core
-   `MAX_IMAGE_WIDTH` lives in web `lib/image-resize.ts`, so copy the constant
-   1200 with a comment). Never upscale. Encode WebP at 0.85.
+2. Resize with `expo-image-manipulator`: fit to `MAX_IMAGE_WIDTH` from
+   `@openrecipe/core/blob` (1200 px, shared with web and the Worker). Never upscale. Encode WebP at 0.85.
 3. Check with core `checkImage({ type, size })` before uploading. Show its
    message on failure.
 4. Upload with **`POST /api/v1/images`**: body is the raw bytes,

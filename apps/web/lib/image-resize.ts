@@ -6,8 +6,9 @@
  * (Phase 4) — different entry point, same 1200px target.
  */
 
-/** PRD §8 uses 1200w for the Worker's images; hand-uploaded ones match. */
-export const MAX_IMAGE_WIDTH = 1200;
+import { MAX_IMAGE_WIDTH } from "@openrecipe/core/blob";
+
+export { MAX_IMAGE_WIDTH };
 
 const OUTPUT_TYPE = "image/webp";
 const OUTPUT_QUALITY = 0.85;
