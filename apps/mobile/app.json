@@ -8,15 +8,33 @@
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "app.openrecipe.android",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-monochrome.png",
+        "backgroundColor": "#fff1c9"
+      }
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#fff1c9",
+          "dark": {
+            "backgroundColor": "#1a1030"
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
-          "defaultChannel": "drafts"
+          "defaultChannel": "drafts",
+          "icon": "./assets/notification-icon.png",
+          "color": "#c0221a"
         }
       ],
       [
@@ -31,6 +49,7 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }
