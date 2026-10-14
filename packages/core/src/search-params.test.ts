@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   parseSearchFilters,
+  searchApiQuery,
   searchFiltersToQuery,
   searchHref,
   toggleTag,
@@ -105,4 +106,17 @@ test("toggling a Tag adds it, then removes it, and leaves the rest alone", () =>
   const two = toggleTag(one, "lunch");
   assert.deepEqual(two.tagSlugs, ["vegan", "lunch"]);
   assert.deepEqual(toggleTag(two, "vegan").tagSlugs, ["lunch"]);
+});
+
+test("searchApiQuery keeps repeated tags as an array and adds the cursor", () => {
+  assert.deepEqual(searchApiQuery("q=jajka&tag=a&tag=b&img=1", "c1"), {
+    q: "jajka",
+    tag: ["a", "b"],
+    img: "1",
+    cursor: "c1",
+  });
+});
+
+test("searchApiQuery on browse with no cursor is empty", () => {
+  assert.deepEqual(searchApiQuery("", null), {});
 });

@@ -136,3 +136,19 @@ export function toggleTag(filters: SearchFilters, slug: string): SearchFilters {
       : [...filters.tagSlugs, slug],
   };
 }
+
+/**
+ * The /api/v1/search query for one page: the canonical string from
+ * `searchFiltersToQuery`, as the record the phone's API client takes (repeated
+ * keys stay arrays), plus the opaque `cursor`.
+ */
+export function searchApiQuery(qs: string, cursor: string | null): Record<string, string | string[]> {
+  const params = new URLSearchParams(qs);
+  const query: Record<string, string | string[]> = {};
+  for (const key of new Set(params.keys())) {
+    const all = params.getAll(key);
+    query[key] = all.length === 1 ? all[0] : all;
+  }
+  if (cursor) query.cursor = cursor;
+  return query;
+}

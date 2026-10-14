@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { copy } from "@openrecipe/core/copy";
 import type { DashboardStats } from "@/lib/dashboard-query";
-import { count, formatNumber, plural } from "@openrecipe/core/format";
+import { count, formatNumber } from "@openrecipe/core/format";
 
 /**
  * The dashboard's numbers (OR-47).
@@ -61,7 +61,7 @@ export function StatWidgets({ stats }: { stats: DashboardStats }) {
           detail={
             stats.neglected.days === null
               ? copy.dashboard.neverCooked
-              : `${stats.neglected.days} ${plural(stats.neglected.days, copy.units.days)} temu`
+              : `${count(stats.neglected.days, copy.units.days)} ${copy.dashboard.ago}`
           }
           href={`/recipes/${stats.neglected.slug}`}
           wide

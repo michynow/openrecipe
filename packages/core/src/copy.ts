@@ -186,6 +186,8 @@ export const copy = {
     addedThisWeek: "Nowe w tym tygodniu",
     cookedThisWeek: "Ugotowane w tym tygodniu",
     neverCooked: "jeszcze nigdy",
+    /** "40 dni temu" — the neglected tile's age, after a counted noun. */
+    ago: "temu",
   },
 
   /** Parking a link, and the Drafts screen (OR-39, OR-45). */
