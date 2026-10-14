@@ -7,6 +7,7 @@ import {
   extractFromHtml,
   findRecipeNode,
   instructionLines,
+  ingredientEntries,
   isoDurationToMinutes,
   readableText,
   sectionName,
@@ -59,11 +60,11 @@ test("skips a malformed block and flattens HowToSection groups", () => {
   assert.equal(page.totalMinutes, 45);
   // Headings smuggled into recipeIngredient become Sections, not ingredients.
   assert.deepEqual(page.ingredients, [
-    { text: "sól", section: null },
+    { text: "1 szczypta soli", section: null },
     { text: "500 g dyni", section: "Baza" },
     { text: "1 l bulionu", section: "Baza" },
     { text: "100 ml śmietanki", section: "Do podania" },
-    { text: "pestki dyni", section: "Posypka" },
+    { text: "2 łyżki pestek dyni", section: "Posypka" },
   ]);
   // Section headings are not instructions; their steps are, in order.
   assert.deepEqual(page.instructions, [
@@ -170,4 +171,47 @@ test("section names: 'Składniki na X' is X, bare 'Składniki' is nothing", () =
   assert.equal(sectionName("Składniki na 4 porcje"), null);
   assert.equal(sectionName("SKŁADNIKI"), null);
   assert.equal(sectionName("--- Sos ---"), "Sos");
+});
+
+test("heading-looking entries stay ingredients unless a quantified line follows", () => {
+  const long = "Świeżo mielony czarny pieprz z młynka albo z moździerza, do smaku:";
+  const entries = ingredientEntries([
+    "SÓL",
+    "pieprz",
+    "<b>oliwa</b>",
+    "natka pietruszki:",
+    long,
+    "1 cebula",
+    "SOS",
+    "2 pomidory",
+    "BAZYLIA",
+  ]);
+  assert.deepEqual(
+    entries.map((e) => [e.section, e.text]),
+    [
+      [null, "SÓL"],
+      [null, "pieprz"],
+      [null, "oliwa"],
+      [null, "natka pietruszki:"],
+      // Over 60 characters: never a Section name, never dropped.
+      [null, long],
+      [null, "1 cebula"],
+      ["SOS", "2 pomidory"],
+      // Last entry: nothing quantified follows, so it is an ingredient.
+      ["SOS", "BAZYLIA"],
+    ],
+  );
+});
+
+test("a bold quantity in the markup is not a Section", () => {
+  const html =
+    "<h3>Ciasto</h3><ul><li>mąka</li><li><strong>1 cebula</strong></li><li>sól</li></ul>" +
+    "<h3>Sos</h3><ul><li>woda</li></ul>";
+  // "cebula drobno" matches no <li>, so the bold "1 cebula" is seen only as a heading candidate.
+  assert.deepEqual(sectionsFromMarkup(html, ["mąka", "cebula drobno", "sól", "woda"]), [
+    "Ciasto",
+    "Ciasto",
+    "Ciasto",
+    "Sos",
+  ]);
 });

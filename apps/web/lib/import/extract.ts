@@ -209,14 +209,21 @@ export function sectionName(raw: string): string | null {
   return text.length > 60 ? null : text;
 }
 
+/** Starts with a quantity: "2 jajka", "½ szklanki", "1,5 kg". */
+const QUANTIFIED = /^\s*[\d½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/;
+
 /**
  * Whether a `recipeIngredient` entry is really a heading. Sites with grouped
  * ingredients and no field for groups (schema.org has none) smuggle the group
  * names into the list: "Sos:", "--- Sos ---", "<strong>Sos</strong>", "SOS".
+ *
+ * Conservative, because a wrong guess deletes an ingredient: it must look like a
+ * heading, carry no number, fit a Section name, and be followed by an entry
+ * with a quantity — "SÓL" then "pieprz" is two ingredients, "SOS" then "2
+ * pomidory" is a heading. Anything else stays a line, editable in review.
  */
-function inlineHeading(raw: string, cleaned: string): string | null {
-  // A heading carries no quantity; "<b>1 cebula</b>" is an ingredient in bold.
-  if (/\d/.test(cleaned)) return null;
+function inlineHeading(raw: string, cleaned: string, next: string | undefined): string | null {
+  if (/\d/.test(cleaned) || cleaned.length > 60 || !next || !QUANTIFIED.test(next)) return null;
   const bold = /^\s*<(strong|b|h[1-6])[^>]*>[^<]+<\/\1>\s*$/i.test(raw);
   const colon = /:\s*$/.test(cleaned);
   const ruled = /^[-=*#_~]{2,}.+[-=*#_~]{2,}$/.test(cleaned);
@@ -227,19 +234,20 @@ function inlineHeading(raw: string, cleaned: string): string | null {
 
 /** Ingredient strings to entries, inline headings turned into Sections. */
 export function ingredientEntries(raw: readonly unknown[]): ExtractedIngredient[] {
+  const entries = raw
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => ({ raw: value, text: stripTags(value) }))
+    .filter((entry) => entry.text);
+
   const out: ExtractedIngredient[] = [];
   let section: string | null = null;
 
-  for (const value of raw) {
-    if (typeof value !== "string") continue;
-    const text = stripTags(value);
-    if (!text) continue;
-
-    const heading = inlineHeading(value, text);
+  entries.forEach(({ raw: value, text }, i) => {
+    const heading = inlineHeading(value, text, entries[i + 1]?.text);
     // "" is a heading that names no Section ("Składniki:") — it ends the current one.
     if (heading !== null) section = heading || null;
     else out.push({ text, section });
-  }
+  });
   return out;
 }
 
@@ -297,6 +305,9 @@ export function sectionsFromMarkup(html: string, ingredients: readonly string[])
       const parent = el.parent();
       if (parent.text().trim() !== el.text().trim() || matchedItems.has(parent.get(0))) return;
     }
+    // As for inline headings: a heading carries no quantity. "<li><strong>1
+    // cebula</strong></li>" is an ingredient the matcher missed, not a Section.
+    if (/\d/.test(el.text())) return;
     heading = sectionName(el.text());
   });
 
