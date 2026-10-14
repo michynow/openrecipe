@@ -38,8 +38,9 @@ jobs:
           cache: pnpm
 
       # Pulls the Linux build of the Claude binary via the Agent SDK's optional
-      # dependencies — nothing else to install.
-      - run: pnpm install --frozen-lockfile
+      # dependencies — nothing else to install. Only the web app and what it
+      # depends on: the mobile app's toolchain is no use to the Worker.
+      - run: pnpm install --frozen-lockfile --filter web...
 
       # `claude setup-token` prints the token wrapped over two lines, and a
       # copied line break makes it an invalid Authorization header. Strip all
