@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import type { Invite } from "@openrecipe/core/api";
 
-import { fail, jsonBody, uuid, type Wire } from "./api.ts";
+import { fail, jsonBody, readCapped, uuid, type Wire } from "./api.ts";
 
 const schema = z.object({ n: z.number() });
 const post = (body: string, type?: string) =>
@@ -67,3 +67,13 @@ export const wireAcceptsDateForIso: Wire<Invite> = {
 };
 // @ts-expect-error — `token` is a plain string, not Iso
 export const wireRejectsDateForString: Wire<Invite> = { ...wireAcceptsDateForIso, token: now };
+
+test("readCapped returns the body under the cap and null over it", async () => {
+  const body = (n: number, headers: Record<string, string> = {}) =>
+    new Request("http://x/api/v1/images", { method: "POST", body: new Uint8Array(n), headers });
+
+  assert.equal((await readCapped(body(10), 10))?.byteLength, 10);
+  assert.equal(await readCapped(body(11), 10), null);
+  // A lying Content-Length is refused before reading; a missing one is counted.
+  assert.equal(await readCapped(body(1, { "content-length": "999" }), 10), null);
+});

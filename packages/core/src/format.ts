@@ -104,6 +104,18 @@ export function formatDuration(minutes: number | null): string | null {
   return `${hours} h ${rest} min`;
 }
 
+/**
+ * A running clock for something waiting or working: "4:07" in the first hour,
+ * then "1 h 15 min", then "3 dni" (a link parked while the kitchen was shut can
+ * wait that long). `dayForms` is `copy.units.days`.
+ */
+export function formatElapsed(totalSeconds: number, dayForms: PluralForms): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  if (s >= 86_400) return count(Math.floor(s / 86_400), dayForms);
+  if (s >= 3_600) return formatDuration(Math.floor(s / 60)) ?? "";
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 const clockFormat = new Intl.DateTimeFormat("pl-PL", {
   timeZone: "Europe/Warsaw",
   day: "2-digit",

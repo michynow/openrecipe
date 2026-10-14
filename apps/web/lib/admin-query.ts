@@ -3,7 +3,7 @@ import { and, asc, count, eq, isNull, ne, sql } from "drizzle-orm";
 import { db } from "./db/index.ts";
 import { account, draft, recipeTag, session, tag, user } from "./db/schema.ts";
 import { effectiveRole, isMasterEmail, type Role } from "./roles.ts";
-import type { Facet } from "@openrecipe/core/tags";
+import { TAG_SLUG, type Facet } from "@openrecipe/core/tags";
 
 /**
  * The Master's screen (OR-50): who is in, what the taxonomy holds, what the
@@ -135,7 +135,6 @@ export async function listTagsWithUse(): Promise<TagRow[]> {
 }
 
 /** English, lowercase, hyphenated. What code and queries reference (ADR-0005). */
-const SLUG = /^[a-z][a-z0-9-]{1,39}$/;
 
 export type TagResult =
   | { ok: true }
@@ -149,7 +148,7 @@ export async function addTag(
   const cleanSlug = slug.trim().toLowerCase();
   const cleanLabel = label.trim();
 
-  if (!SLUG.test(cleanSlug) || cleanLabel.length === 0) {
+  if (!TAG_SLUG.test(cleanSlug) || cleanLabel.length === 0) {
     return { ok: false, reason: "slug" };
   }
 

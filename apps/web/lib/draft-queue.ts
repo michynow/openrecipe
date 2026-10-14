@@ -243,7 +243,7 @@ export async function approveDraft(
     .where(and(eq(draft.id, id), eq(draft.status, "ready")))
     .returning({ id: draft.id });
 
-  if (!claimed) return { ok: false, errors: [copy.imports.notReady] };
+  if (!claimed) return { ok: false, errors: [copy.imports.notReady], reason: "not-ready" };
 
   // Not a transition in the model: an undo of our own claim, guarded so it can
   // only ever undo a claim that never got its Recipe.

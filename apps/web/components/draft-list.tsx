@@ -11,7 +11,7 @@ import {
 import { copy } from "@openrecipe/core/copy";
 import type { DraftRow } from "@/lib/draft-queue";
 import { DRAFT_STAGES, type DraftLogEntry } from "@openrecipe/core/drafts";
-import { count, formatClock, formatRelativeDays } from "@openrecipe/core/format";
+import { formatClock, formatElapsed, formatRelativeDays } from "@openrecipe/core/format";
 
 /** How often the list re-asks the server while something is moving. */
 const REFRESH_MS = 2500;
@@ -287,9 +287,7 @@ function Elapsed({ since }: { since: Date }) {
   const now = useSyncExternalStore(subscribeToSeconds, nowSeconds, () => null);
   if (now === null) return null;
   const total = Math.max(0, now - Math.floor(since.getTime() / 1000));
-  if (total >= 86_400) return <>{count(Math.floor(total / 86_400), copy.units.days)}</>;
-  if (total >= 3_600) return <>{`${Math.floor(total / 3_600)} h ${Math.floor((total % 3_600) / 60)} min`}</>;
-  return <>{`${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`}</>;
+  return <>{formatElapsed(total, copy.units.days)}</>;
 }
 
 function subscribeToSeconds(onTick: () => void) {

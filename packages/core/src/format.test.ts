@@ -79,3 +79,13 @@ test("hand-rolled plural and relative time match Intl (Node has full ICU)", () =
     assert.equal(formatRelativeDays(Date.now() + d * DAY + DAY / 4), want, `d=${d}`);
   }
 });
+
+test("formatElapsed: m:ss, then hours, then days", async () => {
+  const { formatElapsed } = await import("./format.ts");
+  assert.equal(formatElapsed(0, copy.units.days), "0:00");
+  assert.equal(formatElapsed(247, copy.units.days), "4:07");
+  assert.equal(formatElapsed(3_600, copy.units.days), "1 h");
+  assert.equal(formatElapsed(4_500, copy.units.days), "1 h 15 min");
+  assert.equal(formatElapsed(3 * 86_400 + 5, copy.units.days), "3 dni");
+  assert.equal(formatElapsed(-5, copy.units.days), "0:00");
+});

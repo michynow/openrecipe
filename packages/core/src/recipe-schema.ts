@@ -65,6 +65,9 @@ const nullableHttpUrl = z.preprocess(
 );
 
 /** A stand-in for an Ingredient Line's item. Worker-generated, stored, not fetched. */
+/** Whether a value is an http(s) URL — the one check for "may this be opened as a link". */
+export const isHttpUrl = (value: unknown): value is string => httpUrlSchema.safeParse(value).success;
+
 export const substituteSchema = z.object({
   item: z.string().trim().min(1).max(80),
   note: nullableText(200),
@@ -131,6 +134,20 @@ export const IMAGE_RULES = {
   maxBytes: 5 * 1024 * 1024,
   mimeTypes: ["image/jpeg", "image/png", "image/webp"],
 } as const;
+
+/**
+ * What the bytes actually are, from their magic numbers, or null for anything
+ * that is not one of IMAGE_RULES' types. A declared Content-Type is the
+ * client's word; this is the file's.
+ */
+export function sniffImageType(bytes: Uint8Array): (typeof IMAGE_RULES.mimeTypes)[number] | null {
+  const at = (i: number, ...values: number[]) => values.every((v, k) => bytes[i + k] === v);
+  if (at(0, 0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (at(0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "image/png";
+  // "RIFF" <size> "WEBP"
+  if (at(0, 0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x45, 0x42, 0x50)) return "image/webp";
+  return null;
+}
 
 /** Returns a Polish error, or null when the image is acceptable. */
 export function checkImage(file: {

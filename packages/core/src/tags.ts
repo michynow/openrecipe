@@ -13,6 +13,12 @@ export const FACETS = ["meal_slot", "cuisine", "diet", "effort", "vibe"] as cons
 
 export type Facet = (typeof FACETS)[number];
 
+/**
+ * A Tag slug: English, lower-case, starts with a letter, 2–40 of a-z 0-9 and
+ * hyphens. The server enforces it (addTag); forms check it first.
+ */
+export const TAG_SLUG = /^[a-z][a-z0-9-]{1,39}$/;
+
 export type SeedTag = { facet: Facet; slug: string; label: string };
 
 /** A Tag as everything that renders one needs (components/tag-chip.tsx). */

@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 
-import { IMAGE_RULES } from "@openrecipe/core/recipe-schema";
-import { fail, guard, ok } from "@/lib/api";
+import { IMAGE_RULES, sniffImageType } from "@openrecipe/core/recipe-schema";
+import { fail, guard, ok, readCapped } from "@/lib/api";
 
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 
@@ -27,12 +27,16 @@ export async function POST(request: Request) {
     return fail(400, "bad-request", "content-type must be image/jpeg, image/png or image/webp");
   }
 
-  const bytes = await request.arrayBuffer();
-  if (bytes.byteLength === 0 || bytes.byteLength > IMAGE_RULES.maxBytes) {
+  const bytes = await readCapped(request, IMAGE_RULES.maxBytes);
+  if (!bytes || bytes.byteLength === 0) {
     return fail(400, "bad-request", "image is empty or too large");
   }
+  // The bytes must be what the header says: no HTML or script behind image/webp.
+  if (sniffImageType(bytes) !== type) {
+    return fail(400, "bad-request", "image content does not match its content-type");
+  }
 
-  const blob = await put(`recipe.${EXT[type]}`, bytes, {
+  const blob = await put(`recipe.${EXT[type]}`, Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength), {
     access: "private",
     contentType: type,
     addRandomSuffix: true,

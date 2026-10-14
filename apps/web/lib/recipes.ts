@@ -19,7 +19,8 @@ import { uniqueSlug } from "@openrecipe/core/slug";
 
 export type SaveResult =
   | { ok: true; slug: string; id: string }
-  | { ok: false; errors: string[] };
+  /** `reason` is for code to branch on; `errors` are Polish, for people. */
+  | { ok: false; errors: string[]; reason?: "not-ready" };
 
 /**
  * Resolve Tag slugs to ids, refusing anything not in the table.

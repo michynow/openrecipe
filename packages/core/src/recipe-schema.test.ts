@@ -171,3 +171,24 @@ test("toFormValue keeps what the editor edits and drops ids", async () => {
   assert.deepEqual(value.ingredientLines, [{ quantity: 1, unit: "l", item: "zakwas", note: null, substitutes: [] }]);
   assert.deepEqual(value.tagSlugs, ["soup"]);
 });
+
+test("sniffImageType reads magic bytes, not names", async () => {
+  const { sniffImageType } = await import("./recipe-schema.ts");
+  const b = (...n: number[]) => new Uint8Array(n);
+  assert.equal(sniffImageType(b(0xff, 0xd8, 0xff, 0xe0)), "image/jpeg");
+  assert.equal(sniffImageType(b(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)), "image/png");
+  assert.equal(sniffImageType(b(0x52, 0x49, 0x46, 0x46, 1, 2, 3, 4, 0x57, 0x45, 0x42, 0x50)), "image/webp");
+  // RIFF but not WEBP (a WAV), HTML, empty.
+  assert.equal(sniffImageType(b(0x52, 0x49, 0x46, 0x46, 1, 2, 3, 4, 0x57, 0x41, 0x56, 0x45)), null);
+  assert.equal(sniffImageType(new TextEncoder().encode("<html>")), null);
+  assert.equal(sniffImageType(b()), null);
+});
+
+test("isHttpUrl accepts http(s) only", async () => {
+  const { isHttpUrl } = await import("./recipe-schema.ts");
+  assert.equal(isHttpUrl("https://example.com/a"), true);
+  assert.equal(isHttpUrl("HTTP://example.com"), true);
+  for (const bad of ["javascript:alert(1)", "intent://x", "//example.com", "example.com", "", null]) {
+    assert.equal(isHttpUrl(bad), false, String(bad));
+  }
+});

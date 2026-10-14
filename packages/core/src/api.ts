@@ -97,7 +97,8 @@ export type FacetGroup = { facet: Facet; tags: { slug: string; label: string }[]
 
 export type SaveResult =
   | { ok: true; slug: string; id: string }
-  | { ok: false; errors: string[] };
+  /** `reason` is for code to branch on; `errors` are Polish, for people. */
+  | { ok: false; errors: string[]; reason?: "not-ready" };
 
 export type ParkResult =
   | { ok: true; id: string; alreadyQueued: boolean }

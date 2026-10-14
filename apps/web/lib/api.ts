@@ -60,6 +60,38 @@ export function uuid(value: string): string | Response {
   return isUuid(value) ? value : fail(404, "not-found");
 }
 
+/**
+ * The request body, or null once it passes `max` bytes. Stops reading there
+ * instead of buffering whatever a client chooses to send.
+ */
+export async function readCapped(request: Request, max: number): Promise<Uint8Array | null> {
+  const declared = Number(request.headers.get("content-length"));
+  if (declared > max) return null;
+  if (!request.body) return new Uint8Array();
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+
+  const out = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
+}
+
 export async function jsonBody<T>(
   request: Request,
   schema: ZodType<T>,
