@@ -47,7 +47,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   /**
    * Everything except Better Auth's own endpoints (which must stay reachable to
-   * sign in at all), Next internals, and static files.
+   * sign in at all), the JSON API (its handlers authorise themselves and answer
+   * 401, not an HTML redirect), Next internals, and static files.
    */
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|api/v1|_next/static|_next/image|favicon.ico).*)"],
 };

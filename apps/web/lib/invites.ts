@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { invite } from "./db/schema.ts";
@@ -135,4 +135,29 @@ export async function revokeInvite(id: string) {
     .update(invite)
     .set({ revokedAt: new Date() })
     .where(and(eq(invite.id, id), isNull(invite.usedAt)));
+}
+
+/**
+ * The Settings list: newest twenty.
+ *
+ * Expiry is decided by Postgres, not by comparing against `Date.now()` here.
+ * Two reasons: calling an impure function during render is a React rule
+ * violation, and more importantly `claimInvite` enforces expiry with the
+ * database's `now()` — using the same clock means the list can never disagree
+ * with what the claim will actually accept.
+ */
+export async function listInvites() {
+  return db
+    .select({
+      id: invite.id,
+      token: invite.token,
+      email: invite.email,
+      expiresAt: invite.expiresAt,
+      usedAt: invite.usedAt,
+      revokedAt: invite.revokedAt,
+      expired: sql<boolean>`${invite.expiresAt} <= now()`,
+    })
+    .from(invite)
+    .orderBy(desc(invite.createdAt))
+    .limit(20);
 }

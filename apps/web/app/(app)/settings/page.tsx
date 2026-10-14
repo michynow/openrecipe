@@ -1,4 +1,3 @@
-import { desc, sql } from "drizzle-orm";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,10 +9,9 @@ import {
   listMembers,
   listTagsWithUse,
 } from "@/lib/admin-query";
-import { db } from "@/lib/db";
-import { invite } from "@/lib/db/schema";
 import { copy } from "@openrecipe/core/copy";
 import { count, formatDate, formatRelativeDays } from "@openrecipe/core/format";
+import { listInvites } from "@/lib/invites";
 import { getCurrentUser } from "@/lib/session";
 import { FACETS } from "@openrecipe/core/tags";
 import {
@@ -36,26 +34,7 @@ export default async function SettingsPage() {
   const user = await getCurrentUser();
   if (!user?.isAdmin) notFound();
 
-  /**
-   * Expiry is decided by Postgres, not by comparing against `Date.now()` here.
-   * Two reasons: calling an impure function during render is a React rule
-   * violation, and more importantly `claimInvite` enforces expiry with the
-   * database's `now()` — using the same clock means the list can never disagree
-   * with what the claim will actually accept.
-   */
-  const invites = await db
-    .select({
-      id: invite.id,
-      token: invite.token,
-      email: invite.email,
-      expiresAt: invite.expiresAt,
-      usedAt: invite.usedAt,
-      revokedAt: invite.revokedAt,
-      expired: sql<boolean>`${invite.expiresAt} <= now()`,
-    })
-    .from(invite)
-    .orderBy(desc(invite.createdAt))
-    .limit(20);
+  const invites = await listInvites();
 
   const [members, tags, queue] = await Promise.all([
     listMembers(),
