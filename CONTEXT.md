@@ -21,6 +21,13 @@ itself, and an optional note. "2 tbsp butter, melted" is one Ingredient Line, no
 values in a string.
 _Avoid_: ingredient (ambiguous — the row or the foodstuff?), item
 
+**Section**:
+An optional heading over a run of a Recipe's Ingredient Lines — "Ciasto", "Sos", "Do
+podania". A name on the line, not a thing of its own: lines with the same Section sit
+together, ungrouped lines come first, and a Section with no lines does not exist.
+See ADR-0008.
+_Avoid_: component, group, part, subrecipe
+
 **Servings**:
 How many portions the Recipe's stored quantities produce. The number the reader picks
 on the page is a *display scale* over this, never written back to the Recipe.
@@ -72,7 +79,8 @@ _Avoid_: moderator, editor
 
 **Member**:
 Anyone who joined via an Invite. Read-only unless promoted to Admin: browses and
-cooks from Recipes, changes nothing shared — except logging their own Cook Log entries.
+cooks from Recipes, changes nothing shared — except logging their own Cook Log entries
+and using the Shopping List, which is household logistics, not library content.
 _Avoid_: guest, invitee, regular user
 
 **Draft**:
@@ -102,9 +110,22 @@ Lives in the browser only, expires after a day, and belongs to nobody in the dat
 _Avoid_: shopping list, checklist state, inventory
 
 **Shopping Export**:
-The formatted text of the *unticked* Ingredient Lines at the current display scale,
-handed to the clipboard or a share target.
+The formatted text of one Recipe's *unticked* Ingredient Lines at the current display
+scale, handed to the clipboard or a share target. Single-Recipe and never stored.
 _Avoid_: shopping list, grocery list
+
+**Shopping List**:
+The household's one shared list of what to buy, built from several Recipes, each at a
+chosen serving count. Stored on the server; anyone signed in — Members too — adds
+Recipes and ticks items (ADR-0009). Its rows are merged: the same item in the same
+unit is summed, the same item in another unit sits beside it, and every row names the
+Recipes it came from.
+_Avoid_: grocery list, cart, basket, shopping export
+
+**Shopping List Item**:
+One merged row of the Shopping List: an item, a unit (or none), a summed quantity (or
+none — "do smaku"), and its source Recipes. Ticked when bought; the tick is shared.
+_Avoid_: line (that is an Ingredient Line), entry
 
 **Cook Log**:
 A record that someone actually made a Recipe on a given day. The only behavioural data in
@@ -121,6 +142,7 @@ right is what the user reads. Never the other way round.
 |---|---|
 | Recipe | Przepis |
 | Ingredient Line | Składnik |
+| Section | Część (the heading itself is the Recipe's own text) |
 | Servings | Porcje |
 | Step | Krok |
 | Tip | Wskazówka |
@@ -136,5 +158,7 @@ right is what the user reads. Never the other way round.
 | Worker | — (never shown; it is infrastructure) |
 | Substitute | Zamiennik |
 | Pantry Check | Co już masz |
-| Shopping Export | Lista zakupów |
+| Shopping Export | Wyślij, czego brakuje |
+| Shopping List | Lista zakupów |
+| Shopping List Item | Pozycja |
 | Cook Log | Ugotowane |

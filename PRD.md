@@ -249,8 +249,11 @@ Phone-first; this is the screen used with greasy hands.
 - **Keep screen awake** toggle — Screen Wake Lock API. Supported on Chrome/Edge and on
   iOS Safari 16.4+; where unsupported the toggle is absent, not broken. Released on
   page hide and on navigation away.
-- **Share shopping list** — the unticked lines at the current scale, as formatted text,
-  through `navigator.share()`, falling back to clipboard + toast.
+- **Share shopping list** (Shopping Export, „Wyślij, czego brakuje”) — the unticked lines
+  at the current scale, as formatted text, through `navigator.share()`, falling back to
+  clipboard + toast. Grouped under Section headings when the Recipe has them.
+- **„Dodaj do listy zakupów”** — puts the Recipe on the household Shopping List at the
+  serving count on screen; lines ticked in the Pantry Check stay off it (ADR-0009).
 - **Steps** — numbered, one line each, deliberately terse.
 - **Tips** — at the bottom, after the Steps.
 - **"I made this"** — writes a Cook Log entry, optimistic, with an undo window.
@@ -283,6 +286,22 @@ editor in review mode.
 Invites (mint, copy, revoke, expiry countdown), Members (list, remove), Tags (add,
 rename, per Facet), and a read-only queue summary. Non-Masters get a 404, not a 403 —
 the screen doesn't advertise itself.
+
+### 7.9 `/shopping-list` — Shopping List
+
+Added 2026-10-14. ADR-0009; glossary: Shopping List, Shopping List Item, Section (ADR-0008).
+
+- One list for the household, on the server; Members and Admins alike.
+- The Recipes on it, each with a servings stepper and a remove button.
+- Items merged by product: same item + unit summed, other units as separate rows under
+  one heading, "do smaku" lines as one unquantified row; each row names its Recipes.
+- Ticks are shared and persist. „Wyczyść odhaczone”, „Wyczyść wszystko”, and share as
+  plain text in the Shopping Export style.
+- Phone: a tab in the Android app with the same behaviour.
+
+**Ingredient Sections** (also 2026-10-14): Ingredient Lines carry an optional Section
+heading. Read view groups them; the editor and Draft review add, rename, remove and
+reorder Sections; the import keeps the page's own groups.
 
 ## 8. Import pipeline
 
