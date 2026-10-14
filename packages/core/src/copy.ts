@@ -370,6 +370,10 @@ export const copy = {
   account: {
     title: "Konto",
     theme: { title: "Motyw", system: "Jak w systemie", light: "Jasny", dark: "Ciemny" },
+    push: {
+      title: "Powiadomienia",
+      hint: "Gwizdek od MC Kiełbasa, gdy szkic jest gotowy albo się przypalił.",
+    },
     profile: "Profil",
     save: "Zapisz",
     saved: "Zapisane.",
