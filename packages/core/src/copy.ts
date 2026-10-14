@@ -125,6 +125,8 @@ export const copy = {
     unsavedChanges: "Masz niezapisane zmiany. Wyjść i je porzucić?",
     /** The grip on each row: a drag target, and arrow keys when focused. */
     reorder: "Przeciągnij albo użyj strzałek ↑ ↓, żeby przestawić",
+    moveUp: "Przesuń wyżej",
+    moveDown: "Przesuń niżej",
     stepPlaceholder: "np. Podsmaż cebulę na złoto, ok. 5 minut",
     tipPlaceholder: "np. Sos można zamrozić na miesiąc",
     fixErrors: "Popraw zaznaczone pola.",
@@ -209,6 +211,8 @@ export const copy = {
     reviewHint:
       "Szkic zrobiła maszyna. Popraw, co trzeba, i dopiero wtedy dodaj do biblioteki.",
     approve: "Dodaj do biblioteki",
+    /** MC Kiełbas, after a Draft becomes a Recipe. */
+    approved: "Zaliczone! Przepis ląduje w bibliotece, prosto z grilla.",
     /** Approving a Draft someone already approved, discarded or sent back. */
     notReady: "Ten szkic nie czeka już na sprawdzenie. Odśwież listę.",
     guessed: "zgadywane",
@@ -219,6 +223,8 @@ export const copy = {
       "Model nie zadziałał, więc to dane prosto ze strony: bez tłumaczenia, tagów i zamienników. Przejrzyj całość.",
     discardConfirm: "Odrzucić ten szkic? Przepis nie powstanie.",
     reimport: "Zaimportuj ponownie",
+    reimportConfirm:
+      "Pobrać stronę źródłową jeszcze raz? Kuchnia przeczyta ją od nowa, a ty zobaczysz różnice i przyjmiesz tylko te, które chcesz.",
     reimportQueued: "Odłożone. Sprawdzisz zmiany w Szkicach.",
     reviewChangesTitle: "Sprawdź zmiany",
     diffHint:
@@ -335,6 +341,14 @@ export const copy = {
     },
   },
 
+  /** Sharing a page from another app (the phone's share sheet) into the park form. */
+  share: {
+    announce: "Mam twój link! Dotknij „Odłóż na później”, a kuchnia się nim zajmie.",
+    notAdmin: "Odkładać linki mogą tylko administratorzy.",
+    notSignedIn: "Zaloguj się, a potem udostępnij link jeszcze raz.",
+    noUrl: "W tym, co udostępniono, nie ma linku do strony.",
+  },
+
   account: {
     title: "Konto",
     profile: "Profil",
@@ -388,6 +402,20 @@ export const copy = {
       used: "wykorzystane",
       expired: "przedawnione",
       revoked: "unieważnione",
+      open: "aktywne",
+    },
+    shareInvite: "Udostępnij link",
+    /** Why a member change was refused. */
+    memberErrors: {
+      master: "Właściciela nie można zmienić ani usunąć.",
+      missing: "Tej osoby już nie ma. Odśwież listę.",
+    },
+    /** Why a tag change was refused (TagResult.reason). */
+    tagErrors: {
+      slug: "Slug: od 2 do 40 małych liter, cyfr lub myślników, zaczyna się od litery.",
+      duplicate: "Taki tag już istnieje.",
+      "in-use": "Ten tag jest w użyciu, więc nie da się go usunąć.",
+      missing: "Tego tagu już nie ma. Odśwież listę.",
     },
   },
 

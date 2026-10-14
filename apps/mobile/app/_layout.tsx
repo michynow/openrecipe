@@ -3,21 +3,37 @@ import "../global.css";
 import { Baloo2_800ExtraBold } from "@expo-google-fonts/baloo-2";
 import { Nunito_600SemiBold, Nunito_800ExtraBold } from "@expo-google-fonts/nunito";
 import { copy } from "@openrecipe/core/copy";
+import { focusManager } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import Constants from "expo-constants";
 import { useFonts } from "expo-font";
 import { useNetworkState } from "expo-network";
 import { Stack } from "expo-router";
+import { ShareIntentProvider } from "expo-share-intent";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Text, View } from "react-native";
+import { AppState, Text, View } from "react-native";
 import { vars } from "nativewind";
 
+import { PulseToasts } from "../components/drafts/pulse-toasts";
+import { ShareHandler } from "../components/drafts/share-handler";
+import { ToastHost } from "../components/ui/toast";
+import { useIsAdmin } from "../lib/hooks/admin";
 import { authClient, getCookie } from "../lib/auth";
 import { persistOptions, queryClient } from "../lib/query-client";
 import { cssVars, useTokens } from "../lib/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// The share intent is a native module: it does not exist in Expo Go.
+const SHARE_INTENT_OPTIONS = { disabled: Constants.executionEnvironment === "storeClient" };
+
+/** Draft polling, for admins only; it pauses while the app is in the background. */
+function AdminEffects() {
+  const admin = useIsAdmin();
+  return admin.data === true ? <PulseToasts /> : null;
+}
 
 /**
  * The root navigator, always mounted: Expo Router needs a navigator here, and a
@@ -42,22 +58,30 @@ function Shell({ offline }: { offline: boolean }) {
   if (waiting) return null; // the splash screen is still up
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: color.gold },
-        headerTintColor: color.ink,
-        headerTitleStyle: { fontFamily: "Baloo2_800ExtraBold", color: color.ink },
-        contentStyle: { backgroundColor: color.bg },
-      }}
-    >
-      <Stack.Protected guard={signedIn}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="recipe/[slug]" />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: color.gold },
+          headerTintColor: color.ink,
+          headerTitleStyle: { fontFamily: "Baloo2_800ExtraBold", color: color.ink },
+          contentStyle: { backgroundColor: color.bg },
+        }}
+      >
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="recipe/[slug]" />
+          <Stack.Screen name="editor/new" />
+          <Stack.Screen name="editor/[slug]" />
+          <Stack.Screen name="drafts/[id]" />
+          <Stack.Screen name="account" options={{ title: copy.account.title }} />
+        </Stack.Protected>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+        </Stack.Protected>
+      </Stack>
+      <ShareHandler signedIn={signedIn} />
+      {signedIn ? <AdminEffects /> : null}
+    </>
   );
 }
 
@@ -66,22 +90,31 @@ export default function RootLayout() {
   const { scheme } = useTokens();
   const offline = useNetworkState().isConnected === false;
 
+  // Polling and refetches pause in the background.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => focusManager.setFocused(state === "active"));
+    return () => sub.remove();
+  }, []);
+
   // A font that fails to load falls back to the system font, not a stuck splash.
   if (!fontsReady && !fontError) return null;
 
   return (
-    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
-      <View style={vars(cssVars(scheme))} className="flex-1 bg-bg">
-        <StatusBar style="auto" />
-        <View className="flex-1">
-          <Shell offline={offline} />
-        </View>
-        {offline ? (
-          <View accessibilityRole="alert" className="bg-ink px-4 py-1.5">
-            <Text className="text-center font-body text-xs text-gold">{copy.common.offline}</Text>
+    <ShareIntentProvider options={SHARE_INTENT_OPTIONS}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+        <View style={vars(cssVars(scheme))} className="flex-1 bg-bg">
+          <StatusBar style="auto" />
+          <View className="flex-1">
+            <Shell offline={offline} />
+            <ToastHost />
           </View>
-        ) : null}
-      </View>
-    </PersistQueryClientProvider>
+          {offline ? (
+            <View accessibilityRole="alert" className="bg-ink px-4 py-1.5">
+              <Text className="text-center font-body text-xs text-gold">{copy.common.offline}</Text>
+            </View>
+          ) : null}
+        </View>
+      </PersistQueryClientProvider>
+    </ShareIntentProvider>
   );
 }

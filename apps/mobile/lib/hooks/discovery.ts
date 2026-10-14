@@ -14,9 +14,10 @@ export function useReroll() {
   });
 }
 
-export const useTags = () =>
+export const useTags = (enabled = true) =>
   useQuery({
     queryKey: ["tags"],
+    enabled,
     queryFn: () => api("GET /api/v1/tags"),
     staleTime: 60 * 60 * 1000,
   });
