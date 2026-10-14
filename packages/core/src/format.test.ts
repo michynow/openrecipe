@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { copy } from "./copy.ts";
-import { count, formatDuration, formatNumber, plural } from "./format.ts";
+import { count, formatDuration, formatNumber, formatRelativeDays, plural } from "./format.ts";
 
 const { servings } = copy.units;
 
@@ -57,4 +57,25 @@ test("formatDuration is null when there is no time to show", () => {
   assert.equal(formatDuration(35), "35 min");
   assert.equal(formatDuration(60), "1 h");
   assert.equal(formatDuration(75), "1 h 15 min");
+});
+
+test("hand-rolled plural and relative time match Intl (Node has full ICU)", () => {
+  const rules = new Intl.PluralRules("pl-PL");
+  for (let n = 0; n <= 250; n++) {
+    const want = { one: "porcja", few: "porcje" }[rules.select(n) as "one" | "few"] ?? "porcji";
+    assert.equal(plural(n, servings), want, `n=${n}`);
+  }
+
+  const rtf = new Intl.RelativeTimeFormat("pl-PL", { numeric: "auto" });
+  const DAY = 86_400_000;
+  for (let d = -800; d <= 800; d++) {
+    const days = Math.round(d);
+    const want =
+      Math.abs(days) < 30
+        ? rtf.format(days, "day")
+        : Math.abs(days) < 365
+          ? rtf.format(Math.round(days / 30), "month")
+          : rtf.format(Math.round(days / 365), "year");
+    assert.equal(formatRelativeDays(Date.now() + d * DAY + DAY / 4), want, `d=${d}`);
+  }
 });

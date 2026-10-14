@@ -13,23 +13,21 @@ export type PluralForms = {
   many: string;
 };
 
-const pluralRules = new Intl.PluralRules("pl-PL");
-
 /**
  * Pick the right form for `n`.
  *
- * Intl gives four categories for Polish; `other` only ever covers fractions
- * (1,5 porcji), which take the same genitive form as `many`.
+ * The CLDR rule for Polish, written out by hand rather than via
+ * `Intl.PluralRules`: Hermes on Android (the phone app) has no PluralRules and
+ * a module-level `new` crashes every screen that imports this file. Fractions
+ * (1,5 porcji) take the same genitive form as `many`.
  */
 export function plural(n: number, forms: PluralForms): string {
-  switch (pluralRules.select(n)) {
-    case "one":
-      return forms.one;
-    case "few":
-      return forms.few;
-    default:
-      return forms.many;
-  }
+  if (!Number.isInteger(n)) return forms.many;
+  const abs = Math.abs(n);
+  if (abs === 1) return forms.one;
+  const tens = abs % 100;
+  if (abs % 10 >= 2 && abs % 10 <= 4 && (tens < 12 || tens > 14)) return forms.few;
+  return forms.many;
 }
 
 /** "1 porcja", "3 porcje", "7 porcji" */
@@ -57,9 +55,30 @@ export function formatDate(value: Date | string | number): string {
   return dateFormat.format(new Date(value));
 }
 
-const relativeFormat = new Intl.RelativeTimeFormat("pl-PL", {
-  numeric: "auto",
-});
+/** Hand-rolled for the same reason as `plural`: Hermes has no RelativeTimeFormat. */
+const RELATIVE = {
+  day: {
+    forms: { one: "dzień", few: "dni", many: "dni" },
+    near: { "-2": "przedwczoraj", "-1": "wczoraj", "0": "dzisiaj", "1": "jutro", "2": "pojutrze" },
+  },
+  month: {
+    forms: { one: "miesiąc", few: "miesiące", many: "miesięcy" },
+    near: { "-1": "w zeszłym miesiącu", "0": "w tym miesiącu", "1": "w przyszłym miesiącu" },
+  },
+  year: {
+    forms: { one: "rok", few: "lata", many: "lat" },
+    near: { "-1": "w zeszłym roku", "0": "w tym roku", "1": "w przyszłym roku" },
+  },
+} satisfies Record<string, { forms: PluralForms; near: Record<string, string> }>;
+
+/** Same output as `Intl.RelativeTimeFormat("pl-PL", { numeric: "auto" })`. */
+function relative(n: number, unit: keyof typeof RELATIVE): string {
+  const { forms, near } = RELATIVE[unit];
+  const word = (near as Record<string, string>)[String(n)];
+  if (word) return word;
+  const phrase = `${formatNumber(Math.abs(n))} ${plural(Math.abs(n), forms)}`;
+  return n < 0 ? `${phrase} temu` : `za ${phrase}`;
+}
 
 /**
  * "wczoraj", "3 dni temu", "2 miesiące temu" — for added dates and Cook Log
@@ -69,10 +88,10 @@ export function formatRelativeDays(value: Date | string | number): string {
   const then = new Date(value);
   const days = Math.round((then.getTime() - Date.now()) / 86_400_000);
 
-  if (Math.abs(days) < 30) return relativeFormat.format(days, "day");
+  if (Math.abs(days) < 30) return relative(days, "day");
   if (Math.abs(days) < 365)
-    return relativeFormat.format(Math.round(days / 30), "month");
-  return relativeFormat.format(Math.round(days / 365), "year");
+    return relative(Math.round(days / 30), "month");
+  return relative(Math.round(days / 365), "year");
 }
 
 /** "35 min", "1 h 15 min" — nothing at all when the Recipe has no time. */
