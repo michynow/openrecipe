@@ -7,11 +7,18 @@
     "scheme": "openrecipe",
     "userInterfaceStyle": "automatic",
     "android": {
-      "package": "app.openrecipe.android"
+      "package": "app.openrecipe.android",
+      "googleServicesFile": "./google-services.json"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "drafts"
+        }
+      ],
       [
         "expo-share-intent",
         {

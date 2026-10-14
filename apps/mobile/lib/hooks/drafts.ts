@@ -2,6 +2,7 @@ import type { RecipeInput } from "@openrecipe/core/recipe-schema";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import { api } from "../api";
+import { askForPush } from "../push";
 
 const invalidateList = (qc: QueryClient) =>
   Promise.all([qc.invalidateQueries({ queryKey: ["drafts"] }), qc.invalidateQueries({ queryKey: ["home"] })]);
@@ -20,7 +21,10 @@ export function useParkUrl() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (sourceUrl: string) => api("POST /api/v1/drafts", { body: { sourceUrl } }),
-    onSuccess: () => invalidateList(qc),
+    onSuccess: () => {
+      void askForPush();
+      return invalidateList(qc);
+    },
   });
 }
 

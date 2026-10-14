@@ -16,16 +16,19 @@ import { useEffect } from "react";
 import { AppState, Text, View } from "react-native";
 import { vars } from "nativewind";
 
+import { PushHost } from "../components/drafts/push-host";
 import { PulseToasts } from "../components/drafts/pulse-toasts";
 import { ShareHandler } from "../components/drafts/share-handler";
 import { ToastHost } from "../components/ui/toast";
 import { useIsAdmin } from "../lib/hooks/admin";
 import { authClient, getCookie } from "../lib/auth";
+import { initNotifications } from "../lib/push";
 import { persistOptions, queryClient } from "../lib/query-client";
 import { cssVars, useTokens } from "../lib/theme";
 import { applyStoredTheme } from "../lib/theme-pref";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+initNotifications();
 
 // The share intent is a native module: it does not exist in Expo Go.
 const SHARE_INTENT_OPTIONS = { disabled: Constants.executionEnvironment === "storeClient" };
@@ -33,7 +36,12 @@ const SHARE_INTENT_OPTIONS = { disabled: Constants.executionEnvironment === "sto
 /** Draft polling, for admins only; it pauses while the app is in the background. */
 function AdminEffects() {
   const admin = useIsAdmin();
-  return admin.data === true ? <PulseToasts /> : null;
+  return (
+    <>
+      <PushHost admin={admin.data === true} />
+      {admin.data === true ? <PulseToasts /> : null}
+    </>
+  );
 }
 
 /**

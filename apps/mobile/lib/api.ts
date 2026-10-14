@@ -38,7 +38,9 @@ export async function api<E extends Endpoint>(
   if (!res.ok) {
     const json = (await res.json().catch(() => null)) as { error?: ApiErrorCode } | null;
     // Dead session: clearing it lets the layout gate send the user to /login.
-    if (res.status === 401) await signOut();
+    // No cookie left means we already signed out (a late reply from the
+    // sign-out's own push-token delete): don't sign out a second time.
+    if (res.status === 401 && getCookie() !== "") await signOut();
     throw new ApiError(res.status, json?.error ?? null);
   }
   return (await res.json()) as Api[E]["res"];

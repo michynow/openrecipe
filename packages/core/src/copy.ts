@@ -277,6 +277,8 @@ export const copy = {
       readyBody: (title: string) => `„${title}” czeka na Twój werdykt. Do dzieła, szefie!`,
       failedTitle: "Kuchnia się przypaliła",
       failedBody: "Ten link nie dał rady. Zerknij, co poszło nie tak.",
+      /** Stand-in when a ready Draft somehow has no title. */
+      untitled: "Przepis",
     },
     /**
      * A Draft's log (expandable on the Drafts screen). Written by the app and by
@@ -348,6 +350,13 @@ export const copy = {
       approved: "Dodany do biblioteki",
       discarded: "Odrzucony",
     },
+  },
+
+  /** Android notification channel and the one-time permission ask for "Draft finished" pushes. */
+  push: {
+    channelName: "Szkice gotowe",
+    channelDescription: "MC Kiełbas daje znać, kiedy kuchnia skończy szkic albo coś się jej przypali.",
+    ask: "Chcesz usłyszeć gwizdek, gdy szkic będzie gotowy? Zaraz zapytam telefon o zgodę na powiadomienia.",
   },
 
   /** Sharing a page from another app (the phone's share sheet) into the park form. */

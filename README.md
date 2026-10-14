@@ -120,6 +120,20 @@ Worth knowing: **most Polish recipe sites publish no `@type: Recipe` structured 
 Kwestia Smaku and Ania Gotuje both fall to the readable-text path, so the model call (OR-42)
 is what makes them work, not a nicety on top.
 
+## Android app
+
+`apps/mobile`, Expo with a dev build (ADR-0007). Run everything from the repo root:
+
+- `pnpm build-mobile` — native build onto the emulator or a USB phone (prebuild + Gradle, JDK 17).
+  Needed once, and again after adding a native module or changing `app.json`.
+- `pnpm mobile` — the dev server for that build. After changing `tailwind.config.js` or
+  `global.css`, start it with a cleared cache: `cd apps/mobile && npx expo start -c`.
+- `apps/mobile/.env` sets `EXPO_PUBLIC_API_URL`: the laptop's LAN address in dev (a phone
+  can't reach `localhost`), the production URL for a release.
+- `apps/mobile/google-services.json` is required by the build (push notifications). Download
+  it from the Firebase console, Android app `app.openrecipe.android`. It is not a secret and
+  is committed. The Worker's half is `FIREBASE_SERVICE_ACCOUNT` (see The Worker).
+
 ## Where the build is
 
 Phases 0 to 5 from PRD §14 are built. What that means in practice: sign in, type a
