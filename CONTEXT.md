@@ -72,7 +72,7 @@ _Avoid_: moderator, editor
 
 **Member**:
 Anyone who joined via an Invite. Read-only unless promoted to Admin: browses and
-cooks from Recipes, changes nothing shared.
+cooks from Recipes, changes nothing shared — except logging their own Cook Log entries.
 _Avoid_: guest, invitee, regular user
 
 **Draft**:

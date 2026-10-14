@@ -12,7 +12,7 @@ import {
   updateRecipe,
   type SaveResult,
 } from "@/lib/recipes";
-import { requireAdmin } from "@/lib/session";
+import { requireAdmin, requireUser } from "@/lib/session";
 
 /**
  * Server Actions for the editor.
@@ -21,7 +21,7 @@ import { requireAdmin } from "@/lib/session";
  * convenience, not authorisation — a Server Action is an HTTP endpoint and has to
  * defend itself.
  *
- * Members are read-only. Any admin may edit any Recipe, so there is no
+ * Members are read-only, apart from the Cook Log. Any admin may edit any Recipe, so there is no
  * ownership check here. That is deliberate, not an omission.
  */
 
@@ -117,7 +117,8 @@ export async function restoreRecipeAction(
 export async function logCookedAction(
   recipeId: string,
 ): Promise<{ entryId: string }> {
-  const user = await requireAdmin();
+  // Members log too: a Cook Log entry is their own, not shared content.
+  const user = await requireUser();
   const entryId = await logCooked(recipeId, user.id);
   // Deleted under the reader's nose. The button rolls back and says so.
   if (!entryId) throw new Error("Recipe not found");
@@ -130,7 +131,8 @@ export async function logCookedAction(
 export async function undoCookedAction(
   entryId: string,
 ): Promise<{ ok: boolean }> {
-  const user = await requireAdmin();
+  // undoCooked only deletes the caller's own entry, inside the grace window.
+  const user = await requireUser();
   const ok = await undoCooked(entryId, user.id);
 
   if (ok) revalidatePath("/");

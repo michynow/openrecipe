@@ -7,7 +7,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await guard("admin", request);
+  const user = await guard("user", request);
   if (user instanceof Response) return user;
 
   const id = uuid((await params).id);

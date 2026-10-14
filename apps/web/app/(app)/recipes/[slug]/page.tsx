@@ -201,13 +201,11 @@ export default async function RecipePage({
       )}
 
       {/* Last thing on the page, because it is the last thing you do. */}
-      {isAdmin && (
-        <CookLogButton
-          recipeId={recipe.id}
-          times={cookLog.times}
-          lastCookedAt={cookLog.lastCookedAt}
-        />
-      )}
+      <CookLogButton
+        recipeId={recipe.id}
+        times={cookLog.times}
+        lastCookedAt={cookLog.lastCookedAt}
+      />
     </main>
   );
 }

@@ -7,7 +7,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ entryId: string }> },
 ) {
-  const user = await guard("admin", request);
+  const user = await guard("user", request);
   if (user instanceof Response) return user;
 
   const entryId = uuid((await params).entryId);

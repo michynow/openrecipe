@@ -94,10 +94,9 @@ with `router.push({ pathname: "/recipe/[slug]", params: { slug } })`.
 - `useLogCooked(recipeId)` calls `POST /api/v1/recipes/:id/cook-log`.
   `useUndoCooked()` calls `DELETE /api/v1/cook-log/:entryId`. Both invalidate
   `["home"]` (stats).
-- **Cook log is admin-only on the server.** Show the button only when
-  `useMe().data?.isAdmin`, exactly as the web does
-  (`apps/web/app/(app)/recipes/[slug]/page.tsx`). Members see the count
-  read-only.
+- **Cook log is open to every signed-in user** (Members too; decided after
+  this spec was first written). Always show the button, as the web now does.
+  Undo only removes the caller's own entry inside the grace window.
 
 ### 2. Recipe screen — mirror `apps/web/app/(app)/recipes/[slug]/page.tsx` and `components/cooking-panel.tsx`
 
