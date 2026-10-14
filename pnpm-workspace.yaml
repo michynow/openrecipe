@@ -13,3 +13,7 @@ packageExtensions:
   react-native-css-interop:
     dependencies:
       "@babel/plugin-transform-react-jsx": "^7.28.6"
+  # Its config plugin requires @expo/plist without declaring it.
+  expo-share-intent:
+    dependencies:
+      "@expo/plist": "*"
