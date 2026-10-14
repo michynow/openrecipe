@@ -102,6 +102,11 @@ same row, and reclaims anything left in `processing` for more than ten minutes b
 that got closed. With an empty queue it prints `nothing to do` and exits, so running it on a
 whim costs nothing.
 
+To get an Android push when a Draft finishes, set `FIREBASE_SERVICE_ACCOUNT` (the whole Firebase
+service-account JSON as one string) wherever the Worker runs: the `FIREBASE_SERVICE_ACCOUNT`
+GitHub Actions secret for the cloud Worker, `apps/web/.env.local` for the laptop one. Unset, the
+Worker just skips notifications.
+
 What it does per Draft: fetch the page, read its JSON-LD if it publishes any, otherwise keep
 the readable text, hand either to Claude through the Agent SDK — which uses the CLI's own
 subscription, so there is no API key here or on Vercel — and store the result as `ready` for

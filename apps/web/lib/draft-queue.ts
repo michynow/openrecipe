@@ -17,6 +17,7 @@ import {
   type DraftStage,
   type DraftStatus,
 } from "@openrecipe/core/drafts";
+import { notifyDraftFinished } from "./push.ts";
 import { getRecipeById, toFormValue } from "./recipe-query.ts";
 import { createRecipe, updateRecipe, type SaveResult } from "./recipes.ts";
 import type { RecipeFormValue, RecipeInput } from "@openrecipe/core/recipe-schema";
@@ -519,6 +520,8 @@ export async function markReady(
       log: sql`${draft.log} || ${logLine("info", copy.imports.log.ready)}`,
     })
     .where(eq(draft.id, id));
+
+  await notifyDraftFinished(id, "ready", recipe.title);
 }
 
 /**
@@ -537,6 +540,8 @@ export async function markFailed(id: string, error: string): Promise<void> {
       log: sql`${draft.log} || ${logLine("error", error)}`,
     })
     .where(eq(draft.id, id));
+
+  await notifyDraftFinished(id, "failed", null);
 }
 
 /**

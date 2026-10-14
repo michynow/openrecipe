@@ -51,3 +51,5 @@ jobs:
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
           # From `claude setup-token`: the Master's subscription, no API key.
           RAW_CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Service-account JSON for the "Draft finished" push (optional).
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

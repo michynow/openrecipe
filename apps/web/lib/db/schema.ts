@@ -457,3 +457,18 @@ export const proposalReroll = pgTable(
   },
   (table) => [primaryKey({ columns: [table.userId, table.day] })],
 );
+
+/**
+ * FCM registration tokens for the Android app, one row per device. Only Admins
+ * register (Drafts are Admin-only). Unique on the token: a phone that signs in
+ * as someone else is reassigned, not duplicated.
+ */
+export const pushToken = pgTable("push_token", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

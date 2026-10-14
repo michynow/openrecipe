@@ -208,6 +208,11 @@ export type Api = {
   /** admin. Drop an uploaded-then-abandoned blob. */
   "POST /api/v1/images/delete": { body: { url: string }; res: Ok };
 
+  /** admin. Register this device for "Draft finished" pushes; a token moves to the caller. */
+  "POST /api/v1/push-tokens": { body: { token: string }; res: Ok };
+  /** user (so sign-out works after a demotion). Only deletes the caller's own token. */
+  "POST /api/v1/push-tokens/delete": { body: { token: string }; res: Ok };
+
   /** admin */
   "GET /api/v1/drafts": { body: never; res: DraftRow[] };
   /** admin */
