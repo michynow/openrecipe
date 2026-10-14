@@ -20,6 +20,9 @@ export const copy = {
     settings: "Ustawienia",
     signOut: "Wyloguj się",
     account: "Konto",
+    shoppingList: "Lista zakupów",
+    /** The phone's tab label, where "Lista zakupów" does not fit. */
+    shoppingListShort: "Zakupy",
   },
 
   auth: {
@@ -71,7 +74,8 @@ export const copy = {
     kcalPerServing: "kcal na porcję",
 
     pantryCheck: "Co już masz?",
-    export: "Wyślij listę zakupów",
+    /** The Shopping Export — one Recipe, unticked lines. Not the Shopping List. */
+    export: "Wyślij, czego brakuje",
     copy: "Kopiuj",
     copied: "Skopiowano do schowka.",
     nothingToBuy: "Masz wszystko. Do dzieła.",
@@ -142,6 +146,16 @@ export const copy = {
     pasteBlock: "Wklej listę",
     pasteHint: "Wklej składniki — po jednym w linii. Rozbijemy je na pola; potem możesz poprawić.",
     pasteApply: "Rozbij na wiersze",
+    /** Sections (ADR-0008): optional headings over runs of Ingredient Lines. */
+    sectionsHint: "Przepis z kilku części — bułki, sos, surówka? Dodaj nagłówki.",
+    addSection: "Dodaj część",
+    sectionName: "Nazwa części",
+    sectionPlaceholder: "np. Sos",
+    renameSection: "Zmień nazwę",
+    removeSection: "Usuń nagłówek",
+    removeSectionHint: "Składniki zostaną, tylko bez nagłówka.",
+    moveToSection: "Przenieś do części",
+    noSection: "Bez części",
     facets: {
       meal_slot: "Posiłek",
       cuisine: "Kuchnia",
@@ -442,6 +456,41 @@ export const copy = {
     },
   },
 
+  /** The household Shopping List (ADR-0009). Shared: everyone sees the same ticks. */
+  shoppingList: {
+    title: "Lista zakupów",
+    add: "Dodaj do listy zakupów",
+    /** The servings picker in the add sheet. */
+    addServings: "Na ile porcji?",
+    pantryNote: "Pominiemy to, co masz odhaczone w „Co już masz?”.",
+    added: "Wrzucone na listę! MC Kiełbas już pcha wózek.",
+    /** The Recipe page when this Recipe is already on the list. */
+    onList: "Już na liście zakupów",
+    update: "Zmień porcje na liście",
+    updated: "Lista poprawiona.",
+    open: "Zobacz listę",
+    recipes: "Przepisy na liście",
+    items: "Do kupienia",
+    remove: "Usuń z listy",
+    removed: "Wyleciało z listy.",
+    /** After a source Recipe's title: how many of its lines are left off. */
+    skipped: (n: number) => `pominięto: ${n}`,
+    /** Before the source Recipes under a row: "z: Ragu, Sałatka". */
+    from: "z:",
+    toTaste: "do smaku",
+    tick: "Odhacz",
+    untick: "Odznacz",
+    clearTicked: "Wyczyść odhaczone",
+    clearAll: "Wyczyść wszystko",
+    clearAllConfirm: "Wyczyścić całą listę? Zniknie u wszystkich domowników.",
+    share: "Udostępnij listę",
+    empty: "Lista pusta. Wrzuć przepis, a składniki same tu wskoczą.",
+    allTicked: "Wszystko w koszyku. Do kasy!",
+    /** Text export footer: "Na: Ragu (4 porcje), Sałatka (2 porcje)". */
+    forRecipes: "Na:",
+    inBasket: (done: number, total: number) => `(${done} z ${total} już w koszyku)`,
+  },
+
   validation: {
     titleRequired: "Podaj nazwę przepisu.",
     servingsRequired: "Podaj liczbę porcji.",
@@ -468,7 +517,7 @@ export const copy = {
     loading: "Ładowanie…",
     retry: "Spróbuj ponownie",
     somethingFailed: "Nie udało się. Spróbuj jeszcze raz.",
-    offline: "Brak połączenia. Przepis i lista zakupów działają dalej.",
+    offline: "Brak połączenia. Przepis i „Co już masz?” działają dalej.",
     close: "Zamknij",
     notFoundTitle: "Nie ma tu nic",
     notFoundBody: "Ta strona nie istnieje albo nie masz do niej dostępu.",
@@ -516,7 +565,7 @@ export const copy = {
       ],
       recipe: [
         "GOTUJ! Plus i minus zmieniają porcje — ilości przeliczą się same, oryginał zostaje nietknięty.",
-        "„Co już masz?” — odhacz, co stoi w lodówce, resztę wyślij jako listę zakupów.",
+        "„Co już masz?” — odhacz, co stoi w lodówce. Resztę wyślij komuś albo wrzuć na listę zakupów — odhaczone zostaną w domu.",
         "„Nie gaś ekranu”, żeby telefon nie zasnął w połowie akcji. Nikt nie lubi, jak ktoś zasypia w połowie.",
         "Brakuje składnika? Zerknij w zamienniki. Skończone? Wal w „Ugotowane!” — combo zaliczone.",
         "Pod tytułem: edycja, ponowny import i usuwanie. Usunięcie da się na chwilę cofnąć. Mnie jak ktoś zje, to już nie.",
@@ -529,6 +578,12 @@ export const copy = {
         "Zaplecze dla szefa. Zaproszenia: tworzysz link, kopiujesz, dajesz, komu chcesz. Maili nie wysyłamy — wszystko z ręki do ręki.",
         "Domownicy to twoja drużyna. Tagi dodajesz i przemianowujesz, ale slug zostaje na zawsze. Jak tatuaż po kawalerskim.",
         "Na dole kolejka importu: co czeka, co gotowe, a co poległo.",
+      ],
+      shoppingList: [
+        "Supermarket Sweep! Jedna lista dla całej chaty — każdy dorzuca przepisy i odhacza, co już w wózku.",
+        "To samo w tej samej jednostce sumuję. Inna jednostka? Osobny wiersz pod tym samym produktem. Nie przeliczam łyżek na gramy, nie jestem kalkulatorem, jestem kiełbasą.",
+        "Pod każdą pozycją widać, do którego przepisu idzie. Porcje zmieniasz przy przepisie, a „Udostępnij listę” wyśle ją jako tekst.",
+        "Po zakupach „Wyczyść odhaczone”. Lista zrobi się lekka jak ja po grillu… no dobra, nie aż tak.",
       ],
       lost: ["Zgubiłeś się, kotku? Wracaj na Start, tam cię oprowadzę."],
     },

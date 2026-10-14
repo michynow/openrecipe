@@ -11,6 +11,7 @@ export type HelpTopic =
   | "recipe"
   | "editRecipe"
   | "settings"
+  | "shoppingList"
   | "lost";
 
 export function helpTopic(pathname: string): HelpTopic {
@@ -20,6 +21,7 @@ export function helpTopic(pathname: string): HelpTopic {
   if (parts.length === 0) return "dashboard";
   if (first === "search" && parts.length === 1) return "search";
   if (first === "settings" && parts.length === 1) return "settings";
+  if (first === "shopping-list" && parts.length === 1) return "shoppingList";
   if (first === "drafts") return parts.length === 1 ? "drafts" : "draft";
   if (first === "recipes" && second === "new" && parts.length === 2) return "newRecipe";
   if (first === "recipes" && second && parts.length === 2) return "recipe";

@@ -6,6 +6,7 @@ import { helpTopic } from "./help.ts";
 test("every screen gets its own topic", () => {
   assert.equal(helpTopic("/"), "dashboard");
   assert.equal(helpTopic("/search"), "search");
+  assert.equal(helpTopic("/shopping-list"), "shoppingList");
   assert.equal(helpTopic("/drafts"), "drafts");
   assert.equal(helpTopic("/drafts/20f12b27-5815"), "draft");
   assert.equal(helpTopic("/recipes/new"), "newRecipe");

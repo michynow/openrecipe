@@ -14,6 +14,7 @@
 
 import type { DraftLogEntry, DraftPulse, DraftStage, DraftStatus } from "./drafts.ts";
 import type { RecipeFormValue, RecipeInput } from "./recipe-schema.ts";
+import type { ShoppingList } from "./shopping-list.ts";
 import type { ChipTag, Facet } from "./tags.ts";
 
 /**
@@ -86,6 +87,8 @@ export type RecipeDetail = {
     unit: string | null;
     item: string;
     note: string | null;
+    /** Section heading (ADR-0008); lines arrive contiguous, ungrouped first. */
+    section: string | null;
     substitutes: { item: string; note: string | null }[];
   }[];
   tags: ChipTag[];
@@ -155,6 +158,16 @@ export type MemberResult = { ok: true } | { ok: false; reason: "master" | "missi
 export type TagResult =
   | { ok: true }
   | { ok: false; reason: "slug" | "duplicate" | "in-use" | "missing"; uses?: number };
+export type {
+  ShoppingList,
+  ShoppingListGroup,
+  ShoppingListItem,
+  ShoppingListRecipe,
+} from "./shopping-list.ts";
+
+/** Every Shopping List mutation answers with the fresh list. `ok: false` = the Recipe is gone. */
+export type ShoppingListResult = { ok: boolean; list: ShoppingList };
+
 /** `message` is already Polish copy, ready to show. */
 export type AccountResult = { ok: boolean; message: string };
 
@@ -182,7 +195,8 @@ export type Api = {
 
   "GET /api/v1/recipes/by-slug/:slug": {
     body: never;
-    res: { recipe: RecipeDetail; cookLog: CookLogSummary };
+    /** `shoppingListServings`: the servings it is on the Shopping List at, or null. */
+    res: { recipe: RecipeDetail; cookLog: CookLogSummary; shoppingListServings: number | null };
   };
   /** admin */
   "POST /api/v1/recipes": { body: RecipeInput; res: SaveResult };
@@ -253,6 +267,26 @@ export type Api = {
   "PATCH /api/v1/settings/tags/:id": { body: { label: string }; res: TagResult };
   /** admin */
   "DELETE /api/v1/settings/tags/:id": { body: never; res: TagResult };
+
+  /** The household Shopping List (ADR-0009). Any signed-in user, Members included. */
+  "GET /api/v1/shopping-list": { body: never; res: ShoppingList };
+  /**
+   * Put a Recipe on the list (or replace its servings and exclusions if it is
+   * already there). `excludedLineIds`: the lines ticked in this device's Pantry Check.
+   */
+  "POST /api/v1/shopping-list/recipes": {
+    body: { recipeId: string; servings: number; excludedLineIds?: string[] };
+    res: ShoppingListResult;
+  };
+  "PATCH /api/v1/shopping-list/recipes/:recipeId": { body: { servings: number }; res: ShoppingListResult };
+  "DELETE /api/v1/shopping-list/recipes/:recipeId": { body: never; res: ShoppingListResult };
+  /** `key` and `quantity` straight from the ShoppingListItem on screen. */
+  "POST /api/v1/shopping-list/ticks": {
+    body: { key: string; quantity: number | null; ticked: boolean };
+    res: ShoppingListResult;
+  };
+  /** "ticked": drop ticked rows from the list; "all": empty it. */
+  "POST /api/v1/shopping-list/clear": { body: { scope: "ticked" | "all" }; res: ShoppingListResult };
 
   "PATCH /api/v1/account/name": { body: { name: string }; res: AccountResult };
   /** Empty `currentPassword` = "I have none yet" (Google-only account). */
