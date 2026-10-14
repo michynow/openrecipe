@@ -36,6 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# expo / android (prebuild output is generated)
+.expo/
+apps/mobile/android/
+apps/mobile/ios/
+*.apk
+*.aab
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

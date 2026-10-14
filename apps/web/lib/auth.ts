@@ -1,3 +1,4 @@
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
@@ -99,12 +100,22 @@ export const auth = betterAuth({
    * `*.vercel.app` wildcard, which would trust every app on the platform.
    */
   trustedOrigins: [
-    process.env.VERCEL_PROJECT_PRODUCTION_URL,
-    process.env.VERCEL_BRANCH_URL,
-    process.env.VERCEL_URL,
-  ]
-    .filter((host): host is string => Boolean(host))
-    .map((host) => `https://${host}`),
+    ...[
+      process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      process.env.VERCEL_BRANCH_URL,
+      process.env.VERCEL_URL,
+    ]
+      .filter((host): host is string => Boolean(host))
+      .map((host) => `https://${host}`),
+    // The Android app's deep-link scheme (ADR-0007).
+    "openrecipe://",
+    // Expo Go / dev client only — never in production.
+    ...(process.env.NODE_ENV === "development"
+      ? ["exp://", "exp://**", "exp://192.168.*.*:*/**"]
+      : []),
+  ],
+
+  plugins: [expo()],
 });
 
 /** True when Google sign-in can actually be offered. The login screen reads this. */

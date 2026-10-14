@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "OpenRecipe",
+    "slug": "openrecipe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "openrecipe",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "app.openrecipe.android"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
