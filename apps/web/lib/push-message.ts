@@ -37,7 +37,7 @@ export function buildMessage(
       android: {
         notification: {
           title: ready ? c.readyTitle : c.failedTitle,
-          body: ready ? c.readyBody(title ?? "Przepis") : c.failedBody,
+          body: ready ? c.readyBody(title ?? c.untitled) : c.failedBody,
           channel_id: "drafts",
         },
       },
@@ -46,13 +46,17 @@ export function buildMessage(
   };
 }
 
-/** "dead": the token will never work again, delete it. "other": keep it. */
-export function classifyFcmError(status: number, body: unknown): "ok" | "dead" | "other" {
+/**
+ * "dead": FCM says this device token is gone for good, delete it. Only the
+ * explicit UNREGISTERED code counts: a bare 404 or INVALID_ARGUMENT is just as
+ * likely a wrong project_id or a bad payload, and treating those as dead would
+ * wipe every Admin's token in one run. "auth": our access token was refused.
+ */
+export function classifyFcmError(status: number, body: unknown): "ok" | "dead" | "auth" | "other" {
   if (status >= 200 && status < 300) return "ok";
   const error = (body as { error?: { status?: string; details?: { errorCode?: string }[] } } | null)
     ?.error;
   if (error?.details?.some((d) => d.errorCode === "UNREGISTERED")) return "dead";
-  if (status === 404 || error?.status === "NOT_FOUND" || error?.status === "UNREGISTERED") return "dead";
-  if (status === 400 && error?.status === "INVALID_ARGUMENT") return "dead";
+  if (status === 401 || error?.status === "UNAUTHENTICATED") return "auth";
   return "other";
 }

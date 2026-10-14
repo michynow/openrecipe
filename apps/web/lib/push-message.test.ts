@@ -33,12 +33,13 @@ test("the message targets the drafts channel and carries the draft in data", () 
 
 test("only dead tokens are classified for deletion", () => {
   assert.equal(classifyFcmError(200, {}), "ok");
-  assert.equal(classifyFcmError(404, { error: { status: "NOT_FOUND" } }), "dead");
   assert.equal(
     classifyFcmError(404, { error: { details: [{ errorCode: "UNREGISTERED" }] } }),
     "dead",
   );
-  assert.equal(classifyFcmError(400, { error: { status: "INVALID_ARGUMENT" } }), "dead");
-  assert.equal(classifyFcmError(401, { error: { status: "UNAUTHENTICATED" } }), "other");
+  // A wrong project or a bad payload must not read as "every token is dead".
+  assert.equal(classifyFcmError(404, { error: { status: "NOT_FOUND" } }), "other");
+  assert.equal(classifyFcmError(400, { error: { status: "INVALID_ARGUMENT" } }), "other");
+  assert.equal(classifyFcmError(401, { error: { status: "UNAUTHENTICATED" } }), "auth");
   assert.equal(classifyFcmError(500, null), "other");
 });

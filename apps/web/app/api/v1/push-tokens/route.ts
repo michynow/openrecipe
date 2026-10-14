@@ -6,7 +6,7 @@ import { savePushToken } from "@/lib/push";
 export async function POST(request: Request) {
   const user = await guard("admin", request);
   if (user instanceof Response) return user;
-  const body = await jsonBody(request, z.object({ token: z.string().min(1).max(4096) }));
+  const body = await jsonBody(request, z.object({ token: z.string().min(1).max(512) }));
   if (body instanceof Response) return body;
 
   await savePushToken(user.id, body.token);

@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
-import { pushToken } from "./db/schema.ts";
+import { pushToken, user } from "./db/schema.ts";
 import {
   buildMessage,
   classifyFcmError,
@@ -9,6 +9,7 @@ import {
   TOKEN_URL,
   type ServiceAccount,
 } from "./push-message.ts";
+import { effectiveRole } from "./roles.ts";
 
 /**
  * Android push through Firebase Cloud Messaging HTTP v1, no SDK. Best-effort
@@ -78,7 +79,14 @@ export async function notifyDraftFinished(
     const acc = account();
     if (!acc) return;
 
-    const rows = await db.select({ token: pushToken.token }).from(pushToken);
+    // Drafts are Admin-only: a token whose owner has since been demoted stays in
+    // the table (it is theirs to delete) but gets no Draft titles.
+    const rows = (
+      await db
+        .select({ token: pushToken.token, email: user.email, role: user.role })
+        .from(pushToken)
+        .innerJoin(user, eq(pushToken.userId, user.id))
+    ).filter((r) => effectiveRole(r.email, r.role) !== "member");
     if (rows.length === 0) return;
 
     const bearer = await accessToken(acc);
@@ -96,7 +104,10 @@ export async function notifyDraftFinished(
             },
           );
           const body = response.ok ? null : await response.json().catch(() => null);
-          if (classifyFcmError(response.status, body) === "dead") dead.push(token);
+          const verdict = classifyFcmError(response.status, body);
+          if (verdict === "dead") dead.push(token);
+          // Revoked key or clock skew: fetch a fresh access token next time.
+          if (verdict === "auth") cached = null;
         } catch (e) {
           console.warn("push: send failed", (e as Error).message);
         }
