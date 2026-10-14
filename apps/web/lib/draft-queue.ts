@@ -5,7 +5,7 @@ import { db } from "./db/index.ts";
 import { draft, recipe } from "./db/schema.ts";
 import {
   assertReady,
-  assertTransition,
+  canTransition,
   isDraftStage,
   isDraftStatus,
   parseDraftPayload,
@@ -18,7 +18,8 @@ import {
   type DraftStatus,
 } from "@openrecipe/core/drafts";
 import { getRecipeById, toFormValue } from "./recipe-query.ts";
-import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
+import { createRecipe, updateRecipe, type SaveResult } from "./recipes.ts";
+import type { RecipeFormValue, RecipeInput } from "@openrecipe/core/recipe-schema";
 
 /**
  * Reading and writing the import queue (OR-39, OR-45).
@@ -218,23 +219,57 @@ export async function parkReimport(
 }
 
 /**
- * The Draft became a Recipe. Terminal: `recipe_id` is the link back, and it is
- * what stops the same import being approved twice.
+ * Approve a reviewed Draft into a Recipe (OR-44, OR-46). The one path for both
+ * the Server Action and /api/v1.
+ *
+ * Claims the Draft first, with a conditional `ready -> approved` update: of two
+ * concurrent approvals (a double-tap, two admins) exactly one gets the row back,
+ * so only one Recipe is ever created. Neon's HTTP driver has no transactions
+ * (see lib/recipes.ts), so the claim is released again if the save refuses or
+ * throws — the reviewer's edits are in the request, nothing is lost.
+ *
+ * `recipeId` set on a re-import: update that Recipe in place.
  */
-export async function markApproved(id: string, recipeId: string): Promise<void> {
-  const [row] = await db
-    .select({ status: draft.status })
-    .from(draft)
-    .where(eq(draft.id, id))
-    .limit(1);
-
-  if (!row || !isDraftStatus(row.status)) return;
-  assertTransition(row.status, "approved");
-
-  await db
+export async function approveDraft(
+  id: string,
+  input: RecipeInput,
+  userId: string,
+  recipeId?: string,
+): Promise<SaveResult> {
+  // canTransition("ready", "approved"), expressed as the WHERE so it is atomic.
+  const [claimed] = await db
     .update(draft)
-    .set({ status: "approved", recipeId, processedAt: new Date() })
-    .where(eq(draft.id, id));
+    .set({ status: "approved", processedAt: new Date() })
+    .where(and(eq(draft.id, id), eq(draft.status, "ready")))
+    .returning({ id: draft.id });
+
+  if (!claimed) return { ok: false, errors: [copy.imports.notReady] };
+
+  // Not a transition in the model: an undo of our own claim, guarded so it can
+  // only ever undo a claim that never got its Recipe.
+  const release = () =>
+    db
+      .update(draft)
+      .set({ status: "ready", processedAt: null })
+      .where(and(eq(draft.id, id), eq(draft.status, "approved")));
+
+  let result: SaveResult;
+  try {
+    result = recipeId
+      ? await updateRecipe(recipeId, input, userId)
+      : await createRecipe(input, userId);
+  } catch (error) {
+    await release();
+    throw error;
+  }
+
+  if (!result.ok) {
+    await release();
+    return result;
+  }
+
+  await db.update(draft).set({ recipeId: result.id }).where(eq(draft.id, id));
+  return result;
 }
 
 /**
@@ -328,10 +363,11 @@ async function transition(id: string, to: DraftStatus): Promise<boolean> {
     .where(eq(draft.id, id))
     .limit(1);
 
-  if (!row || !isDraftStatus(row.status)) return false;
-  assertTransition(row.status, to);
+  // An illegal move is a refusal, not an error: the buttons only offer legal
+  // ones, so this is a forged or stale request. Real failures still throw.
+  if (!row || !isDraftStatus(row.status) || !canTransition(row.status, to)) return false;
 
-  await db
+  const moved = await db
     .update(draft)
     .set({
       status: to,
@@ -350,9 +386,11 @@ async function transition(id: string, to: DraftStatus): Promise<boolean> {
         : {}),
       ...(to === "discarded" ? { processedAt: new Date() } : {}),
     })
-    .where(eq(draft.id, id));
+    // Still in the status we checked, or someone else moved it first.
+    .where(and(eq(draft.id, id), eq(draft.status, row.status)))
+    .returning({ id: draft.id });
 
-  return true;
+  return moved.length > 0;
 }
 
 /**

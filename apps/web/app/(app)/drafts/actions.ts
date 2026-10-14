@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 
 import {
+  approveDraft,
   discardDraft,
-  markApproved,
   parkReimport,
   parkUrl,
   retryDraft,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/draft-queue";
 import { wakeKitchen } from "@/lib/kitchen";
 import type { RecipeInput } from "@openrecipe/core/recipe-schema";
-import { createRecipe, updateRecipe, type SaveResult } from "@/lib/recipes";
+import type { SaveResult } from "@/lib/recipes";
 import { requireAdmin } from "@/lib/session";
 
 /**
@@ -68,7 +68,8 @@ export async function reimportAction(recipeId: string): Promise<{ ok: boolean }>
  * tried again rather than losing the edits.
  *
  * `createRecipe` validates unconditionally, so nothing can be approved that
- * would fail Recipe validation — the Draft only moves once the Recipe exists.
+ * would fail Recipe validation; a refused save hands the Draft back to `ready`
+ * (see `approveDraft`).
  */
 export async function approveDraftAction(
   id: string,
@@ -82,13 +83,8 @@ export async function approveDraftAction(
 ): Promise<SaveResult> {
   const user = await requireAdmin();
 
-  const result = recipeId
-    ? await updateRecipe(recipeId, input, user.id)
-    : await createRecipe(input, user.id);
-
+  const result = await approveDraft(id, input, user.id, recipeId);
   if (!result.ok) return result;
-
-  await markApproved(id, result.id);
 
   revalidatePath("/drafts");
   revalidatePath("/");
@@ -99,10 +95,9 @@ export async function approveDraftAction(
 }
 
 /**
- * Retry and discard both move a Draft, and the model refuses illegal moves by
- * throwing. The buttons only ever offer legal ones, so a throw here means a
- * forged request — caught and reported as a plain failure rather than reaching
- * the user as an error page.
+ * Retry and discard both move a Draft. An illegal move comes back as `false`
+ * (the buttons only offer legal ones, so that is a forged or stale request);
+ * a database failure still throws.
  */
 async function move(
   action: (id: string) => Promise<boolean>,
@@ -110,13 +105,9 @@ async function move(
 ): Promise<{ ok: boolean }> {
   await requireAdmin();
 
-  try {
-    const ok = await action(id);
-    if (ok) revalidatePath("/drafts");
-    return { ok };
-  } catch {
-    return { ok: false };
-  }
+  const ok = await action(id);
+  if (ok) revalidatePath("/drafts");
+  return { ok };
 }
 
 export async function retryDraftAction(id: string): Promise<{ ok: boolean }> {

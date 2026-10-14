@@ -207,6 +207,8 @@ export const copy = {
     reviewHint:
       "Szkic zrobiła maszyna. Popraw, co trzeba, i dopiero wtedy dodaj do biblioteki.",
     approve: "Dodaj do biblioteki",
+    /** Approving a Draft someone already approved, discarded or sent back. */
+    notReady: "Ten szkic nie czeka już na sprawdzenie. Odśwież listę.",
     guessed: "zgadywane",
     guessedHint:
       "Tej wartości nie było wprost na stronie — model ją oszacował. Sprawdź, zanim dodasz przepis.",
