@@ -1,3 +1,5 @@
+import { spawn } from "node:child_process";
+
 import { copy } from "@openrecipe/core/copy";
 import { appendLog } from "./draft-queue.ts";
 import { cleanGithubToken, dispatchFailureHint } from "./github-token.ts";
@@ -22,6 +24,7 @@ export async function wakeKitchen(draftId: string): Promise<void> {
   const repo = process.env.GITHUB_REPOSITORY || (owner && slug ? `${owner}/${slug}` : undefined);
 
   if (!token || !repo) {
+    if (process.env.NODE_ENV === "development") return wakeLocalKitchen(draftId);
     await appendLog(
       draftId,
       "warn",
@@ -53,6 +56,24 @@ export async function wakeKitchen(draftId: string): Promise<void> {
         copy.imports.log.wakeFailed(`GitHub HTTP ${response.status}${hint ? `: ${hint}` : ""}`),
       );
     }
+  } catch (error) {
+    await appendLog(draftId, "warn", copy.imports.log.wakeFailed((error as Error).message));
+  }
+}
+
+/**
+ * Local dev without a dispatch token: cook on this laptop instead (ADR-0002 —
+ * the laptop always worked). Same script as `pnpm worker`; it drains the queue
+ * and exits, and two at once are safe (claims skip locked rows), so one per
+ * parked link is fine. Output goes to the `next dev` terminal.
+ */
+async function wakeLocalKitchen(draftId: string): Promise<void> {
+  try {
+    spawn(process.execPath, ["--env-file-if-exists=.env.local", "scripts/worker.ts"], {
+      cwd: process.cwd(),
+      stdio: "inherit",
+    }).on("error", (error) => console.error("[kitchen] local worker failed:", error));
+    await appendLog(draftId, "info", copy.imports.log.wokeLocal);
   } catch (error) {
     await appendLog(draftId, "warn", copy.imports.log.wakeFailed((error as Error).message));
   }

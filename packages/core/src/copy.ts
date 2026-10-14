@@ -282,6 +282,8 @@ export const copy = {
       requeued: "Ponownie w kolejce.",
       reimport: "Ponowny import przepisu — dodany do kolejki.",
       woke: "Kuchnia obudzona (GitHub Actions). Start zwykle w ciągu minuty.",
+      /** Local dev without GITHUB_DISPATCH_TOKEN: the Worker runs on this laptop. */
+      wokeLocal: "Kuchnia rusza lokalnie, na tym komputerze.",
       wakeOff: (missing: string) =>
         `Nie mogę obudzić kuchni w chmurze (brak ${missing} na Vercelu). Szkic weźmie cron, najpóźniej za 30 minut.`,
       wakeFailed: (detail: string) =>
