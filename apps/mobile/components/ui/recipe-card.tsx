@@ -7,7 +7,13 @@ import { Pressable, Text, View } from "react-native";
 import { recipeImage } from "../../lib/image";
 import { TagChip } from "./tag-chip";
 
-/** A recipe tile: photo (or a designed placeholder), time badge, title, up to two rows of tags. */
+/**
+ * A recipe tile: photo (or a designed placeholder), time badge, title, the first
+ * few tags. Capped by count, not by a clipped box: a fixed height cut the third
+ * row of chips in half, and breaks again with a larger system font.
+ */
+const CARD_TAGS = 3;
+
 export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
   const router = useRouter();
   const source = recipeImage(recipe.imageUrl);
@@ -20,7 +26,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
       onPress={() => router.push({ pathname: "/recipe/[slug]", params: { slug: recipe.slug } })}
       className="flex-1 active:opacity-80"
     >
-      <View className="flex-1 overflow-hidden rounded-card border-[3px] border-line bg-surface">
+      {/* flex-grow, not flex-1: flex-1 is flexBasis 0, which collapses to a bare border
+          wherever the parent has no fixed height (a lone Proposal card). */}
+      <View className="flex-grow overflow-hidden rounded-card border-[3px] border-line bg-surface">
         <View className="aspect-[4/3] w-full overflow-hidden bg-fill">
           {source ? (
             <Image source={source} contentFit="cover" style={{ width: "100%", height: "100%" }} />
@@ -35,12 +43,12 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
             </View>
           ) : null}
         </View>
-        <View className="flex-1 gap-2 p-3">
+        <View className="flex-grow gap-2 p-3">
           <Text numberOfLines={2} className="min-h-[44px] font-display text-lg uppercase leading-snug text-text">
             {recipe.title}
           </Text>
-          <View className="h-[60px] flex-row flex-wrap content-start gap-1 overflow-hidden">
-            {recipe.tags.map((tag) => (
+          <View className="flex-row flex-wrap gap-1">
+            {recipe.tags.slice(0, CARD_TAGS).map((tag) => (
               <TagChip key={tag.slug} tag={tag} size="sm" />
             ))}
           </View>
