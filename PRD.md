@@ -27,7 +27,8 @@ Look: snack arcade — a cartoon 2D game you cook from. Words: clean and cheeky.
 - Public sign-up, SEO, sharing outside the instance.
 - Meal-plan calendars, week planners, pantry inventory tracked over time.
 - Nutrition computed from an ingredient database (kcal is a hand-entered or scraped number).
-- Native apps. Responsive web, phone-first for the cooking view.
+- iOS apps. The web is responsive and phone-first; Android has a native app, sideloaded — see
+  [ADR-0007](./docs/adr/0007-native-android-app.md).
 - Unit conversion between metric and imperial.
 - Any LLM call from the deployed app. See [ADR-0002](./docs/adr/0002-ai-runs-on-a-local-worker.md).
 
