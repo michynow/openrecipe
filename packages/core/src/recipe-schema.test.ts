@@ -153,3 +153,21 @@ test("checkImage enforces type then size", () => {
     copy.validation.imageTooBig,
   );
 });
+
+test("toFormValue keeps what the editor edits and drops ids", async () => {
+  const { toFormValue } = await import("./recipe-schema.ts");
+  const value = toFormValue({
+    title: "Żurek",
+    servings: 4,
+    totalMinutes: 60,
+    kcalPerServing: null,
+    sourceUrl: null,
+    imageUrl: null,
+    steps: ["Gotuj"],
+    tips: [],
+    ingredientLines: [{ id: "x", quantity: 1, unit: "l", item: "zakwas", note: null, substitutes: [] }],
+    tags: [{ slug: "soup" }],
+  });
+  assert.deepEqual(value.ingredientLines, [{ quantity: 1, unit: "l", item: "zakwas", note: null, substitutes: [] }]);
+  assert.deepEqual(value.tagSlugs, ["soup"]);
+});

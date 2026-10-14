@@ -191,3 +191,43 @@ export type RecipeFormValue = {
   tips: string[];
   tagSlugs: string[];
 };
+
+/** What `toFormValue` reads: the server's Recipe read shape, or its JSON on the phone. */
+type FormSource = Pick<
+  RecipeFormValue,
+  "title" | "servings" | "totalMinutes" | "kcalPerServing" | "sourceUrl" | "imageUrl" | "steps" | "tips"
+> & {
+  ingredientLines: (RecipeFormValue["ingredientLines"][number] & { id?: string })[];
+  tags: { slug: string }[];
+};
+
+/**
+ * A Recipe as the editor holds it.
+ *
+ * Mapped explicitly rather than spread: the read shape carries author, dates and
+ * generated ids that the form has no business editing. Substitutes ride along
+ * untouched — they are Worker-generated (ADR-0002) and a hand edit must not drop
+ * them.
+ *
+ * Shared: the web edit route, the re-import diff (OR-46) and the phone's editor.
+ */
+export function toFormValue(recipe: FormSource): RecipeFormValue {
+  return {
+    title: recipe.title,
+    servings: recipe.servings,
+    totalMinutes: recipe.totalMinutes,
+    kcalPerServing: recipe.kcalPerServing,
+    sourceUrl: recipe.sourceUrl,
+    imageUrl: recipe.imageUrl,
+    ingredientLines: recipe.ingredientLines.map((line) => ({
+      quantity: line.quantity,
+      unit: line.unit,
+      item: line.item,
+      note: line.note,
+      substitutes: line.substitutes,
+    })),
+    steps: recipe.steps,
+    tips: recipe.tips,
+    tagSlugs: recipe.tags.map((tag) => tag.slug),
+  };
+}

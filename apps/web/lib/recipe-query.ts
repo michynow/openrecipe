@@ -1,7 +1,6 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
-import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
 import { ingredientLine, recipe, recipeTag, tag, user } from "./db/schema.ts";
 import { byFacet, type ChipTag, type Facet } from "@openrecipe/core/tags";
 
@@ -121,34 +120,5 @@ export async function getRecipeById(id: string): Promise<RecipeDetail | null> {
   return row ? getRecipeBySlug(row.slug) : null;
 }
 
-/**
- * A Recipe as the editor holds it.
- *
- * Mapped explicitly rather than spread: the read shape carries author, dates and
- * generated ids that the form has no business editing. Substitutes ride along
- * untouched — they are Worker-generated (ADR-0002) and a hand edit must not drop
- * them.
- *
- * Lives here because three screens need the same mapping: the edit route, the
- * re-import diff (OR-46), and whatever review reads next.
- */
-export function toFormValue(recipe: RecipeDetail): RecipeFormValue {
-  return {
-    title: recipe.title,
-    servings: recipe.servings,
-    totalMinutes: recipe.totalMinutes,
-    kcalPerServing: recipe.kcalPerServing,
-    sourceUrl: recipe.sourceUrl,
-    imageUrl: recipe.imageUrl,
-    ingredientLines: recipe.ingredientLines.map((line) => ({
-      quantity: line.quantity,
-      unit: line.unit,
-      item: line.item,
-      note: line.note,
-      substitutes: line.substitutes,
-    })),
-    steps: recipe.steps,
-    tips: recipe.tips,
-    tagSlugs: recipe.tags.map((tag) => tag.slug),
-  };
-}
+// toFormValue moved to core so the phone maps a Recipe into its editor the same way.
+export { toFormValue } from "@openrecipe/core/recipe-schema";

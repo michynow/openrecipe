@@ -1,7 +1,7 @@
 "use client";
 
 import { copy } from "@openrecipe/core/copy";
-import { diffRecipes, type Difference } from "@openrecipe/core/import/diff";
+import { diffRecipes, isTaken, patchFor, type Difference } from "@openrecipe/core/import/diff";
 import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
 
 /**
@@ -85,43 +85,4 @@ function Row({
       </button>
     </li>
   );
-}
-
-/** What "accept this one" means, field by field. */
-function patchFor(
-  field: Difference["field"],
-  incoming: RecipeFormValue,
-): Partial<RecipeFormValue> {
-  switch (field) {
-    case "title":
-      return { title: incoming.title };
-    case "servings":
-      return { servings: incoming.servings };
-    case "totalMinutes":
-      return { totalMinutes: incoming.totalMinutes };
-    case "kcalPerServing":
-      return { kcalPerServing: incoming.kcalPerServing };
-    case "imageUrl":
-      return { imageUrl: incoming.imageUrl };
-    case "steps":
-      return { steps: incoming.steps };
-    case "tips":
-      return { tips: incoming.tips };
-    case "tagSlugs":
-      return { tagSlugs: incoming.tagSlugs };
-    case "ingredientLines":
-      return { ingredientLines: incoming.ingredientLines };
-  }
-}
-
-/** Whether the editor already holds the incoming value for this field. */
-function isTaken(
-  difference: Difference,
-  value: RecipeFormValue,
-  incoming: RecipeFormValue,
-): boolean {
-  const patch = patchFor(difference.field, incoming);
-  const [key] = Object.keys(patch) as (keyof RecipeFormValue)[];
-
-  return JSON.stringify(value[key]) === JSON.stringify(incoming[key]);
 }

@@ -85,3 +85,13 @@ test("renders an ingredient line the way a person reads it", () => {
   assert.equal(lineText(line("masła", 2, "łyżki", "roztopione")), "2 łyżki masła (roztopione)");
   assert.equal(lineText(line("sól")), "sól");
 });
+
+test("patchFor takes one field; isTaken sees when the editor already holds it", async () => {
+  const { isTaken, patchFor } = await import("./diff.ts");
+  const current = { ...emptyRecipe, title: "A", servings: 2 };
+  const incoming = { ...emptyRecipe, title: "B", servings: 2 };
+  assert.deepEqual(patchFor("title", incoming), { title: "B" });
+  const difference = { field: "title" as const, current: "A", incoming: "B" };
+  assert.equal(isTaken(difference, current, incoming), false);
+  assert.equal(isTaken(difference, { ...current, ...patchFor("title", incoming) }, incoming), true);
+});

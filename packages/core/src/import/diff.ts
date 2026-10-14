@@ -157,3 +157,42 @@ export function diffRecipes(
 
   return out;
 }
+
+/** What "accept this one" means, field by field. */
+export function patchFor(
+  field: Difference["field"],
+  incoming: RecipeFormValue,
+): Partial<RecipeFormValue> {
+  switch (field) {
+    case "title":
+      return { title: incoming.title };
+    case "servings":
+      return { servings: incoming.servings };
+    case "totalMinutes":
+      return { totalMinutes: incoming.totalMinutes };
+    case "kcalPerServing":
+      return { kcalPerServing: incoming.kcalPerServing };
+    case "imageUrl":
+      return { imageUrl: incoming.imageUrl };
+    case "steps":
+      return { steps: incoming.steps };
+    case "tips":
+      return { tips: incoming.tips };
+    case "tagSlugs":
+      return { tagSlugs: incoming.tagSlugs };
+    case "ingredientLines":
+      return { ingredientLines: incoming.ingredientLines };
+  }
+}
+
+/** Whether the editor already holds the incoming value for this field. */
+export function isTaken(
+  difference: Difference,
+  value: RecipeFormValue,
+  incoming: RecipeFormValue,
+): boolean {
+  const patch = patchFor(difference.field, incoming);
+  const [key] = Object.keys(patch) as (keyof RecipeFormValue)[];
+
+  return JSON.stringify(value[key]) === JSON.stringify(incoming[key]);
+}
