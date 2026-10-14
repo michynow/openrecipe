@@ -11,8 +11,21 @@ import { ArcadeButton } from "../ui/button";
  * Park a link for the Worker: one field, one button. `prefill` (with a changing
  * `nonce`) is a link shared from another app; it fills the field, parking stays
  * a deliberate tap.
+ *
+ * `onParked` is for the Add screen: there is no queue below to watch, so a
+ * newly parked link moves on (to Drafts) instead of saying "see below".
  */
-export function ParkForm({ prefill, nonce }: { prefill?: string; nonce?: string }) {
+export function ParkForm({
+  prefill,
+  nonce,
+  intro = copy.imports.parkIntro,
+  onParked,
+}: {
+  prefill?: string;
+  nonce?: string;
+  intro?: string;
+  onParked?: () => void;
+}) {
   const router = useRouter();
   const park = useParkUrl();
   const [url, setUrl] = useState("");
@@ -41,6 +54,9 @@ export function ParkForm({ prefill, nonce }: { prefill?: string; nonce?: string 
         if ("existingSlug" in result) {
           setNote(copy.imports.alreadyImported);
           setExistingSlug(result.existingSlug);
+        } else if (onParked) {
+          setUrl("");
+          return onParked();
         } else {
           setNote(result.alreadyQueued ? copy.imports.alreadyParked : copy.imports.parked);
         }
@@ -52,7 +68,7 @@ export function ParkForm({ prefill, nonce }: { prefill?: string; nonce?: string 
 
   return (
     <View className="gap-2">
-      <Text className="font-body text-base text-text">{copy.imports.parkIntro}</Text>
+      <Text className="font-body text-base text-text">{intro}</Text>
       <TextInput
         value={url}
         onChangeText={setUrl}
@@ -72,7 +88,7 @@ export function ParkForm({ prefill, nonce }: { prefill?: string; nonce?: string 
         disabled={park.isPending || url.trim() === ""}
         onPress={submit}
       />
-      <Text className="font-body text-sm text-muted">{copy.imports.parkHint}</Text>
+      {onParked ? null : <Text className="font-body text-sm text-muted">{copy.imports.parkHint}</Text>}
       {note ? (
         <Text accessibilityLiveRegion="polite" className="font-bold text-sm text-text">
           {note}{" "}

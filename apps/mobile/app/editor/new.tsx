@@ -2,6 +2,9 @@ import { copy } from "@openrecipe/core/copy";
 import { emptyRecipe, httpUrlSchema } from "@openrecipe/core/recipe-schema";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 
+import { Text } from "react-native";
+
+import { ParkForm } from "../../components/drafts/park-form";
 import { RecipeEditor } from "../../components/editor/recipe-editor";
 import { AdminGateView, useAdminGate } from "../../components/ui/admin-gate";
 import { StateView } from "../../components/ui/state-view";
@@ -33,6 +36,16 @@ export default function NewRecipe() {
         heading={copy.editor.newTitle}
         tagGroups={tags.data}
         initial={{ ...emptyRecipe, sourceUrl: prefill }}
+        // PRD §7.3: one entry point, both ways in. The web links over to Drafts;
+        // on a phone that detour is a tab switch, so the link field sits here.
+        banner={
+          prefill ? undefined : (
+            <>
+              <ParkForm intro={copy.imports.orPasteLink} onParked={() => router.replace("/drafts")} />
+              <Text className="mt-2 font-display text-xl uppercase text-text">{copy.imports.typeInstead}</Text>
+            </>
+          )
+        }
         onSubmit={(v) => create.mutateAsync(v)}
         onSaved={({ slug }) => router.replace({ pathname: "/recipe/[slug]", params: { slug } })}
       />
