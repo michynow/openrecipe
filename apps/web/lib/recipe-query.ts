@@ -33,6 +33,8 @@ export type RecipeDetail = {
     unit: string | null;
     item: string;
     note: string | null;
+    /** Section heading (ADR-0008); contiguous, ungrouped first. */
+    section: string | null;
     substitutes: { item: string; note: string | null }[];
   }[];
   /** In Facet order — meal, cuisine, diet, effort, vibe — so like sits with like. */
@@ -97,6 +99,7 @@ export async function getRecipeBySlug(
       unit: line.unit,
       item: line.item,
       note: line.note,
+      section: line.section,
       substitutes: line.substitutes,
     })),
     tags: byFacet(tags.map((t) => ({ ...t, facet: t.facet as Facet }))),

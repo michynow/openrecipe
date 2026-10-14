@@ -53,6 +53,7 @@ export default async function EditRecipePage({
       unit: line.unit,
       item: line.item,
       note: line.note,
+      section: line.section,
       substitutes: line.substitutes,
     })),
     steps: recipe.steps,

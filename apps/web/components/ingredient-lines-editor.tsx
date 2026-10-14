@@ -17,6 +17,7 @@ const blankLine: Line = {
   unit: null,
   item: "",
   note: null,
+  section: null,
   substitutes: [],
 };
 
@@ -65,6 +66,7 @@ export function IngredientLinesEditor({
   function applyPaste() {
     const parsed = parseIngredientBlock(pasteText).map((line) => ({
       ...line,
+      section: null,
       substitutes: [],
     }));
     if (parsed.length === 0) return;

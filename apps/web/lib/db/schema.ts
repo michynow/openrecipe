@@ -237,6 +237,13 @@ export const ingredientLine = pgTable(
     item: text("item").notNull(),
     note: text("note"),
 
+    /**
+     * The Section heading this line sits under, or null (ADR-0008). Lines with the
+     * same Section are contiguous by position, ungrouped ones first — the Recipe
+     * schema normalises that on every write.
+     */
+    section: text("section"),
+
     /** [{ item, note }] — Worker-generated and stored, never fetched live (ADR-0002). */
     substitutes: jsonb("substitutes")
       .$type<{ item: string; note: string | null }[]>()
@@ -471,4 +478,42 @@ export const pushToken = pgTable("push_token", {
   token: text("token").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/* ──────────────────────── Shopping List (ADR-0009) ──────────────────────── */
+
+/**
+ * The household's one Shopping List: a row per Recipe on it. No list table —
+ * one household, one list. Lines are read live from the Recipe; a soft-deleted
+ * Recipe drops off on read, a hard-deleted one by cascade.
+ */
+export const shoppingListEntry = pgTable("shopping_list_entry", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Unique: adding a Recipe again replaces its servings and exclusions. */
+  recipeId: uuid("recipe_id")
+    .notNull()
+    .unique()
+    .references(() => recipe.id, { onDelete: "cascade" }),
+  /** The chosen serving count, not the Recipe's own. */
+  servings: integer("servings").notNull(),
+  /**
+   * Row keys (core `rowKey`: item + unit) left off the list — the Pantry Check's
+   * ticks at add time, and rows cleared after shopping. Keys rather than line ids,
+   * because saving a Recipe replaces its lines and their ids.
+   */
+  excluded: jsonb("excluded").$type<string[]>().notNull().default([]),
+  addedById: text("added_by_id").references(() => user.id, { onDelete: "set null" }),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * A ticked Shopping List Item, shared by the household. `quantity` is what was on
+ * screen when it was ticked: the tick holds only while the list needs no more than
+ * that (core `mergeShoppingList`).
+ */
+export const shoppingListTick = pgTable("shopping_list_tick", {
+  key: text("key").primaryKey(),
+  quantity: numeric("quantity"),
+  tickedById: text("ticked_by_id").references(() => user.id, { onDelete: "set null" }),
+  tickedAt: timestamp("ticked_at", { withTimezone: true }).notNull().defaultNow(),
 });

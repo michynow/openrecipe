@@ -11,7 +11,7 @@ import { move } from "./move";
 
 type Line = RecipeFormValue["ingredientLines"][number];
 
-const blank: Line = { quantity: null, unit: null, item: "", note: null, substitutes: [] };
+const blank: Line = { quantity: null, unit: null, item: "", note: null, section: null, substitutes: [] };
 
 /** Quantity as the user typed it ("1,5", "1."): parsed on every keystroke, shown as typed. */
 const parseQuantity = (text: string): number | null => (text.trim() === "" ? null : Number(text.replace(",", ".")));
