@@ -1,8 +1,8 @@
 "use client";
 
-import { copy } from "@/lib/copy";
-import { diffRecipes, type Difference } from "@/lib/import/diff";
-import type { RecipeFormValue } from "@/lib/recipe-schema";
+import { copy } from "@openrecipe/core/copy";
+import { diffRecipes, type Difference } from "@openrecipe/core/import/diff";
+import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
 
 /**
  * The re-import diff (OR-46).

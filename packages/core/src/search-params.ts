@@ -1,4 +1,3 @@
-import type { SearchParams } from "./search-query.ts";
 
 /**
  * The /search URL contract (OR-36).
@@ -27,6 +26,19 @@ import type { SearchParams } from "./search-query.ts";
  * not part of the view being shared, and it stays in the client island that asked
  * for it.
  */
+
+/** What `searchRecipes` (apps/web/lib/search-query.ts) can be asked. */
+export type SearchParams = {
+  /** Free text. Empty or whitespace means "browse", not "search for nothing". */
+  query?: string;
+  /** Tag slugs, flat. Facet grouping is worked out in SQL, in `searchRecipes`. */
+  tagSlugs?: string[];
+  maxTotalMinutes?: number;
+  hasImage?: boolean;
+  /** Opaque; hand back `nextCursor` from the previous page. */
+  cursor?: string | null;
+  limit?: number;
+};
 
 /** What both the page and the paging action hand to `searchRecipes`. */
 export type SearchFilters = Pick<SearchParams, "query" | "maxTotalMinutes"> & {

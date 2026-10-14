@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 import { GripButton, RowButton } from "@/components/section-card";
 import { reorder, useSortable } from "@/components/use-sortable";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * An ordered list of text lines — Steps and Tips both.

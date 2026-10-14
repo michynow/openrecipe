@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 
-import { IMAGE_RULES } from "@/lib/recipe-schema";
+import { IMAGE_RULES } from "@openrecipe/core/recipe-schema";
 import { getCurrentUser } from "@/lib/session";
 
 /**

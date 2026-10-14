@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { DraftList } from "@/components/draft-list";
 import { ParkUrlForm } from "@/components/park-url-form";
 import { SectionCard } from "@/components/section-card";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import { listDrafts } from "@/lib/draft-queue";
 import { requireUser } from "@/lib/session";
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { loadMoreSearchPage } from "@/app/(app)/search/actions";
 import { RecipeGrid } from "@/components/recipe-card";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import type { SearchPage } from "@/lib/search-query";
 
 /**

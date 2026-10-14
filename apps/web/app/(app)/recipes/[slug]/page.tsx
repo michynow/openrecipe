@@ -10,10 +10,10 @@ import { ReimportButton } from "@/components/reimport-button";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
 import WakeLockToggle from "@/components/wake-lock-toggle";
-import { imageSrc } from "@/lib/blob";
+import { imageSrc } from "@openrecipe/core/blob";
 import { getCookLog } from "@/lib/cook-log";
-import { copy } from "@/lib/copy";
-import { formatDate, formatDuration } from "@/lib/format";
+import { copy } from "@openrecipe/core/copy";
+import { formatDate, formatDuration } from "@openrecipe/core/format";
 import { getRecipeBySlug } from "@/lib/recipe-query";
 import { requireUser } from "@/lib/session";
 

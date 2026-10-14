@@ -6,8 +6,8 @@ import {
   logCookedAction,
   undoCookedAction,
 } from "@/app/(app)/recipes/actions";
-import { copy } from "@/lib/copy";
-import { count, formatDate } from "@/lib/format";
+import { copy } from "@openrecipe/core/copy";
+import { count, formatDate } from "@openrecipe/core/format";
 
 /**
  * "I made this" — writes a Cook Log entry (OR-32).

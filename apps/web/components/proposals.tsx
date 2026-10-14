@@ -5,7 +5,7 @@ import { useTransition } from "react";
 
 import { rerollProposalsAction } from "@/app/(app)/actions";
 import { RecipeCard } from "@/components/recipe-card";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import type { Proposal } from "@/lib/proposals-query";
 
 /**

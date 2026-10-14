@@ -2,10 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { TagChip } from "@/components/tag-chip";
-import { imageSrc } from "@/lib/blob";
-import type { ChipTag } from "@/lib/db/tags";
-import { copy } from "@/lib/copy";
-import { formatDuration } from "@/lib/format";
+import { imageSrc } from "@openrecipe/core/blob";
+import type { ChipTag } from "@openrecipe/core/tags";
+import { copy } from "@openrecipe/core/copy";
+import { formatDuration } from "@openrecipe/core/format";
 
 /**
  * What a card needs. Deliberately narrower than a Recipe — list queries must not

@@ -8,7 +8,7 @@ import {
   restoreRecipeAction,
 } from "@/app/(app)/recipes/actions";
 import { Icon } from "@/components/icons";
-import { confirmDelete, copy } from "@/lib/copy";
+import { confirmDelete, copy } from "@openrecipe/core/copy";
 
 /**
  * Delete a Recipe, with a confirm dialog and an undo (OR-25).

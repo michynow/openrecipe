@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { NewRecipeForm } from "@/components/new-recipe-form";
-import { copy } from "@/lib/copy";
-import { emptyRecipe, httpUrlSchema } from "@/lib/recipe-schema";
+import { copy } from "@openrecipe/core/copy";
+import { emptyRecipe, httpUrlSchema } from "@openrecipe/core/recipe-schema";
 import { requireUser } from "@/lib/session";
 import { getTagsByFacet } from "@/lib/tags-query";
 

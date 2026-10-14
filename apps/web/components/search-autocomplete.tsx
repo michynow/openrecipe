@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
 import type { RecipeCardData } from "@/components/recipe-card";
-import { imageSrc } from "@/lib/blob";
-import { copy } from "@/lib/copy";
-import { searchHref } from "@/lib/search-params";
+import { imageSrc } from "@openrecipe/core/blob";
+import { copy } from "@openrecipe/core/copy";
+import { searchHref } from "@openrecipe/core/search-params";
 
 /**
  * The header's search box with suggestions (OR-37).

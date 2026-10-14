@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 
-import { copy } from "./copy.ts";
+import { copy } from "@openrecipe/core/copy";
 import { db } from "./db/index.ts";
 import { draft, recipe } from "./db/schema.ts";
 import {
@@ -16,9 +16,9 @@ import {
   type DraftPulse,
   type DraftStage,
   type DraftStatus,
-} from "./drafts.ts";
+} from "@openrecipe/core/drafts";
 import { getRecipeById, toFormValue } from "./recipe-query.ts";
-import type { RecipeFormValue } from "./recipe-schema.ts";
+import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
 
 /**
  * Reading and writing the import queue (OR-39, OR-45).

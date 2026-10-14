@@ -5,10 +5,10 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 
 import { deleteImageAction } from "@/app/(app)/recipes/actions";
-import { imageSrc } from "@/lib/blob";
-import { copy } from "@/lib/copy";
+import { imageSrc } from "@openrecipe/core/blob";
+import { copy } from "@openrecipe/core/copy";
 import { resizeToWebp, webpName } from "@/lib/image-resize";
-import { checkImage } from "@/lib/recipe-schema";
+import { checkImage } from "@openrecipe/core/recipe-schema";
 
 /**
  * The Recipe's photo (OR-22).

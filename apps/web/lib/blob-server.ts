@@ -1,6 +1,6 @@
 import { del } from "@vercel/blob";
 
-import { isOwnBlobUrl } from "./blob.ts";
+import { isOwnBlobUrl } from "@openrecipe/core/blob";
 
 /**
  * Deleting blobs. Separate from lib/blob.ts because that module is imported by

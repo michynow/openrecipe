@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { EditRecipeForm } from "@/components/edit-recipe-form";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import { getRecipeBySlug } from "@/lib/recipe-query";
-import type { RecipeFormValue } from "@/lib/recipe-schema";
+import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
 import { requireUser } from "@/lib/session";
 import { getTagsByFacet } from "@/lib/tags-query";
 

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { deleteBlob } from "@/lib/blob-server";
 import { logCooked, undoCooked } from "@/lib/cook-log";
-import type { RecipeInput } from "@/lib/recipe-schema";
+import type { RecipeInput } from "@openrecipe/core/recipe-schema";
 import {
   createRecipe,
   deleteRecipe,

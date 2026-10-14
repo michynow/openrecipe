@@ -8,14 +8,14 @@ import { IngredientLinesEditor } from "@/components/ingredient-lines-editor";
 import { LineListEditor } from "@/components/line-list-editor";
 import { SectionCard } from "@/components/section-card";
 import { TagPicker } from "@/components/tag-picker";
-import { copy } from "@/lib/copy";
-import { guessedFields } from "@/lib/inferred";
-import { firstErrorField, toFieldErrors, type FieldErrors } from "@/lib/form-errors";
+import { copy } from "@openrecipe/core/copy";
+import { guessedFields } from "@openrecipe/core/inferred";
+import { firstErrorField, toFieldErrors, type FieldErrors } from "@openrecipe/core/form-errors";
 import {
   emptyRecipe,
   recipeSchema,
   type RecipeFormValue,
-} from "@/lib/recipe-schema";
+} from "@openrecipe/core/recipe-schema";
 import type { SaveResult } from "@/lib/recipes";
 import type { FacetGroup } from "@/lib/tags-query";
 

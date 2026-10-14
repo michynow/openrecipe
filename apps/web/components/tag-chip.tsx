@@ -1,7 +1,7 @@
 import { Icon, type IconName } from "@/components/icons";
-import type { ChipTag, Facet } from "@/lib/db/tags";
-import { PIXEL_SIZE, spriteLayers } from "@/lib/pixel";
-import { TAG_SPRITES } from "@/lib/tag-sprites";
+import type { ChipTag, Facet } from "@openrecipe/core/tags";
+import { PIXEL_SIZE, spriteLayers } from "@openrecipe/core/pixel";
+import { TAG_SPRITES } from "@openrecipe/core/tag-sprites";
 
 /**
  * A Tag as a sticker: its own pixel sprite (a flag, a fried egg, a chili) on

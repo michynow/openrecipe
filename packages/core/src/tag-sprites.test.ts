@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { SEED_TAGS } from "./db/tags.ts";
+import { SEED_TAGS } from "./tags.ts";
 import { spriteProblem } from "./pixel.ts";
 import { TAG_SPRITES } from "./tag-sprites.ts";
 

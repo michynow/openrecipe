@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Kielbas } from "@/components/help-button";
-import { copy } from "@/lib/copy";
-import { finishedSince, type DraftPulse, type DraftStatus } from "@/lib/drafts";
+import { copy } from "@openrecipe/core/copy";
+import { finishedSince, type DraftPulse, type DraftStatus } from "@openrecipe/core/drafts";
 
 /** Fired by anything that parks a Draft, so the poller starts watching at once. */
 export const DRAFTS_CHANGED = "openrecipe:drafts-changed";

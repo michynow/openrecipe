@@ -1,13 +1,13 @@
 import Form from "next/form";
 import Link from "next/link";
 
-import { copy } from "@/lib/copy";
-import { formatDuration } from "@/lib/format";
+import { copy } from "@openrecipe/core/copy";
+import { formatDuration } from "@openrecipe/core/format";
 import {
   searchHref,
   toggleTag,
   type SearchFilters,
-} from "@/lib/search-params";
+} from "@openrecipe/core/search-params";
 import type { FacetGroup } from "@/lib/tags-query";
 
 /**

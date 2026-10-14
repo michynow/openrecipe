@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import { requireUser } from "@/lib/session";
 
 /**

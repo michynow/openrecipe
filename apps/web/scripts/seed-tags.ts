@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 
 import { db } from "../lib/db/index.ts";
 import { tag } from "../lib/db/schema.ts";
-import { SEED_TAGS } from "../lib/db/tags.ts";
+import { SEED_TAGS } from "@openrecipe/core/tags";
 
 /**
  * Seed the Tag taxonomy. Idempotent: re-running it changes nothing.

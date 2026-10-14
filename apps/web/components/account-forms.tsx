@@ -7,7 +7,7 @@ import {
   updateNameAction,
   type AccountResult,
 } from "@/app/(app)/account/actions";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 const input =
   "rounded-input border border-line bg-surface px-3 py-2 disabled:opacity-50";

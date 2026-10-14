@@ -1,5 +1,5 @@
-import { SPRITES, spriteFor } from "@/lib/ingredient-sprites";
-import { PIXEL_SIZE, spriteLayers } from "@/lib/pixel";
+import { SPRITES, spriteFor } from "@openrecipe/core/ingredient-sprites";
+import { PIXEL_SIZE, spriteLayers } from "@openrecipe/core/pixel";
 
 /**
  * An Ingredient Line's pixel-art sprite, picked from its item name. Decorative:

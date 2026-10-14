@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { signIn } from "@/lib/auth-client";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * Sign in. Two paths, no way to create an account — accounts exist only via an

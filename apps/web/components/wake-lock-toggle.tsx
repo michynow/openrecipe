@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /** Support never changes, so there is nothing to subscribe to. */
 const noSubscribe = () => () => {};

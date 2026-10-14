@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * Polish 404. Next's default is English, which would be the only untranslated

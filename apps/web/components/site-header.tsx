@@ -4,7 +4,7 @@ import { DraftToasts } from "@/components/draft-toasts";
 import { HelpButton } from "@/components/help-button";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { SignOutButton } from "@/components/sign-out-button";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import { getCurrentUser } from "@/lib/session";
 
 /**

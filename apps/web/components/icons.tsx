@@ -1,4 +1,4 @@
-import { PIXEL_SIZE, pixelPath } from "@/lib/pixel";
+import { PIXEL_SIZE, pixelPath } from "@openrecipe/core/pixel";
 
 /**
  * The whole UI icon set, as 12×12 pixel art in one colour (currentColor), so it

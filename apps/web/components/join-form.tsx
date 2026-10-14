@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { joinWithPassword } from "@/app/(auth)/join/[token]/actions";
 import { signIn } from "@/lib/auth-client";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * Create an account from an Invite.

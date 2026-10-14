@@ -5,9 +5,9 @@ import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { deleteBlob } from "./blob-server.ts";
 import { db } from "./db/index.ts";
 import { ingredientLine, recipe, recipeTag, tag } from "./db/schema.ts";
-import { copy } from "./copy.ts";
-import { recipeSchema, type RecipeInput } from "./recipe-schema.ts";
-import { uniqueSlug } from "./slug.ts";
+import { copy } from "@openrecipe/core/copy";
+import { recipeSchema, type RecipeInput } from "@openrecipe/core/recipe-schema";
+import { uniqueSlug } from "@openrecipe/core/slug";
 
 /**
  * Writing Recipes.

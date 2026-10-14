@@ -7,8 +7,8 @@ import { approveDraftAction, discardDraftAction } from "@/app/(app)/drafts/actio
 import { Icon } from "@/components/icons";
 import { GuessedChip, RecipeEditor, type RecipeEditorValue } from "@/components/recipe-editor";
 import { ReimportDiff } from "@/components/reimport-diff";
-import { copy } from "@/lib/copy";
-import { guessedFields } from "@/lib/inferred";
+import { copy } from "@openrecipe/core/copy";
+import { guessedFields } from "@openrecipe/core/inferred";
 import type { FacetGroup } from "@/lib/tags-query";
 
 /**

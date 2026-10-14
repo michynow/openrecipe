@@ -1,6 +1,6 @@
 "use server";
 
-import { parseSearchFilters } from "@/lib/search-params";
+import { parseSearchFilters } from "@openrecipe/core/search-params";
 import { searchRecipes, type SearchPage } from "@/lib/search-query";
 import { requireUser } from "@/lib/session";
 

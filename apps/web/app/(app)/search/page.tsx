@@ -3,13 +3,13 @@ import { Suspense } from "react";
 import { RecipeGrid } from "@/components/recipe-card";
 import { SearchFilterPanel } from "@/components/search-filters";
 import { SearchResults } from "@/components/search-results";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import {
   parseSearchFilters,
   searchFiltersToQuery,
   type RawSearchParams,
   type SearchFilters,
-} from "@/lib/search-params";
+} from "@openrecipe/core/search-params";
 import { searchRecipes } from "@/lib/search-query";
 import { requireUser } from "@/lib/session";
 import { getTagsByFacet } from "@/lib/tags-query";

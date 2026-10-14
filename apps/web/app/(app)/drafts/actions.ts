@@ -12,7 +12,7 @@ import {
   type ParkResult,
 } from "@/lib/draft-queue";
 import { wakeKitchen } from "@/lib/kitchen";
-import type { RecipeInput } from "@/lib/recipe-schema";
+import type { RecipeInput } from "@openrecipe/core/recipe-schema";
 import { createRecipe, updateRecipe, type SaveResult } from "@/lib/recipes";
 import { requireAdmin } from "@/lib/session";
 

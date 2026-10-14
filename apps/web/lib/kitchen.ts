@@ -1,4 +1,4 @@
-import { copy } from "./copy.ts";
+import { copy } from "@openrecipe/core/copy";
 import { appendLog } from "./draft-queue.ts";
 import { cleanGithubToken, dispatchFailureHint } from "./github-token.ts";
 

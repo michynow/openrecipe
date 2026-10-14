@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Baloo_2, JetBrains_Mono, Nunito } from "next/font/google";
 import "./globals.css";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * Root layout: document, fonts, nothing else.

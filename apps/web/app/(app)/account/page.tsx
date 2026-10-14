@@ -1,5 +1,5 @@
 import { AccountForms } from "@/components/account-forms";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import { requireUser } from "@/lib/session";
 
 /** Every role gets this page: your name, your password, and what you may do. */

@@ -3,8 +3,8 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { copy } from "@/lib/copy";
-import { helpTopic } from "@/lib/help";
+import { copy } from "@openrecipe/core/copy";
+import { helpTopic } from "@openrecipe/core/help";
 
 /** Milliseconds per typed character. Game dialogue speed, not reading speed. */
 const TYPE_MS = 22;

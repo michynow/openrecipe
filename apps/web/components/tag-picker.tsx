@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { copy } from "@/lib/copy";
-import { MAX_TAGS } from "@/lib/recipe-schema";
+import { copy } from "@openrecipe/core/copy";
+import { MAX_TAGS } from "@openrecipe/core/recipe-schema";
 import type { FacetGroup } from "@/lib/tags-query";
 
 /**

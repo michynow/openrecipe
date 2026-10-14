@@ -1,9 +1,9 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
-import type { RecipeFormValue } from "./recipe-schema.ts";
+import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
 import { ingredientLine, recipe, recipeTag, tag, user } from "./db/schema.ts";
-import { byFacet, type ChipTag, type Facet } from "./db/tags.ts";
+import { byFacet, type ChipTag, type Facet } from "@openrecipe/core/tags";
 
 /**
  * Reading a single Recipe.

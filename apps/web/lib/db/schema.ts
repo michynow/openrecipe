@@ -13,7 +13,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import type { DraftLogEntry } from "../drafts.ts";
+import type { DraftLogEntry } from "@openrecipe/core/drafts";
 
 /**
  * The database schema, in TypeScript. Source of truth for `drizzle-kit generate`.

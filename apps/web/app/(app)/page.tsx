@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Proposals } from "@/components/proposals";
 import { RecipeGrid } from "@/components/recipe-card";
 import { StatWidgets } from "@/components/stat-widgets";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import { getDashboardStats } from "@/lib/dashboard-query";
 import { getProposals } from "@/lib/proposals-query";
 import { requireUser } from "@/lib/session";

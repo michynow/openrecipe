@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * Copies the full join URL. Built from `location.origin` at click time rather than

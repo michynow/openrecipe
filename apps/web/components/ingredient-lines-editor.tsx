@@ -5,10 +5,10 @@ import { useRef, useState } from "react";
 import { IngredientSprite } from "@/components/pixel-sprite";
 import { GripButton, RowButton } from "@/components/section-card";
 import { reorder, useSortable } from "@/components/use-sortable";
-import { copy } from "@/lib/copy";
-import type { FieldErrors } from "@/lib/form-errors";
-import { parseIngredientBlock } from "@/lib/parse-ingredient";
-import type { RecipeFormValue } from "@/lib/recipe-schema";
+import { copy } from "@openrecipe/core/copy";
+import type { FieldErrors } from "@openrecipe/core/form-errors";
+import { parseIngredientBlock } from "@openrecipe/core/parse-ingredient";
+import type { RecipeFormValue } from "@openrecipe/core/recipe-schema";
 
 type Line = RecipeFormValue["ingredientLines"][number];
 

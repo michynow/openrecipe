@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { JoinForm } from "@/components/join-form";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import { inspectInvite } from "@/lib/invites";
 
 /**

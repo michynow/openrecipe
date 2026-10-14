@@ -2,7 +2,8 @@ import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import type { RecipeCardData } from "../components/recipe-card.tsx";
-import { byFacet, type ChipTag } from "./db/tags.ts";
+import type { SearchParams } from "@openrecipe/core/search-params";
+import { byFacet, type ChipTag } from "@openrecipe/core/tags";
 
 /**
  * The one search query (OR-35). Everything /search can ask — text, Facet filters,
@@ -16,18 +17,6 @@ import { byFacet, type ChipTag } from "./db/tags.ts";
  * It returns exactly what a card renders. A search page pulling steps, tips and
  * Ingredient Lines for twenty-four tiles is the mistake this shape prevents.
  */
-
-export type SearchParams = {
-  /** Free text. Empty or whitespace means "browse", not "search for nothing". */
-  query?: string;
-  /** Tag slugs, flat. Facet grouping is worked out in SQL — see below. */
-  tagSlugs?: string[];
-  maxTotalMinutes?: number;
-  hasImage?: boolean;
-  /** Opaque; hand back `nextCursor` from the previous page. */
-  cursor?: string | null;
-  limit?: number;
-};
 
 export type SearchPage = {
   recipes: RecipeCardData[];

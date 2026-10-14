@@ -3,7 +3,7 @@ import { and, asc, count, eq, isNull, ne, sql } from "drizzle-orm";
 import { db } from "./db/index.ts";
 import { account, draft, recipeTag, session, tag, user } from "./db/schema.ts";
 import { effectiveRole, isMasterEmail, type Role } from "./roles.ts";
-import type { Facet } from "./db/tags.ts";
+import type { Facet } from "@openrecipe/core/tags";
 
 /**
  * The Master's screen (OR-50): who is in, what the taxonomy holds, what the

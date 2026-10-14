@@ -4,7 +4,7 @@ import { useEffect, useId, useRef } from "react";
 
 import { Icon } from "@/components/icons";
 import { IngredientSprite } from "@/components/pixel-sprite";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import type { RecipeDetail } from "@/lib/recipe-query";
 
 type Line = RecipeDetail["ingredientLines"][number];

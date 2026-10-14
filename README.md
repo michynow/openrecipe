@@ -17,16 +17,16 @@ see [ADR-0002](./docs/adr/0002-ai-runs-on-a-local-worker.md).
 
 ```bash
 pnpm install
-cp .env.example .env.local
+cp apps/web/.env.example apps/web/.env.local
 pnpm dev
 ```
 
-Fill in `.env.local` — each variable says which ticket needs it.
+Fill in `apps/web/.env.local` — each variable says which ticket needs it.
 
 ## Database
 
-Schema is TypeScript in [`lib/db/schema.ts`](./lib/db/schema.ts); migrations are generated
-SQL files under `drizzle/`, committed and reviewed like any other code.
+Schema is TypeScript in [`apps/web/lib/db/schema.ts`](./apps/web/lib/db/schema.ts); migrations are generated
+SQL files under `apps/web/drizzle/`, committed and reviewed like any other code.
 
 ```bash
 pnpm db:generate
@@ -49,18 +49,25 @@ Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `test`.
 ## Conventions
 
 **Tests.** `node:test` with Node's native type stripping — no framework, no transpile.
-`pnpm test` runs `lib/**/*.test.ts`.
+`pnpm test` runs every workspace's tests: `apps/web/lib/**/*.test.ts` and
+`packages/core/src/**/*.test.ts`.
 
-**Relative imports inside `lib/` carry the `.ts` extension** (`./copy.ts`). Node strips
+**Relative imports inside `lib/` and `packages/core` carry the `.ts` extension** (`./copy.ts`). Node strips
 types but does no extension resolution, so anything reachable from a test must be imported
 that way. Turbopack and `tsc` both accept it (`allowImportingTsExtensions`). App code
-imports through the `@/` alias without an extension, as usual.
+imports through the `@/` alias without an extension, as usual; shared code through
+`@openrecipe/core/<module>` (also without one).
+
+**Layout.** pnpm workspace: `apps/web` (Next.js, Vercel Root Directory), `apps/mobile`
+(Expo, [ADR-0007](./docs/adr/0007-native-android-app.md)), `packages/core` (pure TS both
+share — no DB, no Node built-ins, no Next).
 
 **No user-facing string in a component.** Everything readable comes from
-[`lib/copy.ts`](./lib/copy.ts); formatting from [`lib/format.ts`](./lib/format.ts).
+[`packages/core/src/copy.ts`](./packages/core/src/copy.ts); formatting from
+[`packages/core/src/format.ts`](./packages/core/src/format.ts).
 
 **No hex colour in a component.** Palette tokens live in
-[`app/globals.css`](./app/globals.css).
+[`apps/web/app/globals.css`](./apps/web/app/globals.css).
 
 ## CI
 

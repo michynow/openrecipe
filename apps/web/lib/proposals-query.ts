@@ -3,7 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "./db/index.ts";
 import { proposalReroll } from "./db/schema.ts";
 import type { RecipeCardData } from "../components/recipe-card.tsx";
-import { byFacet, type ChipTag } from "./db/tags.ts";
+import { byFacet, type ChipTag } from "@openrecipe/core/tags";
 
 /**
  * Today's Proposals (OR-48).

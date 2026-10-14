@@ -8,9 +8,9 @@ import {
   reclaimStale,
   setStage,
 } from "../lib/draft-queue.ts";
-import { copy } from "../lib/copy.ts";
+import { copy } from "@openrecipe/core/copy";
 import { db } from "../lib/db/index.ts";
-import { formatClock } from "../lib/format.ts";
+import { formatClock } from "@openrecipe/core/format";
 import { tag } from "../lib/db/schema.ts";
 import { extractRecipeFromUrl, type ExtractFailure } from "../lib/import/extract.ts";
 import { generateRecipe } from "../lib/import/generate.ts";

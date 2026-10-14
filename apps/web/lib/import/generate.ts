@@ -1,6 +1,6 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 
-import { recipeSchema, type RecipeFormValue } from "../recipe-schema.ts";
+import { recipeSchema, type RecipeFormValue } from "@openrecipe/core/recipe-schema";
 import type { ExtractedPage } from "./extract.ts";
 import { buildPrompt, SYSTEM_PROMPT, type TagOption } from "./prompt.ts";
 import { usageLimitRetryAt } from "./usage-limit.ts";

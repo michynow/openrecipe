@@ -6,7 +6,7 @@ import { useState } from "react";
 import { reimportAction } from "@/app/(app)/drafts/actions";
 import { DRAFTS_CHANGED } from "@/components/draft-toasts";
 import { Icon } from "@/components/icons";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * "Import this one again" (OR-46), shown only on a Recipe that has a Source URL.

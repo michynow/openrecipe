@@ -8,10 +8,10 @@ import {
   discardDraftAction,
   retryDraftAction,
 } from "@/app/(app)/drafts/actions";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import type { DraftRow } from "@/lib/draft-queue";
-import { DRAFT_STAGES, type DraftLogEntry } from "@/lib/drafts";
-import { count, formatClock, formatRelativeDays } from "@/lib/format";
+import { DRAFT_STAGES, type DraftLogEntry } from "@openrecipe/core/drafts";
+import { count, formatClock, formatRelativeDays } from "@openrecipe/core/format";
 
 /** How often the list re-asks the server while something is moving. */
 const REFRESH_MS = 2500;

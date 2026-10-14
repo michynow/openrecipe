@@ -2,7 +2,7 @@ import { asc, sql } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { tag } from "./db/schema.ts";
-import { FACETS, type Facet } from "./db/tags.ts";
+import { FACETS, type Facet } from "@openrecipe/core/tags";
 
 /**
  * Tags for the picker and, later, the search filters.

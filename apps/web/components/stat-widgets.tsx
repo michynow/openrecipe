@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import type { DashboardStats } from "@/lib/dashboard-query";
-import { count, formatNumber, plural } from "@/lib/format";
+import { count, formatNumber, plural } from "@openrecipe/core/format";
 
 /**
  * The dashboard's numbers (OR-47).

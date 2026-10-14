@@ -11,7 +11,7 @@ import {
 } from "@/lib/admin-query";
 import { mintInvite, revokeInvite } from "@/lib/invites";
 import { requireAdmin } from "@/lib/session";
-import type { Facet } from "@/lib/db/tags";
+import type { Facet } from "@openrecipe/core/tags";
 
 /**
  * Admin-only. Each action re-checks on the server — hiding a button is not

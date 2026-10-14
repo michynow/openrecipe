@@ -4,7 +4,7 @@ A private, invite-only recipe library for one household. Recipes arrive either
 hand-typed or imported from a URL via an LLM, and are cooked from the phone.
 
 **The interface is Polish; this glossary is English.** These terms name concepts in code,
-schema, tickets and conversation. What the user sees is a Polish string in `lib/copy.ts`.
+schema, tickets and conversation. What the user sees is a Polish string in `packages/core/src/copy.ts`.
 The two are related by the table at the bottom — a term's Polish label is a rendering
 decision, not a rename.
 

@@ -1,5 +1,5 @@
-import { parseIngredientBlock } from "../parse-ingredient.ts";
-import { recipeSchema, type RecipeFormValue } from "../recipe-schema.ts";
+import { parseIngredientBlock } from "@openrecipe/core/parse-ingredient";
+import { recipeSchema, type RecipeFormValue } from "@openrecipe/core/recipe-schema";
 import type { ExtractedPage } from "./extract.ts";
 
 /**

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { parkUrlAction } from "@/app/(app)/drafts/actions";
 import { DRAFTS_CHANGED } from "@/components/draft-toasts";
 import { Icon } from "@/components/icons";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 
 /**
  * Park a link for the Worker (OR-39).

@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { copy } from "@/lib/copy";
+import { copy } from "@openrecipe/core/copy";
 import {
   attributeInvite,
   claimInvite,

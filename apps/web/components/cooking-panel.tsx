@@ -5,8 +5,8 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/icons";
 import { IngredientSprite } from "@/components/pixel-sprite";
 import { SubstitutesSheet } from "@/components/substitutes-sheet";
-import { copy } from "@/lib/copy";
-import { count } from "@/lib/format";
+import { copy } from "@openrecipe/core/copy";
+import { count } from "@openrecipe/core/format";
 import {
   pantryKey,
   parsePantry,
@@ -14,9 +14,9 @@ import {
   today,
   writePantry,
 } from "@/lib/pantry";
-import { formatScaledQuantity } from "@/lib/quantity";
+import { formatScaledQuantity } from "@openrecipe/core/quantity";
 import type { RecipeDetail } from "@/lib/recipe-query";
-import { buildShoppingExport } from "@/lib/shopping-export";
+import { buildShoppingExport } from "@openrecipe/core/shopping-export";
 
 type Line = RecipeDetail["ingredientLines"][number];
 

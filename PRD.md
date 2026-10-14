@@ -417,7 +417,7 @@ message, error and empty state. There is no language switcher and no second loca
 commit messages and Jira tickets. `ingredientLine.item` holds `"masło"`. Mixed-language
 identifiers age badly and make the codebase unsearchable against its own docs.
 
-**No i18n library.** One module, `lib/copy.ts`, exporting a flat keyed object of Polish
+**No i18n library.** One module, `packages/core/src/copy.ts`, exporting a flat keyed object of Polish
 strings. `next-intl` and friends exist to serve a second locale; there isn't one. Every
 user-facing string comes from that module — none inline in a component.
 
@@ -494,7 +494,7 @@ These are real work items, not notes:
 Same Zod schema in the form, the Server Action and the Worker. Client validation is a
 convenience; the Server Action re-validates unconditionally.
 
-All messages Polish, from `lib/copy.ts` — including the ones Zod would otherwise generate
+All messages Polish, from `packages/core/src/copy.ts` — including the ones Zod would otherwise generate
 in English. Character limits count Polish text, so bear in mind diacritics are single
 characters, not two.
 
