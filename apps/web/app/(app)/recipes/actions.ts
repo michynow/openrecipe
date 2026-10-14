@@ -119,6 +119,8 @@ export async function logCookedAction(
 ): Promise<{ entryId: string }> {
   const user = await requireAdmin();
   const entryId = await logCooked(recipeId, user.id);
+  // Deleted under the reader's nose. The button rolls back and says so.
+  if (!entryId) throw new Error("Recipe not found");
 
   revalidatePath("/");
 

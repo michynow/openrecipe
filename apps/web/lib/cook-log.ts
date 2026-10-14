@@ -1,4 +1,4 @@
-import { and, count, eq, gt, max } from "drizzle-orm";
+import { and, count, eq, gt, max, sql } from "drizzle-orm";
 
 import { db } from "./db/index.ts";
 import { cookLog } from "./db/schema.ts";
@@ -45,18 +45,22 @@ export async function getCookLog(recipeId: string): Promise<CookLogSummary> {
  * Write an entry. Logging the same Recipe twice in one day is allowed on purpose —
  * see the note on the table in lib/db/schema.ts.
  *
- * Returns the new entry's id, which is the only handle the undo has.
+ * Returns the new entry's id, which is the only handle the undo has — or null
+ * when there is no live Recipe with that id (deleted, or never existed). One
+ * statement, so a delete landing in between cannot slip a row past the check.
  */
 export async function logCooked(
   recipeId: string,
   userId: string,
-): Promise<string> {
-  const [row] = await db
-    .insert(cookLog)
-    .values({ recipeId, userId })
-    .returning({ id: cookLog.id });
+): Promise<string | null> {
+  const inserted = await db.execute<{ id: string }>(sql`
+    insert into cook_log (recipe_id, user_id)
+    select id, ${userId} from recipe
+    where id = ${recipeId} and deleted_at is null
+    returning id
+  `);
 
-  return row.id;
+  return inserted.rows[0]?.id ?? null;
 }
 
 /**
