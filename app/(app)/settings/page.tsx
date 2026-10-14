@@ -289,7 +289,7 @@ export default async function SettingsPage() {
                   >
                     <form
                       action={renameTagAction}
-                      className="flex min-w-0 flex-1 items-center gap-2"
+                      className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-56"
                     >
                       <input type="hidden" name="id" value={row.id} />
                       <input
@@ -310,7 +310,7 @@ export default async function SettingsPage() {
                       {row.slug}
                     </span>
 
-                    <form action={deleteTagAction} className="shrink-0">
+                    <form action={deleteTagAction} className="ml-auto shrink-0">
                       <input type="hidden" name="id" value={row.id} />
                       <ConfirmButton
                         message={`${copy.common.delete}: ${row.label}?`}

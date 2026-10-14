@@ -15,6 +15,7 @@ export const copy = {
     dashboard: "Start",
     search: "Szukaj",
     add: "Dodaj przepis",
+    addShort: "Dodaj",
     drafts: "Szkice",
     settings: "Ustawienia",
     signOut: "Wyloguj się",
@@ -233,6 +234,14 @@ export const copy = {
       tagSlugs: "Tagi",
       ingredientLines: "Składniki",
     },
+    /** Toasts from MC Kiełbas when the Worker finishes a Draft. */
+    toastReady: (title: string | null) =>
+      title
+        ? `Gorące z grilla! „${title}” czeka, aż rzucisz okiem.`
+        : "Gorące z grilla! Szkic czeka, aż rzucisz okiem.",
+    toastFailed: "Ups, ten link się przypalił. Zajrzyj do Szkiców, co poszło nie tak.",
+    toastOpenDrafts: "Do Szkiców",
+    toastDismiss: "Zamknij powiadomienie",
     draftsEmpty: "Nic nie czeka. Wklej link, a zajmiemy się resztą.",
     review: "Sprawdź szkic",
     retry: "Spróbuj jeszcze raz",

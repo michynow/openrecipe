@@ -98,7 +98,7 @@ export function CookingPanel({
   const openLine = lines.find((line) => line.id === openLineId) ?? null;
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
+    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-3 sm:p-4">
       <h2 className="font-display text-xl uppercase tracking-tight">
         {copy.recipe.ingredients}
       </h2>
@@ -128,7 +128,7 @@ export function CookingPanel({
         </button>
       </div>
 
-      <fieldset className="flex flex-col gap-1">
+      <fieldset className="flex min-w-0 flex-col gap-1">
         <legend className="pb-1 text-sm text-muted">
           {copy.recipe.pantryCheck}
         </legend>
@@ -167,19 +167,21 @@ export function CookingPanel({
                     <IngredientSprite item={line.item} className="size-7" />
                   </span>
                   {/*
-                    Number and unit are two columns, not one string: "350 g" and
+                    Number and unit are two columns from sm up: "350 g" and
                     "1 łyżeczka" right-aligned as a whole put their numbers in
                     different places. The number is right-aligned in tabular figures,
-                    the unit starts on one left edge. On a phone the unit tucks under
-                    the number to leave the item room.
+                    the unit starts on one left edge. On a phone the unit column
+                    would eat the item's room, so the unit leads the item's text
+                    instead — "1 | łyżeczka oliwa", the way a recipe card reads.
                   */}
-                  <span className="flex w-14 shrink-0 flex-col items-end leading-tight sm:w-auto sm:flex-row sm:items-center sm:gap-2">
-                    <span className="font-mono text-lg font-bold tabular-nums sm:w-16 sm:text-right">
+                  <span className="flex shrink-0 items-baseline gap-2 self-start pt-2">
+                    <span className="w-12 text-right font-mono text-lg font-bold tabular-nums sm:w-16">
                       <Amount text={amount} />
                     </span>
-                    <span className="text-sm font-semibold sm:w-24 sm:text-base">{line.unit}</span>
+                    <span className="hidden w-24 text-base font-semibold sm:inline">{line.unit}</span>
                   </span>
-                  <span className={`min-w-0 flex-1 py-2 font-bold ${itemStyle}`}>
+                  <span className={`min-w-0 flex-1 py-2 font-bold hyphens-auto ${itemStyle}`}>
+                    {line.unit && <span className="font-semibold sm:hidden">{line.unit} </span>}
                     {line.item}
                     {line.note && <span className="font-semibold text-muted"> ({line.note})</span>}
                   </span>
@@ -190,9 +192,9 @@ export function CookingPanel({
                     onClick={() => setOpenLineId(line.id)}
                     aria-label={`${copy.recipe.substitutes}: ${line.item}`}
                     title={copy.recipe.substitutes}
-                    className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-input border border-line px-2 text-sm font-extrabold text-accent2"
+                    className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-input border border-line px-1.5 text-sm font-extrabold text-accent2 sm:gap-1.5 sm:px-2"
                   >
-                    <Icon name="swap" className="size-5" />
+                    <Icon name="swap" className="size-4 sm:size-5" />
                     <span className="hidden sm:inline">{copy.recipe.substitutes}</span>
                     <span className="font-mono tabular-nums">{line.substitutes.length}</span>
                   </button>

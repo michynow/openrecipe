@@ -6,6 +6,7 @@ import {
   assertTransition,
   canTransition,
   DRAFT_STATUSES,
+  finishedSince,
   isDraftStatus,
   isRetryDue,
   isQueueExpired,
@@ -14,6 +15,8 @@ import {
   QUEUE_MAX_MS,
   RECLAIM_AFTER_MS,
   sourceUrlSchema,
+  type DraftPulse,
+  type DraftStatus,
 } from "./drafts.ts";
 
 const validPayload = {
@@ -136,4 +139,24 @@ test("isRetryDue waits for the reset, and only for limited Drafts", () => {
   assert.equal(isRetryDue("limited", reset, new Date("2026-10-12T21:51:59Z")), false);
   assert.equal(isRetryDue("limited", reset, new Date("2026-10-12T21:52:00Z")), true);
   assert.equal(isRetryDue("queued", reset, new Date("2026-10-13T00:00:00Z")), false);
+});
+
+test("finishedSince reports only Drafts that moved from waiting to done", () => {
+  const before = new Map<string, DraftStatus>([
+    ["a", "processing"],
+    ["b", "queued"],
+    ["c", "ready"],
+    ["d", "limited"],
+  ]);
+  const now: DraftPulse[] = [
+    { id: "a", status: "ready", title: "Żurek" },
+    { id: "b", status: "processing", title: null },
+    { id: "c", status: "ready", title: "Stary" }, // already ready: not news
+    { id: "d", status: "failed", title: null },
+    { id: "e", status: "ready", title: "Nowy" }, // never seen: baseline, not news
+  ];
+  assert.deepEqual(
+    finishedSince(before, now).map((d) => d.id),
+    ["a", "d"],
+  );
 });

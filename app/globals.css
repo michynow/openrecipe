@@ -107,6 +107,13 @@
     font-family: var(--font-sans);
     /* Nunito at 400 is spindly on cream; 500 is the floor for reading. */
     font-weight: 500;
+    /* Long Polish compounds and pasted URLs wrap instead of pushing out of cards. */
+    overflow-wrap: break-word;
+    /*
+     * The sticker-pop tilt swings a tall card's corners a few dozen px sideways
+     * mid-animation; on a phone that flashes a horizontal scrollbar. Clip it.
+     */
+    overflow-x: clip;
     /* gingham tablecloth: two faint tomato stripes crossing over custard */
     background-color: var(--color-bg);
     background-image:

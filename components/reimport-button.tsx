@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { reimportAction } from "@/app/(app)/drafts/actions";
+import { DRAFTS_CHANGED } from "@/components/draft-toasts";
 import { Icon } from "@/components/icons";
 import { copy } from "@/lib/copy";
 
@@ -28,6 +29,7 @@ export function ReimportButton({ recipeId }: { recipeId: string }) {
     if (!result.ok) return;
 
     setQueued(true);
+    window.dispatchEvent(new Event(DRAFTS_CHANGED));
     router.refresh();
   }
 

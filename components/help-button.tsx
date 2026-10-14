@@ -127,7 +127,7 @@ export function HelpButton({ className = "" }: { className?: string }) {
  * bedroom eyes and a grape bow tie. Bobs while idle, flaps his mouth while
  * talking. Colours are tokens.
  */
-function Kielbas({ talking }: { talking: boolean }) {
+export function Kielbas({ talking }: { talking: boolean }) {
   return (
     <svg
       viewBox="0 0 96 96"

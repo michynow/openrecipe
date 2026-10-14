@@ -76,7 +76,7 @@ export function LineListEditor({
             */}
             <span
               aria-hidden
-              className="mt-2.5 w-6 shrink-0 text-right font-mono text-base font-bold text-accent"
+              className="mt-2.5 w-8 shrink-0 text-right font-mono text-base font-bold text-accent"
             >
               {numbered ? `${index + 1}.` : "—"}
             </span>

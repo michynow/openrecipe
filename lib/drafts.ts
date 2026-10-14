@@ -178,3 +178,23 @@ export function assertReady(payload: unknown): Recipe {
   }
   return recipe;
 }
+
+/** What the header's toast poller sees of one Draft. */
+export type DraftPulse = { id: string; status: DraftStatus; title: string | null };
+
+/**
+ * The Drafts that finished between two polls: were waiting on the Worker in
+ * `before`, are `ready` or `failed` now. Anything not seen before is skipped —
+ * the first poll after a page load is a baseline, not news, or every reload
+ * would re-announce yesterday's Drafts.
+ */
+export function finishedSince(
+  before: ReadonlyMap<string, DraftStatus>,
+  now: readonly DraftPulse[],
+): DraftPulse[] {
+  const waiting = (s: DraftStatus | undefined) =>
+    s === "queued" || s === "processing" || s === "limited";
+  return now.filter(
+    (d) => waiting(before.get(d.id)) && (d.status === "ready" || d.status === "failed"),
+  );
+}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { DraftToasts } from "@/components/draft-toasts";
 import { HelpButton } from "@/components/help-button";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -19,7 +20,9 @@ export async function SiteHeader() {
 
   const links = [
     // No "Start" link: the wordmark already goes home.
-    { href: "/search", label: copy.nav.search },
+    // Hidden below sm, where the search box sits right under it and five links
+    // do not fit one row.
+    { href: "/search", label: copy.nav.search, className: "hidden sm:block" },
     ...(isAdmin
       ? [
           { href: "/drafts", label: copy.nav.drafts },
@@ -32,8 +35,9 @@ export async function SiteHeader() {
   return (
     <header className="border-b-4 border-line bg-gold text-ink">
       {/*
-        Wraps to two rows below sm: wordmark and the add button share the top row,
-        the nav takes a full-width row beneath. Everything fits on one row from sm
+        Wraps below sm: wordmark, help and a short add button share the top row,
+        the nav takes one full-width row beneath (scrolling sideways rather than
+        wrapping if it ever outgrows it), then search. Everything fits on one row from sm
         up. Measured at 375px, where a single row overflowed by ~60px and pushed
         the add button off screen.
       */}
@@ -53,7 +57,8 @@ export async function SiteHeader() {
             href="/recipes/new"
             className="order-2 rounded-input bg-accent px-3 py-2 text-sm font-medium text-accent-ink sm:order-4"
           >
-            {copy.nav.add}
+            <span className="sm:hidden">{copy.nav.addShort}</span>
+            <span className="hidden sm:inline">{copy.nav.add}</span>
           </Link>
         )}
 
@@ -67,19 +72,22 @@ export async function SiteHeader() {
           <SearchAutocomplete />
         </div>
 
-        <nav className="order-3 -mx-3 flex w-full flex-wrap items-center gap-1 text-sm sm:order-2 sm:mx-0 sm:w-auto">
+        <nav className="order-3 -mx-2 flex w-full items-center overflow-x-auto text-sm sm:order-2 sm:mx-0 sm:w-auto sm:flex-wrap sm:gap-1 sm:overflow-visible">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-input px-3 py-2 font-bold text-ink underline-offset-4 hover:underline"
+              className={`shrink-0 whitespace-nowrap rounded-input px-2 py-2 font-bold text-ink underline-offset-4 hover:underline sm:px-3 ${link.className ?? ""}`}
             >
               {link.label}
             </Link>
           ))}
-          <SignOutButton className="ml-auto rounded-input px-3 py-2 font-bold text-ink underline-offset-4 hover:underline disabled:opacity-50 sm:ml-0" />
+          <SignOutButton className="ml-auto shrink-0 whitespace-nowrap rounded-input px-2 py-2 font-bold text-ink underline-offset-4 hover:underline disabled:opacity-50 sm:ml-0 sm:px-3" />
         </nav>
       </div>
+
+      {/* Only admins see Drafts, so only they hear when one is done. */}
+      {isAdmin && <DraftToasts />}
     </header>
   );
 }

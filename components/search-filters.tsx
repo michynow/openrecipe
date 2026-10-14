@@ -143,7 +143,7 @@ export function SearchFilterPanel({
 
         <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto border-t border-line p-3 sm:max-h-none">
           {groups.map((group) => (
-            <fieldset key={group.facet} className="flex flex-col gap-1.5">
+            <fieldset key={group.facet} className="flex min-w-0 flex-col gap-1.5">
               <legend className="text-sm font-extrabold uppercase tracking-wide text-text">
                 {copy.editor.facets[group.facet] ?? group.facet}
               </legend>
@@ -163,7 +163,7 @@ export function SearchFilterPanel({
             </fieldset>
           ))}
 
-          <fieldset className="flex flex-col gap-1.5">
+          <fieldset className="flex min-w-0 flex-col gap-1.5">
             <legend className="text-sm font-extrabold uppercase tracking-wide text-text">
               {copy.search.maxTime}
             </legend>

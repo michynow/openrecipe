@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { parkUrlAction } from "@/app/(app)/drafts/actions";
+import { DRAFTS_CHANGED } from "@/components/draft-toasts";
 import { Icon } from "@/components/icons";
 import { copy } from "@/lib/copy";
 
@@ -45,6 +46,8 @@ export function ParkUrlForm() {
         );
       }
       setUrl("");
+      // Wake the header's toast poller: it watches this Draft from now on.
+      window.dispatchEvent(new Event(DRAFTS_CHANGED));
     } else {
       setError(result.error);
     }
@@ -71,12 +74,12 @@ export function ParkUrlForm() {
           placeholder="https://"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "sourceUrl-error" : undefined}
-          className="min-w-0 flex-1 rounded-input border border-line bg-bg px-3 py-2"
+          className="min-w-0 flex-1 basis-full rounded-input border border-line bg-bg px-3 py-2 sm:basis-0"
         />
         <button
           type="submit"
           disabled={pending || url.trim() === ""}
-          className="flex min-h-11 items-center gap-2 rounded-input bg-accent px-4 py-2 font-medium text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-input bg-accent px-4 sm:w-auto py-2 font-medium text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           <Icon name="link" className="size-4" />
           {copy.imports.parkAction}
@@ -87,17 +90,17 @@ export function ParkUrlForm() {
 
       {note && (
         /* Not accent: next to the error line below it, coral read as "it failed". */
-        <p role="status" className="flex flex-wrap items-center gap-x-2 text-sm font-semibold text-text">
-          <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-line bg-leaf" />
-          {note}
-          {existingSlug && (
-            <Link
-              href={`/recipes/${existingSlug}`}
-              className="underline underline-offset-4"
-            >
-              {copy.imports.openExisting}
-            </Link>
-          )}
+        <p role="status" className="flex items-start gap-2 text-sm font-semibold text-text">
+          {/* Centred on the first line of text, not the whole block. */}
+          <span aria-hidden className="mt-[0.45em] size-2.5 shrink-0 rounded-full border border-line bg-leaf" />
+          <span>
+            {note}{" "}
+            {existingSlug && (
+              <Link href={`/recipes/${existingSlug}`} className="underline underline-offset-4">
+                {copy.imports.openExisting}
+              </Link>
+            )}
+          </span>
         </p>
       )}
 

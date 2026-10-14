@@ -88,10 +88,12 @@ export function IngredientLinesEditor({
       >
         <span className="w-11 shrink-0" />
         <span className="w-11 shrink-0" />
-        <span className="w-24 shrink-0">{copy.editor.quantity}</span>
-        <span className="w-28 shrink-0">{copy.editor.unit}</span>
-        <span className="min-w-32 flex-1">{copy.editor.item}</span>
-        <span className="min-w-28 flex-1">{copy.editor.note}</span>
+        <span className="grid flex-1 grid-cols-[5rem_6rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+          <span>{copy.editor.quantity}</span>
+          <span>{copy.editor.unit}</span>
+          <span>{copy.editor.item}</span>
+          <span>{copy.editor.note}</span>
+        </span>
         <span className="w-11 shrink-0" />
       </div>
 
@@ -108,7 +110,7 @@ export function IngredientLinesEditor({
                 dragging === index ? "rounded-input bg-fill" : ""
               }`}
             >
-              <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
+              <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:items-end">
                 <GripButton
                   label={`${copy.editor.reorder}: ${line.item || index + 1}`}
                   active={dragging === index}
@@ -120,69 +122,75 @@ export function IngredientLinesEditor({
                   <IngredientSprite item={line.item} className="size-8" />
                 </span>
 
-                <Labelled caption={copy.editor.quantity} className="w-24">
-                  <input
-                    id={`ingredientLines.${index}.quantity`}
-                    aria-label={`${copy.editor.quantity} ${index + 1}`}
-                    inputMode="decimal"
-                    value={line.quantity === null ? "" : String(line.quantity)}
-                    placeholder={copy.editor.quantityPlaceholder}
-                    onChange={(event) =>
-                      update(index, { quantity: numberOrNull(event.target.value) })
-                    }
-                    aria-invalid={quantityError ? true : undefined}
-                    className="w-full rounded-input border border-line bg-bg px-2 py-2 font-mono"
-                  />
-                </Labelled>
-
-                <Labelled caption={copy.editor.unit} className="w-28">
-                  <input
-                    aria-label={`${copy.editor.unit} ${index + 1}`}
-                    value={line.unit ?? ""}
-                    placeholder={copy.editor.unitPlaceholder}
-                    onChange={(event) =>
-                      update(index, { unit: event.target.value || null })
-                    }
-                    className="w-full rounded-input border border-line bg-bg px-2 py-2"
-                  />
-                </Labelled>
-
-                <Labelled caption={copy.editor.item} className="min-w-32 flex-1">
-                  <input
-                    id={`ingredientLines.${index}.item`}
-                    aria-label={`${copy.editor.item} ${index + 1}`}
-                    value={line.item}
-                    placeholder={copy.editor.itemPlaceholder}
-                    onChange={(event) => update(index, { item: event.target.value })}
-                    ref={(node) => {
-                      if (node && focusRow.current === index) {
-                        node.focus();
-                        focusRow.current = null;
+                {/*
+                  On a phone the fields drop below the grip/sprite/delete bar into two
+                  columns (item and note full width); from sm up they sit in the row.
+                */}
+                <div className="order-last grid min-w-0 basis-full grid-cols-2 gap-2 sm:order-none sm:flex-1 sm:basis-auto sm:grid-cols-[5rem_6rem_minmax(0,1fr)_minmax(0,1fr)]">
+                  <Labelled caption={copy.editor.quantity}>
+                    <input
+                      id={`ingredientLines.${index}.quantity`}
+                      aria-label={`${copy.editor.quantity} ${index + 1}`}
+                      inputMode="decimal"
+                      value={line.quantity === null ? "" : String(line.quantity)}
+                      placeholder={copy.editor.quantityPlaceholder}
+                      onChange={(event) =>
+                        update(index, {
+                          quantity: numberOrNull(event.target.value),
+                        })
                       }
-                    }}
-                    aria-invalid={itemError ? true : undefined}
-                    className="w-full rounded-input border border-line bg-bg px-3 py-2 font-bold"
-                  />
-                </Labelled>
+                      aria-invalid={quantityError ? true : undefined}
+                      className="w-full rounded-input border border-line bg-bg px-2 py-2 font-mono"
+                    />
+                  </Labelled>
 
-                <Labelled caption={copy.editor.note} className="min-w-28 flex-1">
-                  <input
-                    aria-label={`${copy.editor.note} ${index + 1}`}
-                    value={line.note ?? ""}
-                    placeholder={copy.editor.notePlaceholder}
-                    onChange={(event) =>
-                      update(index, { note: event.target.value || null })
-                    }
-                    className="w-full rounded-input border border-line bg-bg px-3 py-2"
-                  />
-                </Labelled>
+                  <Labelled caption={copy.editor.unit}>
+                    <input
+                      aria-label={`${copy.editor.unit} ${index + 1}`}
+                      value={line.unit ?? ""}
+                      placeholder={copy.editor.unitPlaceholder}
+                      onChange={(event) => update(index, { unit: event.target.value || null })}
+                      className="w-full rounded-input border border-line bg-bg px-2 py-2"
+                    />
+                  </Labelled>
 
-                <RowButton
-                  icon="remove"
-                  label={`${copy.common.delete}: ${line.item || index + 1}`}
-                  onClick={() => remove(index)}
-                  destructive
-                />
+                  <Labelled caption={copy.editor.item} className="col-span-2 sm:col-span-1">
+                    <input
+                      id={`ingredientLines.${index}.item`}
+                      aria-label={`${copy.editor.item} ${index + 1}`}
+                      value={line.item}
+                      placeholder={copy.editor.itemPlaceholder}
+                      onChange={(event) => update(index, { item: event.target.value })}
+                      ref={(node) => {
+                        if (node && focusRow.current === index) {
+                          node.focus();
+                          focusRow.current = null;
+                        }
+                      }}
+                      aria-invalid={itemError ? true : undefined}
+                      className="w-full rounded-input border border-line bg-bg px-3 py-2 font-bold"
+                    />
+                  </Labelled>
+
+                  <Labelled caption={copy.editor.note} className="col-span-2 sm:col-span-1">
+                    <input
+                      aria-label={`${copy.editor.note} ${index + 1}`}
+                      value={line.note ?? ""}
+                      placeholder={copy.editor.notePlaceholder}
+                      onChange={(event) => update(index, { note: event.target.value || null })}
+                      className="w-full rounded-input border border-line bg-bg px-3 py-2"
+                    />
+                  </Labelled>
+                </div>
+
+                <span className="ml-auto sm:ml-0">
+                  <RowButton
+                    icon="remove"
+                    label={`${copy.common.delete}: ${line.item || index + 1}`}
+                    onClick={() => remove(index)}
+                    destructive
+                  />
+                </span>
               </div>
 
               {(itemError || quantityError) && (
@@ -265,11 +273,11 @@ function Labelled({
   children,
 }: {
   caption: string;
-  className: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className={`flex shrink-0 flex-col gap-0.5 ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-0.5 ${className ?? ""}`}>
       <span aria-hidden className="text-sm font-extrabold uppercase tracking-wide sm:sr-only">
         {caption}
       </span>

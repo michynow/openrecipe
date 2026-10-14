@@ -13,6 +13,7 @@ import {
   RECLAIM_AFTER_MS,
   sourceUrlSchema,
   type DraftLogEntry,
+  type DraftPulse,
   type DraftStage,
   type DraftStatus,
 } from "./drafts.ts";
@@ -277,6 +278,29 @@ export async function listDrafts(): Promise<DraftRow[]> {
       stage: isDraftStage(row.stage) ? row.stage : null,
     }))
     .sort((a, b) => ATTENTION[a.status] - ATTENTION[b.status]);
+}
+
+/**
+ * The open Drafts, as little as the header's toast poller needs: status and,
+ * once the Worker has written one, the title. Runs every few seconds from every
+ * admin tab, so no log, no payload beyond the one field.
+ */
+export async function listDraftPulse(): Promise<DraftPulse[]> {
+  const rows = await db
+    .select({
+      id: draft.id,
+      status: draft.status,
+      title: sql<string | null>`${draft.payload}->>'title'`,
+    })
+    .from(draft)
+    .where(notInArray(draft.status, ["approved", "discarded"]))
+    .orderBy(desc(draft.createdAt))
+    .limit(100);
+
+  return rows.map((row) => ({
+    ...row,
+    status: isDraftStatus(row.status) ? row.status : ("failed" as DraftStatus),
+  }));
 }
 
 /** Lower sorts first. Ties keep the newest-first order the query returned. */

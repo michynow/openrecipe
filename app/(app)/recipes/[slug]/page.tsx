@@ -176,7 +176,7 @@ export default async function RecipePage({
             <li key={index} className="flex gap-3 text-lg leading-relaxed">
               <span
                 aria-hidden
-                className="w-6 shrink-0 text-right font-mono font-bold text-accent"
+                className="w-8 shrink-0 text-right font-mono font-bold text-accent"
               >
                 {index + 1}.
               </span>
