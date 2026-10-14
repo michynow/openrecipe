@@ -1,6 +1,7 @@
 import { copy, pantrySkipped } from "./copy.ts";
 import { count } from "./format.ts";
 import { formatScaledQuantity } from "./quantity.ts";
+import { groupSections } from "./sections.ts";
 
 /**
  * The Shopping Export: the unticked Ingredient Lines as plain text, at whatever
@@ -15,6 +16,8 @@ export type ExportLine = {
   quantity: number | null;
   unit: string | null;
   item: string;
+  /** Section heading (ADR-0008). Lines arrive in Recipe order, so Sections are contiguous. */
+  section?: string | null;
   /** What else will do, so the shop that is out of one can still be shopped. */
   substitutes?: readonly { item: string }[];
 };
@@ -45,14 +48,18 @@ export function buildShoppingExport({
   // Everything ticked. An empty list would read as a failure, so say the good news.
   if (wanted.length === 0) return `${header}\n\n${copy.recipe.nothingToBuy}`;
 
-  const bullets = wanted
-    .map(
-      (line) =>
-        `• ${[formatScaledQuantity(line.quantity, factor), line.unit, withSubstitutes(line)]
-          .filter(Boolean)
-          .join(" ")}`,
-    )
-    .join("\n");
+  const bullet = (line: ExportLine) =>
+    `• ${[formatScaledQuantity(line.quantity, factor), line.unit, withSubstitutes(line)]
+      .filter(Boolean)
+      .join(" ")}`;
+
+  // A heading per Section, "Sos:", with a blank line before it; ungrouped lines need none.
+  const bullets = groupSections(wanted)
+    .map((group) => {
+      const rows = group.items.map(({ line }) => bullet(line)).join("\n");
+      return group.section ? `${group.section}:\n${rows}` : rows;
+    })
+    .join("\n\n");
 
   const skipped = lines.length - wanted.length;
   // Nothing skipped means nothing to explain — the whole list is the whole recipe.

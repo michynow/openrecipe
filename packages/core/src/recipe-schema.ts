@@ -3,6 +3,7 @@ import { z } from "zod";
 // Explicit .ts extension: `node --test` strips types but does no extension
 // resolution, so anything reachable from a test must be imported this way.
 import { copy } from "./copy.ts";
+import { normalizeSections } from "./sections.ts";
 
 /**
  * The single definition of a valid Recipe. PRD §12.
@@ -82,6 +83,11 @@ export const ingredientLineSchema = z.object({
   unit: nullableText(20),
   item: z.string().trim().min(1, v.itemRequired).max(80, v.itemRequired),
   note: nullableText(200),
+  /** The Section heading this line sits under; null = ungrouped (ADR-0008). */
+  section: z.preprocess(
+    (raw) => (typeof raw === "string" ? raw.replace(/\s+/g, " ") : raw),
+    nullableText(60),
+  ).default(null),
   substitutes: z.array(substituteSchema).max(5).default([]),
 });
 
@@ -104,9 +110,11 @@ export const recipeSchema = z.object({
   sourceUrl: nullableHttpUrl,
   imageUrl: nullableHttpUrl,
 
+  // Sections kept contiguous, ungrouped first — the invariant every reader relies on.
   ingredientLines: z
     .array(ingredientLineSchema)
-    .min(1, v.ingredientsRequired),
+    .min(1, v.ingredientsRequired)
+    .transform(normalizeSections),
 
   steps: z.array(shortLine).min(1, v.stepsRequired),
   tips: z.array(shortLine).default([]),
@@ -202,6 +210,7 @@ export type RecipeFormValue = {
     unit: string | null;
     item: string;
     note: string | null;
+    section: string | null;
     substitutes: { item: string; note: string | null }[];
   }[];
   steps: string[];
@@ -214,7 +223,11 @@ type FormSource = Pick<
   RecipeFormValue,
   "title" | "servings" | "totalMinutes" | "kcalPerServing" | "sourceUrl" | "imageUrl" | "steps" | "tips"
 > & {
-  ingredientLines: (RecipeFormValue["ingredientLines"][number] & { id?: string })[];
+  // `section` optional: a phone on an older API build sends lines without it.
+  ingredientLines: (Omit<RecipeFormValue["ingredientLines"][number], "section"> & {
+    id?: string;
+    section?: string | null;
+  })[];
   tags: { slug: string }[];
 };
 
@@ -241,6 +254,7 @@ export function toFormValue(recipe: FormSource): RecipeFormValue {
       unit: line.unit,
       item: line.item,
       note: line.note,
+      section: line.section ?? null,
       substitutes: line.substitutes,
     })),
     steps: recipe.steps,

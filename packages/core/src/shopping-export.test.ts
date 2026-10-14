@@ -111,3 +111,23 @@ test("substitutes ride along in parentheses", () => {
     ["Sałatka — 2 porcje", "", "• 1 ogórek (albo pomidor)", "• 100 g feta (albo mozzarella, tofu)", "• sól"].join("\n"),
   );
 });
+
+test("Sections become headings, ungrouped lines first with none", () => {
+  const text = buildShoppingExport({
+    title: "Burgery",
+    servings: 2,
+    factor: 1,
+    lines: [
+      { id: "a", quantity: null, unit: null, item: "sól", section: null },
+      { id: "b", quantity: 2, unit: null, item: "bułki", section: "Bułki" },
+      { id: "c", quantity: 1, unit: null, item: "ogórek", section: "Surówka" },
+      { id: "d", quantity: 1, unit: null, item: "marchew", section: "Surówka" },
+    ],
+    checked: ["b"],
+  });
+
+  assert.equal(
+    text,
+    ["Burgery — 2 porcje", "", "• sól", "", "Surówka:", "• 1 ogórek", "• 1 marchew", "", "(1 z 4 już masz)"].join("\n"),
+  );
+});

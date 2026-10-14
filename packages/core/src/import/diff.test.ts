@@ -9,7 +9,8 @@ const line = (
   quantity: number | null = null,
   unit: string | null = null,
   note: string | null = null,
-) => ({ quantity, unit, item, note, substitutes: [] });
+  section: string | null = null,
+) => ({ quantity, unit, item, note, section, substitutes: [] });
 
 const recipe = (over: Partial<RecipeFormValue> = {}): RecipeFormValue => ({
   ...emptyRecipe,
@@ -94,4 +95,18 @@ test("patchFor takes one field; isTaken sees when the editor already holds it", 
   const difference = { field: "title" as const, current: "A", incoming: "B" };
   assert.equal(isTaken(difference, current, incoming), false);
   assert.equal(isTaken(difference, { ...current, ...patchFor("title", incoming) }, incoming), true);
+});
+
+test("a line moving into a Section is a change; repeated items match in order", () => {
+  const result = diffIngredientLines(
+    [line("sól"), line("mąka", 500, "g"), line("sól")],
+    [line("mąka", 500, "g", null, "Ciasto"), line("sól", null, null, null, "Ciasto"), line("sól", null, null, null, "Sos")],
+  );
+  assert.deepEqual(result.added, []);
+  assert.deepEqual(result.removed, []);
+  assert.deepEqual(result.changed, [
+    { from: "sól", to: "Ciasto: sól" },
+    { from: "500 g mąka", to: "Ciasto: 500 g mąka" },
+    { from: "sól", to: "Sos: sól" },
+  ]);
 });

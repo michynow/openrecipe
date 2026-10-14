@@ -168,7 +168,7 @@ test("toFormValue keeps what the editor edits and drops ids", async () => {
     ingredientLines: [{ id: "x", quantity: 1, unit: "l", item: "zakwas", note: null, substitutes: [] }],
     tags: [{ slug: "soup" }],
   });
-  assert.deepEqual(value.ingredientLines, [{ quantity: 1, unit: "l", item: "zakwas", note: null, substitutes: [] }]);
+  assert.deepEqual(value.ingredientLines, [{ quantity: 1, unit: "l", item: "zakwas", note: null, section: null, substitutes: [] }]);
   assert.deepEqual(value.tagSlugs, ["soup"]);
 });
 
@@ -191,4 +191,25 @@ test("isHttpUrl accepts http(s) only", async () => {
   for (const bad of ["javascript:alert(1)", "intent://x", "//example.com", "example.com", "", null]) {
     assert.equal(isHttpUrl(bad), false, String(bad));
   }
+});
+
+test("Sections are trimmed and kept contiguous, ungrouped lines first", () => {
+  const parsed = recipeSchema.parse({
+    ...valid(),
+    ingredientLines: [
+      { item: "mąka", section: "  Ciasto " },
+      { item: "sól", section: "" },
+      { item: "pomidory", section: "Sos" },
+      { item: "jajko", section: "Ciasto" },
+    ],
+  });
+  assert.deepEqual(
+    parsed.ingredientLines.map((l) => [l.section, l.item]),
+    [
+      [null, "sól"],
+      ["Ciasto", "mąka"],
+      ["Ciasto", "jajko"],
+      ["Sos", "pomidory"],
+    ],
+  );
 });

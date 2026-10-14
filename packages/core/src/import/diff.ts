@@ -34,20 +34,35 @@ const asText = (value: unknown): string => {
   return String(value);
 };
 
-/** Ingredient lines as one comparable line each: "2 łyżki masła (roztopione)". */
-export function lineText(line: RecipeFormValue["ingredientLines"][number]): string {
+type Line = RecipeFormValue["ingredientLines"][number];
+
+/** Ingredient lines as one comparable line each: "Sos: 2 łyżki masła (roztopione)". */
+export function lineText(line: Line): string {
   const parts = [
     line.quantity === null ? null : String(line.quantity),
     line.unit,
     line.item,
   ].filter(Boolean);
 
-  return line.note ? `${parts.join(" ")} (${line.note})` : parts.join(" ");
+  const text = line.note ? `${parts.join(" ")} (${line.note})` : parts.join(" ");
+  return line.section ? `${line.section}: ${text}` : text;
 }
 
-/** Matching key for an Ingredient Line. Case and spacing are not a difference. */
-const keyOf = (line: RecipeFormValue["ingredientLines"][number]) =>
-  line.item.trim().toLowerCase().replace(/\s+/g, " ");
+/**
+ * Matching keys for Ingredient Lines: the item, case and spacing ignored, plus
+ * which occurrence of it this is — "sól" in the dough and "sól" in the sauce are
+ * two lines, matched first-to-first. The Section is deliberately not in the key,
+ * so moving a line into a Section reads as a change, not a removal and an addition.
+ */
+function keysOf(lines: readonly Line[]): string[] {
+  const seen = new Map<string, number>();
+  return lines.map((line) => {
+    const item = line.item.trim().toLowerCase().replace(/\s+/g, " ");
+    const n = seen.get(item) ?? 0;
+    seen.set(item, n + 1);
+    return `${item}#${n}`;
+  });
+}
 
 /**
  * Ingredient Lines, compared by item rather than by position.
@@ -60,20 +75,22 @@ export function diffIngredientLines(
   current: RecipeFormValue["ingredientLines"],
   incoming: RecipeFormValue["ingredientLines"],
 ): { added: string[]; removed: string[]; changed: { from: string; to: string }[] } {
-  const currentByKey = new Map(current.map((line) => [keyOf(line), line]));
-  const incomingByKey = new Map(incoming.map((line) => [keyOf(line), line]));
+  const currentKeys = keysOf(current);
+  const incomingKeys = keysOf(incoming);
+  const currentByKey = new Map(current.map((line, i) => [currentKeys[i], line]));
+  const incomingByKey = new Map(incoming.map((line, i) => [incomingKeys[i], line]));
 
   const added = incoming
-    .filter((line) => !currentByKey.has(keyOf(line)))
+    .filter((_, i) => !currentByKey.has(incomingKeys[i]))
     .map(lineText);
 
   const removed = current
-    .filter((line) => !incomingByKey.has(keyOf(line)))
+    .filter((_, i) => !incomingByKey.has(currentKeys[i]))
     .map(lineText);
 
   const changed: { from: string; to: string }[] = [];
-  for (const line of current) {
-    const match = incomingByKey.get(keyOf(line));
+  for (const [i, line] of current.entries()) {
+    const match = incomingByKey.get(currentKeys[i]);
     if (!match) continue;
 
     const from = lineText(line);
