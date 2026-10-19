@@ -26,6 +26,7 @@ import { initNotifications } from "../lib/push";
 import { persistOptions, queryClient } from "../lib/query-client";
 import { cssVars, useTokens } from "../lib/theme";
 import { applyStoredTheme } from "../lib/theme-pref";
+import { checkForUpdate } from "../lib/update";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 initNotifications();
@@ -105,9 +106,13 @@ export default function RootLayout() {
     applyStoredTheme();
   }, []);
 
-  // Polling and refetches pause in the background.
+  // Polling and refetches pause in the background; coming back also looks for a new APK.
   useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => focusManager.setFocused(state === "active"));
+    checkForUpdate();
+    const sub = AppState.addEventListener("change", (state) => {
+      focusManager.setFocused(state === "active");
+      if (state === "active") checkForUpdate();
+    });
     return () => sub.remove();
   }, []);
 

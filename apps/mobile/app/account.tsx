@@ -9,6 +9,7 @@ import { useMe } from "../lib/api";
 import { pushEnabled, setPushEnabled } from "../lib/push";
 import { signOut } from "../lib/sign-out";
 import { THEME_PREFS, useThemePref } from "../lib/theme-pref";
+import { installedVersion, newerVersion, openApk } from "../lib/update";
 
 function ThemeChoice() {
   const [pref, choose] = useThemePref();
@@ -67,6 +68,40 @@ function PushChoice() {
   );
 }
 
+/** The installed version, and the newer one's download when there is one. */
+function AppVersion() {
+  const [state, setState] = useState<"idle" | "checking" | "current" | string>("idle");
+  const u = copy.update;
+  const check = async () => {
+    setState("checking");
+    setState((await newerVersion()) ?? "current");
+  };
+  const newer = !["idle", "checking", "current"].includes(state) ? state : null;
+  return (
+    <View className="gap-2">
+      <Text className="font-display text-xl uppercase text-text">{u.title}</Text>
+      <Text className="font-body text-sm text-muted">{u.installed(installedVersion ?? "?")}</Text>
+      {newer ? (
+        <>
+          <Text className="font-bold text-base text-text">{u.available(newer)}</Text>
+          <Text className="font-body text-sm text-muted">{u.hint}</Text>
+          <ArcadeButton label={u.install} tone="accent" onPress={openApk} />
+        </>
+      ) : (
+        <>
+          {state === "current" ? <Text className="font-body text-sm text-text">{u.upToDate}</Text> : null}
+          <ArcadeButton
+            label={state === "checking" ? u.checking : u.check}
+            tone="surface"
+            disabled={state === "checking"}
+            onPress={check}
+          />
+        </>
+      )}
+    </View>
+  );
+}
+
 /** Name, password and sign out: for everyone, Members included. */
 export default function Account() {
   const me = useMe();
@@ -76,6 +111,7 @@ export default function Account() {
         <AccountScreenBody name={me.data?.name ?? ""} />
         <ThemeChoice />
         {me.data?.isAdmin === true ? <PushChoice /> : null}
+        <AppVersion />
         <ArcadeButton
           label={copy.appDownload.shareApp}
           tone="surface"

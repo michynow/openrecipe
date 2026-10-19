@@ -529,6 +529,17 @@ export const copy = {
     imageWrongType: "Dozwolone formaty: JPG, PNG, WebP.",
   },
 
+  update: {
+    available: (version: string) => `Jest nowa wersja aplikacji (${version}).`,
+    install: "Pobierz",
+    title: "Aplikacja",
+    installed: (version: string) => `Wersja ${version}`,
+    check: "Sprawdź aktualizację",
+    checking: "Sprawdzam…",
+    upToDate: "Masz najnowszą wersję.",
+    hint: "Pobierz plik i zainstaluj go na obecną aplikację — dane i logowanie zostają.",
+  },
+
   common: {
     undo: "Cofnij",
     delete: "Usuń",
