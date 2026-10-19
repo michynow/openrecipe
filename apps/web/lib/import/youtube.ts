@@ -1,0 +1,157 @@
+import * as cheerio from "cheerio";
+
+import type { ExtractResult } from "./extract.ts";
+
+/**
+ * YouTube links. A watch page is a JavaScript app with no recipe in its HTML,
+ * so this asks YouTube's own player API for what the app would show: the title,
+ * the description, and the caption tracks.
+ *
+ * The description comes first and wins: many cooks paste the ingredient list
+ * there. The spoken transcript (the cook's own captions, else YouTube's
+ * auto-generated ones) goes after it whenever there is one, because a
+ * description with every quantity still rarely says what to do with them.
+ *
+ * ponytail: the ANDROID client is what works without a key or a PO token today;
+ * YouTube changes this every year or so. When it breaks, the fix is a newer
+ * clientVersion here, or yt-dlp.
+ */
+
+const PLAYER_URL = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false";
+const CLIENT = { clientName: "ANDROID", clientVersion: "20.10.38" };
+const TIMEOUT_MS = 20_000;
+const MAX_CHARS = 12_000;
+
+/** The video id of a youtube.com / youtu.be link, or null for anything else. */
+export function youtubeVideoId(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url.trim());
+  } catch {
+    return null;
+  }
+  const host = parsed.hostname.replace(/^(www|m)\./, "");
+  const id =
+    host === "youtu.be"
+      ? parsed.pathname.slice(1)
+      : host === "youtube.com"
+        ? parsed.searchParams.get("v") ?? /^\/(?:shorts|live|embed)\/([^/]+)/.exec(parsed.pathname)?.[1]
+        : null;
+  return id && /^[\w-]{11}$/.test(id) ? id : null;
+}
+
+/** Several lines that start with a quantity — not a chapter timestamp like "0:22". */
+export function descriptionHasRecipe(description: string): boolean {
+  const quantified = description
+    .split("\n")
+    .filter((line) => /^\s*(?:[-•*▪️✅]\s*)?[\d½⅓⅔¼¾]/u.test(line) && !/^\s*\d+:\d\d/.test(line));
+  return quantified.length >= 3;
+}
+
+type CaptionTrack = { baseUrl: string; languageCode: string; kind?: string };
+
+/** The cook's own captions over YouTube's guesses; Polish over anything else. */
+export function pickCaptionTrack(tracks: readonly CaptionTrack[]): CaptionTrack | null {
+  const manual = tracks.filter((track) => track.kind !== "asr");
+  return (
+    manual.find((track) => track.languageCode.startsWith("pl")) ??
+    tracks.find((track) => track.kind === "asr") ??
+    manual[0] ??
+    null
+  );
+}
+
+/** A timedtext (srv3) document as plain text, with "[Music]"-style cues dropped. */
+export function captionText(xml: string): string {
+  const $ = cheerio.load(xml, { xml: true });
+  return $("p")
+    .map((_, element) => $(element).text())
+    .get()
+    .join(" ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+type PlayerResponse = {
+  playabilityStatus?: { status?: string; reason?: string };
+  videoDetails?: {
+    title?: string;
+    shortDescription?: string;
+    author?: string;
+    lengthSeconds?: string;
+    thumbnail?: { thumbnails?: { url: string; width?: number }[] };
+  };
+  captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: CaptionTrack[] } };
+};
+
+export async function extractFromYoutube(videoId: string): Promise<ExtractResult> {
+  const started = Date.now();
+  let player: PlayerResponse;
+  try {
+    const response = await fetch(PLAYER_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ context: { client: CLIENT }, videoId }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!response.ok) return { ok: false, reason: "fetch-blocked", detail: `YouTube HTTP ${response.status}` };
+    player = (await response.json()) as PlayerResponse;
+  } catch (error) {
+    return { ok: false, reason: "fetch-blocked", detail: `YouTube: ${(error as Error).message}` };
+  }
+
+  const status = player.playabilityStatus?.status;
+  if (status !== "OK") {
+    const detail = `YouTube: ${status ?? "?"} ${player.playabilityStatus?.reason ?? ""}`.trim();
+    return { ok: false, reason: status === "ERROR" ? "not-found" : "fetch-blocked", detail };
+  }
+
+  const details = player.videoDetails ?? {};
+  const title = details.title?.trim() || null;
+  const description = details.shortDescription?.trim() ?? "";
+
+  let transcript = "";
+  const track = pickCaptionTrack(player.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []);
+  if (track) {
+    try {
+      const response = await fetch(track.baseUrl, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+      if (response.ok) transcript = captionText(await response.text());
+    } catch {
+      // Not fatal: the description may still be enough.
+    }
+  }
+
+  const text = [
+    title && `Tytuł filmu: ${title}`,
+    description && `Opis filmu:\n${description}`,
+    transcript && `Transkrypcja tego, co mówi autor (automatyczna, bez interpunkcji, mogą być błędy):\n${transcript}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, MAX_CHARS);
+
+  if (!transcript && !descriptionHasRecipe(description)) {
+    return { ok: false, reason: "no-recipe-found", detail: "YouTube: brak przepisu w opisie i brak napisów" };
+  }
+
+  const thumbnails = details.thumbnail?.thumbnails ?? [];
+  const biggest = [...thumbnails].sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0];
+
+  return {
+    ok: true,
+    page: {
+      path: "video",
+      title,
+      imageUrl: biggest?.url ?? null,
+      ingredients: [],
+      instructions: [],
+      servings: null,
+      totalMinutes: null,
+      kcalPerServing: null,
+      author: details.author ?? null,
+      text,
+    },
+    fetched: { status: 200, bytes: Buffer.byteLength(text), ms: Date.now() - started },
+  };
+}

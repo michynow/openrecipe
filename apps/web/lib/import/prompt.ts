@@ -113,7 +113,19 @@ ${ingredientList(page)}
 
 Instructions, in order:
 ${page.instructions.map((line) => `- ${line}`).join("\n")}`
-      : `The page published no structured data, so this is its readable text with the
+      : page.path === "video"
+        ? `This is a cooking video: its title, its description, and usually a
+transcript of what the cook says, made by speech recognition (no punctuation,
+misheard words). Pull the recipe out. The description is written and wins: take
+its ingredient list and quantities as given, and use the transcript for the
+steps and for whatever the description leaves out. A spoken
+"a bit of", "a handful" is a quantity of null with that as the note, not a
+number you made up. Anything you work out rather than read or hear plainly goes
+in "inferred" by field name. If there is no recipe in it at all, return
+"ingredientLines": [] and "steps": [].
+
+${page.text ?? ""}`
+        : `The page published no structured data, so this is its readable text with the
 navigation and comments stripped. Read it and pull the recipe out. Anything you
 work out rather than read plainly — a serving count, a time, a quantity — goes
 in "inferred" by field name.

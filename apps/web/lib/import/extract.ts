@@ -1,5 +1,7 @@
 import * as cheerio from "cheerio";
 
+import { extractFromYoutube, youtubeVideoId } from "./youtube.ts";
+
 /**
  * Getting the facts off a recipe page without asking a model to guess them
  * (OR-41).
@@ -18,7 +20,8 @@ import * as cheerio from "cheerio";
  * believes it said 400 g of flour".
  */
 
-export type ExtractPath = "json-ld" | "readable-text";
+/** "video": a YouTube title, description and maybe transcript (youtube.ts). */
+export type ExtractPath = "json-ld" | "readable-text" | "video";
 
 /** One published ingredient, and the Section heading the page put it under (ADR-0008). */
 export type ExtractedIngredient = { text: string; section: string | null };
@@ -33,7 +36,7 @@ export type ExtractedPage = {
   totalMinutes: number | null;
   kcalPerServing: number | null;
   author: string | null;
-  /** The page's prose, for the model. Only set on the readable-text path. */
+  /** The page's prose, for the model. Only set on the readable-text and video paths. */
   text: string | null;
 };
 
@@ -541,6 +544,9 @@ export async function fetchPage(url: string): Promise<
 
 /** Fetch and extract. The Worker's whole use of this module. */
 export async function extractRecipeFromUrl(url: string): Promise<ExtractResult> {
+  const videoId = youtubeVideoId(url);
+  if (videoId) return extractFromYoutube(videoId);
+
   const fetched = await fetchPage(url);
   if (!fetched.ok) return fetched;
 
