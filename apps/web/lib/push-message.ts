@@ -35,6 +35,9 @@ export function buildMessage(
     message: {
       token,
       android: {
+        // Normal priority waits for Doze's next maintenance window, which on an
+        // idle phone is minutes to hours: "sometimes no push while minimised".
+        priority: "HIGH",
         notification: {
           title: ready ? c.readyTitle : c.failedTitle,
           body: ready ? c.readyBody(title ?? c.untitled) : c.failedBody,

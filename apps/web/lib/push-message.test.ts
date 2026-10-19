@@ -26,6 +26,7 @@ test("the message targets the drafts channel and carries the draft in data", () 
   const { message } = buildMessage("tok", "d1", "ready", "Pierogi");
   assert.equal(message.token, "tok");
   assert.equal(message.android.notification.channel_id, "drafts");
+  assert.equal(message.android.priority, "HIGH");
   assert.match(message.android.notification.body, /Pierogi/);
   assert.deepEqual(message.data, { draftId: "d1", status: "ready" });
   assert.doesNotMatch(buildMessage("t", "d", "failed", null).message.android.notification.body, /Pierogi/);
