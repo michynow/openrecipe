@@ -92,7 +92,10 @@ function DraftItem({ draft }: { draft: DraftRow }) {
         it — there is no title yet. `break-all` because a recipe URL is long and
         must not push the card sideways on a phone.
       */}
-      <p className="break-all text-base font-semibold">{draft.sourceUrl}</p>
+      {draft.title && <p className="text-lg font-semibold">{draft.title}</p>}
+      <p className={draft.title ? "break-all text-sm text-muted" : "break-all text-base font-semibold"}>
+        {draft.sourceUrl}
+      </p>
 
       {moving && <Progress draft={draft} />}
 

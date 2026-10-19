@@ -111,6 +111,8 @@ export type ParkResult =
 export type DraftRow = {
   id: string;
   sourceUrl: string;
+  /** The Recipe title, once the Worker has written one. */
+  title: string | null;
   status: DraftStatus;
   stage: DraftStage | null;
   error: string | null;

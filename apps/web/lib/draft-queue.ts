@@ -35,6 +35,8 @@ import type { RecipeFormValue, RecipeInput } from "@openrecipe/core/recipe-schem
 export type DraftRow = {
   id: string;
   sourceUrl: string;
+  /** The Recipe title, once the Worker has written a payload. */
+  title: string | null;
   status: DraftStatus;
   /** Where the Worker is, while `processing`. Null otherwise. */
   stage: DraftStage | null;
@@ -163,6 +165,7 @@ export async function getDraftForReview(
   return {
     id: row.id,
     sourceUrl: row.sourceUrl,
+    title: payload.title,
     status: "ready",
     stage: null,
     error: row.error,
@@ -289,6 +292,7 @@ export async function listDrafts(): Promise<DraftRow[]> {
     .select({
       id: draft.id,
       sourceUrl: draft.sourceUrl,
+      title: sql<string | null>`${draft.payload}->>'title'`,
       status: draft.status,
       stage: draft.stage,
       error: draft.error,
@@ -480,6 +484,7 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
   return {
     id: row.id,
     sourceUrl: row.source_url,
+    title: null,
     status: "processing",
     stage: "fetching",
     error: row.error,

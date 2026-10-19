@@ -175,7 +175,7 @@ export function DraftItem({ draft }: { draft: DraftRow }) {
       </View>
 
       <Text className="font-display text-lg text-text" numberOfLines={1}>
-        {host(draft.sourceUrl)}
+        {draft.title ?? host(draft.sourceUrl)}
       </Text>
       <Text numberOfLines={2} className="font-body text-xs text-muted">
         {draft.sourceUrl}
