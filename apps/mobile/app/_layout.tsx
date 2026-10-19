@@ -78,10 +78,11 @@ function Shell({ offline }: { offline: boolean }) {
       >
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="recipe/[slug]" />
-          <Stack.Screen name="editor/new" />
-          <Stack.Screen name="editor/[slug]" />
-          <Stack.Screen name="drafts/[id]" />
+          {/* Titles here too: a screen sets its own only once its data loads, and until then the header shows the route name. */}
+          <Stack.Screen name="recipe/[slug]" options={{ title: "" }} />
+          <Stack.Screen name="editor/new" options={{ title: copy.editor.newTitle }} />
+          <Stack.Screen name="editor/[slug]" options={{ title: copy.editor.editTitle }} />
+          <Stack.Screen name="drafts/[id]" options={{ title: copy.imports.reviewTitle }} />
           <Stack.Screen name="account" options={{ title: copy.account.title }} />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
