@@ -16,6 +16,7 @@ test("the model's own spellings land on the field they mean", () => {
     "calories",
     "tags",
     "ingredient_lines.0.unit",
+    "section",
   ]);
   assert.deepEqual([...fields].sort(), ["ingredientLines", "kcalPerServing", "tagSlugs", "totalMinutes"]);
 });

@@ -39,11 +39,16 @@ Rules, in order of importance:
 7. Substitutes: 2 or 3 per ingredient line where a sensible one exists, each
    with a one-line Polish note saying how it differs. None at all is better than
    a bad one — do not force them onto salt or water.
-8. Sections: when the source groups its ingredients under headings ("For the
-   sauce", "Ciasto", "Do podania"), give each line its group's heading as
-   "section" — short, Polish, in the source's order. Lines outside any group get
-   null. Never invent groups: a single plain list has every "section" null, and
-   a heading that only says "Ingredients" is not a section.`;
+8. Sections: group the ingredient lines by the part of the dish they make,
+   giving each line its group's name as "section" — short, Polish, capitalised,
+   in cooking order. When the source has its own headings ("For the sauce",
+   "Ciasto", "Do podania"), use those. When it lists everything flat but the
+   dish plainly has separate components — a burger's bułka, mięso and surówka;
+   a cake's ciasto, krem and polewa; a bowl's ryż, kurczak, sos — group them
+   yourself and add "section" to "inferred". Lines that belong to no one
+   component (salt for everything, oil for frying) get null. A dish made in
+   one go (a soup, a stew, a simple salad) has every "section" null, and a
+   heading that only says "Ingredients" is never a section.`;
 
 /** The exact JSON shape wanted back, described once. */
 const SHAPE = `{

@@ -36,8 +36,10 @@ starts it with a blank line.
 - Section names are compared exactly after trimming: "Sos" and "sos" are two sections.
 - The import keeps sections: JSON-LD has no field for them, so the extractor reads
   them from heading-like `recipeIngredient` entries ("Sos:") and from the page's own
-  headings above the ingredient list; the model is told to keep the page's groups and
-  never to invent them.
+  headings above the ingredient list; the model is told to keep the page's groups.
+  Where a page lists a multi-part dish flat (burger: bułka, mięso, surówka), the model
+  groups it by component itself and marks `section` as inferred, so review flags it.
+  Amended 2026-10-19: "never invent" left most real imports ungrouped.
 - The re-import diff matches lines by item, not section, so moving a line between
   sections shows as a change, not a removal plus an addition.
 - Pantry Check ticks still key on line id; sections do not touch them (ADR-0004).

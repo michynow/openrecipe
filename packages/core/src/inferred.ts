@@ -35,6 +35,8 @@ const FIELD: Record<string, string> = {
   quantity: "ingredientLines",
   unit: "ingredientLines",
   substitutes: "ingredientLines",
+  section: "ingredientLines",
+  sections: "ingredientLines",
   steps: "steps",
   instructions: "steps",
   tips: "tips",
