@@ -549,6 +549,8 @@ export const copy = {
     somethingFailed: "Nie udało się. Spróbuj jeszcze raz.",
     offline: "Brak połączenia. Przepis i „Co już masz?” działają dalej.",
     close: "Zamknij",
+    /** The lone button on an informational dialog. */
+    ok: "OK",
     notFoundTitle: "Nie ma tu nic",
     notFoundBody: "Ta strona nie istnieje albo nie masz do niej dostępu.",
     backHome: "Wróć na start",

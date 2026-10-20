@@ -1,6 +1,6 @@
 import { copy } from "@openrecipe/core/copy";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { InvitesSection } from "../../components/settings/invites";
 import { MembersSection } from "../../components/settings/members";
@@ -9,6 +9,7 @@ import { TagsSection } from "../../components/settings/tags";
 import { ArcadeButton } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { AdminGateView, useAdminGate } from "../../components/ui/admin-gate";
+import { RefreshBar, usePullRefresh } from "../../components/ui/refresh";
 import { Screen } from "../../components/ui/screen";
 import { useSettings } from "../../lib/hooks/admin";
 
@@ -17,6 +18,7 @@ export default function Settings() {
   const router = useRouter();
   const gate = useAdminGate();
   const settings = useSettings(gate.ok);
+  const pull = usePullRefresh(settings.refetch);
 
   if (!gate.ok) return <AdminGateView gate={gate} />;
 
@@ -26,7 +28,7 @@ export default function Settings() {
       <ScrollView
         contentContainerClassName="gap-5 p-4 pb-12"
         keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={settings.isRefetching} onRefresh={() => settings.refetch()} />}
+        refreshControl={pull.control}
       >
         {!data ? (
           settings.isError ? (
@@ -54,6 +56,7 @@ export default function Settings() {
           </>
         )}
       </ScrollView>
+      <RefreshBar active={pull.refreshing} />
     </Screen>
   );
 }

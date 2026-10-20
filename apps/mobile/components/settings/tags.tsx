@@ -3,11 +3,12 @@ import { copy } from "@openrecipe/core/copy";
 import { count } from "@openrecipe/core/format";
 import { FACETS, TAG_SLUG, type Facet } from "@openrecipe/core/tags";
 import { useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 
 import { useAddTag, useDeleteTag, useRenameTag } from "../../lib/hooks/admin";
 import { ArcadeButton } from "../ui/button";
 import { Card } from "../ui/card";
+import { showDialog } from "../ui/dialog";
 import { HEADING, INPUT } from "./styles";
 
 /** A TagResult refusal as copy, or null when it went through. */
@@ -23,7 +24,7 @@ function TagItem({ tag }: { tag: TagRow }) {
   const settle = (res: TagResult) => setError(refusal(res));
   const fail = () => setError(copy.common.somethingFailed);
   const confirmDelete = () =>
-    Alert.alert(`${copy.common.delete}: ${tag.label}?`, undefined, [
+    showDialog(`${copy.common.delete}: ${tag.label}?`, undefined, [
       { text: copy.editor.cancel, style: "cancel" },
       {
         text: copy.common.delete,

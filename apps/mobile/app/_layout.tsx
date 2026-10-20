@@ -15,10 +15,12 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { AppState, Text, View } from "react-native";
 import { vars } from "nativewind";
+import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PushHost } from "../components/drafts/push-host";
 import { PulseToasts } from "../components/drafts/pulse-toasts";
 import { ShareHandler } from "../components/drafts/share-handler";
+import { DialogHost } from "../components/ui/dialog";
 import { ToastHost } from "../components/ui/toast";
 import { useIsAdmin } from "../lib/hooks/admin";
 import { authClient, getCookie } from "../lib/auth";
@@ -100,6 +102,7 @@ export default function RootLayout() {
   const [fontsReady, fontError] = useFonts({ Baloo2_800ExtraBold, Nunito_600SemiBold, Nunito_800ExtraBold });
   const { scheme } = useTokens();
   const offline = useNetworkState().isConnected === false;
+  const insets = useSafeAreaInsets();
 
   // The saved Light/Dark/System choice overrides the OS appearance; useTokens follows it.
   useEffect(() => {
@@ -124,15 +127,24 @@ export default function RootLayout() {
       <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
         <View style={vars(cssVars(scheme))} className="flex-1 bg-bg">
           <StatusBar style="auto" />
-          <View className="flex-1">
-            <Shell offline={offline} />
-            <ToastHost />
-          </View>
+          {/*
+            The app draws edge to edge, so the bottom inset is the system
+            navigation bar. Offline, the banner below takes that inset and the
+            app above is told there is none — otherwise the tab bar keeps its
+            own padding for the bar and the banner sits under the system buttons.
+          */}
+          <SafeAreaInsetsContext.Provider value={offline ? { ...insets, bottom: 0 } : insets}>
+            <View className="flex-1">
+              <Shell offline={offline} />
+              <ToastHost />
+            </View>
+          </SafeAreaInsetsContext.Provider>
           {offline ? (
-            <View accessibilityRole="alert" className="bg-ink px-4 py-1.5">
+            <View accessibilityRole="alert" style={{ paddingBottom: insets.bottom + 6 }} className="bg-ink px-4 pt-1.5">
               <Text className="text-center font-body text-xs text-gold">{copy.common.offline}</Text>
             </View>
           ) : null}
+          <DialogHost />
         </View>
       </PersistQueryClientProvider>
     </ShareIntentProvider>

@@ -2,12 +2,13 @@ import type { Invite } from "@openrecipe/core/api";
 import { copy } from "@openrecipe/core/copy";
 import { formatRelativeDays } from "@openrecipe/core/format";
 import { useState } from "react";
-import { Alert, Pressable, Share, Text, TextInput, View } from "react-native";
+import { Pressable, Share, Text, TextInput, View } from "react-native";
 
 import { useMintInvite, useRevokeInvite } from "../../lib/hooks/admin";
 import { API_URL } from "../../lib/auth";
 import { ArcadeButton } from "../ui/button";
 import { Card } from "../ui/card";
+import { showDialog } from "../ui/dialog";
 import { HEADING, INPUT } from "./styles";
 
 const stateOf = (i: Invite) =>
@@ -20,7 +21,7 @@ function InviteRow({ invite }: { invite: Invite }) {
   // Invites are redeemed on the web: API_URL is the web origin.
   const share = () => Share.share({ message: `${API_URL}/join/${invite.token}` }).catch(() => {});
   const confirmRevoke = () =>
-    Alert.alert(`${copy.settings.revoke}?`, invite.email ?? undefined, [
+    showDialog(`${copy.settings.revoke}?`, invite.email ?? undefined, [
       { text: copy.editor.cancel, style: "cancel" },
       { text: copy.settings.revoke, style: "destructive", onPress: () => revoke.mutate(invite.id) },
     ]);

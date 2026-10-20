@@ -5,11 +5,12 @@ import { isHttpUrl } from "@openrecipe/core/recipe-schema";
 import { formatClock, formatElapsed, formatRelativeDays } from "@openrecipe/core/format";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState, type ReactNode } from "react";
-import { Alert, Linking, Pressable, Text, View } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 
 import { useDiscardDraft, useRetryDraft } from "../../lib/hooks/drafts";
 import { ArcadeButton } from "../ui/button";
 import { Card } from "../ui/card";
+import { showDialog } from "../ui/dialog";
 
 const STATUS_TONE: Record<DraftRow["status"], string> = {
   ready: "bg-leaf",
@@ -162,7 +163,7 @@ export function DraftItem({ draft }: { draft: DraftRow }) {
   const failed = retry.isError || discard.isError || retry.data?.ok === false || discard.data?.ok === false;
 
   const confirmDiscard = () =>
-    Alert.alert(copy.imports.discardConfirm, undefined, [
+    showDialog(copy.imports.discardConfirm, undefined, [
       { text: copy.editor.cancel, style: "cancel" },
       { text: copy.imports.discard, style: "destructive", onPress: () => discard.mutate(draft.id) },
     ]);

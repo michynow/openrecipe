@@ -3,11 +3,12 @@ import { confirmDelete, copy } from "@openrecipe/core/copy";
 import { formatDate, formatDuration } from "@openrecipe/core/format";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
 
 import { CookingPanel } from "../../components/recipe/cooking-panel";
 import { CookLog } from "../../components/recipe/cook-log";
 import { KeepAwakeToggle } from "../../components/recipe/keep-awake-toggle";
+import { showDialog } from "../../components/ui/dialog";
 import { HelpButton } from "../../components/ui/help-button";
 import { ArcadeButton } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -167,7 +168,7 @@ function AdminActions({ recipe }: { recipe: RecipeDetail }) {
   const reimport = useReimport();
 
   function confirmDeleteRecipe() {
-    Alert.alert(confirmDelete(recipe.title), undefined, [
+    showDialog(confirmDelete(recipe.title), undefined, [
       { text: copy.editor.cancel, style: "cancel" },
       {
         text: copy.common.delete,
@@ -190,13 +191,13 @@ function AdminActions({ recipe }: { recipe: RecipeDetail }) {
                 },
               });
             })
-            .catch(() => Alert.alert(copy.common.somethingFailed)),
+            .catch(() => showDialog(copy.common.somethingFailed)),
       },
     ]);
   }
 
   function confirmReimport() {
-    Alert.alert(copy.imports.reimport, copy.imports.reimportConfirm, [
+    showDialog(copy.imports.reimport, copy.imports.reimportConfirm, [
       { text: copy.editor.cancel, style: "cancel" },
       {
         text: copy.imports.reimport,
@@ -207,7 +208,7 @@ function AdminActions({ recipe }: { recipe: RecipeDetail }) {
               showToast({ message: copy.imports.reimportQueued, kielbas: true });
               router.push("/drafts");
             })
-            .catch(() => Alert.alert(copy.common.somethingFailed)),
+            .catch(() => showDialog(copy.common.somethingFailed)),
       },
     ]);
   }

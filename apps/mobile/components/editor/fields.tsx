@@ -1,8 +1,9 @@
 import { copy } from "@openrecipe/core/copy";
 import type { IconName } from "@openrecipe/core/icons";
 import { createContext, useContext, type ReactNode } from "react";
-import { Alert, Pressable, Text, TextInput, View, type TextInputProps } from "react-native";
+import { Pressable, Text, TextInput, View, type TextInputProps } from "react-native";
 
+import { showDialog } from "../ui/dialog";
 import { Icon } from "../ui/pixel";
 import { Card } from "../ui/card";
 import { useTokens } from "../../lib/theme";
@@ -16,7 +17,7 @@ export function GuessedChip() {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${copy.imports.guessed}. ${copy.imports.guessedHint}`}
-      onPress={() => Alert.alert(copy.imports.guessed, copy.imports.guessedHint)}
+      onPress={() => showDialog(copy.imports.guessed, copy.imports.guessedHint)}
       className="min-h-8 flex-row items-center gap-1 self-start rounded-full border-2 border-accent bg-surface px-2"
     >
       <Text className="font-bold text-xs uppercase text-accent">? {copy.imports.guessed}</Text>

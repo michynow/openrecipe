@@ -2,11 +2,12 @@ import type { Member } from "@openrecipe/core/api";
 import { copy } from "@openrecipe/core/copy";
 import { formatDate } from "@openrecipe/core/format";
 import { useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { useRemoveMember, useSetMemberRole } from "../../lib/hooks/admin";
 import { ArcadeButton } from "../ui/button";
 import { Card } from "../ui/card";
+import { showDialog } from "../ui/dialog";
 import { HEADING } from "./styles";
 
 type Assignable = "admin" | "member";
@@ -25,7 +26,7 @@ function MemberRow({ member }: { member: Member }) {
   const fail = () => setRefusal(copy.common.somethingFailed);
 
   const confirmRemove = () =>
-    Alert.alert(copy.settings.removeMemberConfirm, member.name, [
+    showDialog(copy.settings.removeMemberConfirm, member.name, [
       { text: copy.editor.cancel, style: "cancel" },
       {
         text: copy.settings.remove,

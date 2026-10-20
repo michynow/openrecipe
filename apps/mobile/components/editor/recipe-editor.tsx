@@ -5,7 +5,7 @@ import { guessedFields } from "@openrecipe/core/inferred";
 import { emptyRecipe, recipeSchema, type RecipeFormValue } from "@openrecipe/core/recipe-schema";
 import { useNavigation, useRouter } from "expo-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { ArcadeButton } from "../ui/button";
 import { ErrorText, Field, FieldRegistry, GuessedChip, Section } from "./fields";
@@ -15,6 +15,7 @@ import { LineList } from "./line-list";
 import { TagPicker } from "./tag-picker";
 import { deleteUploadedImage } from "../../lib/hooks/editor";
 import { SessionUploads } from "../../lib/upload";
+import { showDialog } from "../ui/dialog";
 
 /** Focus order: the form's order, not Zod's report order. */
 const FIELD_ORDER = [
@@ -95,7 +96,7 @@ export function RecipeEditor({
           return;
         }
         e.preventDefault();
-        Alert.alert(copy.editor.unsavedChanges, undefined, [
+        showDialog(copy.editor.unsavedChanges, undefined, [
           { text: copy.editor.cancel, style: "cancel" },
           {
             text: copy.imports.discard,

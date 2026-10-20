@@ -3,11 +3,12 @@ import { guessedFields } from "@openrecipe/core/inferred";
 import { isHttpUrl } from "@openrecipe/core/recipe-schema";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Linking, Text, View } from "react-native";
+import { Linking, Text, View } from "react-native";
 
 import { GuessedChip } from "../../components/editor/fields";
 import { RecipeEditor } from "../../components/editor/recipe-editor";
 import { ReimportDiff } from "../../components/editor/reimport-diff";
+import { showDialog } from "../../components/ui/dialog";
 import { HelpButton } from "../../components/ui/help-button";
 import { AdminGateView, useAdminGate } from "../../components/ui/admin-gate";
 import { StateView } from "../../components/ui/state-view";
@@ -45,7 +46,7 @@ export default function DraftReview() {
   const link = isHttpUrl(draft.sourceUrl) ? draft.sourceUrl : null;
 
   function confirmDiscard(leave: (go: () => void) => void) {
-    Alert.alert(copy.imports.discardConfirm, undefined, [
+    showDialog(copy.imports.discardConfirm, undefined, [
       { text: copy.editor.cancel, style: "cancel" },
       {
         text: copy.imports.discard,

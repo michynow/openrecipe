@@ -1,11 +1,12 @@
 import { copy } from "@openrecipe/core/copy";
 import { useRouter } from "expo-router";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { Proposals } from "../../components/home/proposals";
 import { StatTiles } from "../../components/home/stat-tiles";
 import { ArcadeButton } from "../../components/ui/button";
 import { RecipeGrid, RecipeGridSkeleton } from "../../components/ui/recipe-card";
+import { RefreshBar, usePullRefresh } from "../../components/ui/refresh";
 import { Screen } from "../../components/ui/screen";
 import { useHome, useReroll } from "../../lib/hooks/discovery";
 
@@ -13,12 +14,13 @@ export default function Home() {
   const router = useRouter();
   const home = useHome();
   const reroll = useReroll();
+  const pull = usePullRefresh(home.refetch);
 
   return (
     <Screen>
       <ScrollView
         contentContainerClassName="gap-6 p-4"
-        refreshControl={<RefreshControl refreshing={home.isRefetching && !reroll.isPending} onRefresh={() => home.refetch()} />}
+        refreshControl={pull.control}
       >
         {home.isError && !home.data ? (
           <View className="items-center gap-3 py-10">
@@ -65,6 +67,7 @@ export default function Home() {
           </>
         )}
       </ScrollView>
+      <RefreshBar active={pull.refreshing} />
     </Screen>
   );
 }

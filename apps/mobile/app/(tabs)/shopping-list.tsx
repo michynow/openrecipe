@@ -1,10 +1,12 @@
 import { copy } from "@openrecipe/core/copy";
 import { buildShoppingListText } from "@openrecipe/core/shopping-list";
-import { Alert, RefreshControl, ScrollView, Share, Text, View } from "react-native";
+import { ScrollView, Share, Text, View } from "react-native";
 
 import { ItemsCard } from "../../components/shopping-list/items-card";
 import { RecipesCard } from "../../components/shopping-list/recipes-card";
 import { ArcadeButton } from "../../components/ui/button";
+import { showDialog } from "../../components/ui/dialog";
+import { RefreshBar, usePullRefresh } from "../../components/ui/refresh";
 import { Screen } from "../../components/ui/screen";
 import { StateView } from "../../components/ui/state-view";
 import { useClearShoppingList, useShoppingList } from "../../lib/hooks/shopping-list";
@@ -13,6 +15,7 @@ import { useClearShoppingList, useShoppingList } from "../../lib/hooks/shopping-
 export default function ShoppingListScreen() {
   const query = useShoppingList();
   const clear = useClearShoppingList();
+  const pull = usePullRefresh(query.refetch);
   const list = query.data;
 
   if (query.isPending) return <StateView />;
@@ -32,7 +35,7 @@ export default function ShoppingListScreen() {
     <Screen>
       <ScrollView
         contentContainerClassName="gap-4 p-4 pb-12"
-        refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} />}
+        refreshControl={pull.control}
       >
         {empty ? (
           <Text className="rounded-card border-2 border-dashed border-line p-6 text-center font-body text-muted">
@@ -59,7 +62,7 @@ export default function ShoppingListScreen() {
                 label={copy.shoppingList.clearAll}
                 disabled={clear.isPending}
                 onPress={() =>
-                  Alert.alert(copy.shoppingList.clearAll, copy.shoppingList.clearAllConfirm, [
+                  showDialog(copy.shoppingList.clearAll, copy.shoppingList.clearAllConfirm, [
                     { text: copy.editor.cancel, style: "cancel" },
                     { text: copy.shoppingList.clearAll, style: "destructive", onPress: () => clear.mutate("all") },
                   ])
@@ -69,6 +72,7 @@ export default function ShoppingListScreen() {
           </>
         )}
       </ScrollView>
+      <RefreshBar active={pull.refreshing} />
     </Screen>
   );
 }

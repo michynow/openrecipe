@@ -1,11 +1,12 @@
 import { copy } from "@openrecipe/core/copy";
 import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, FlatList, RefreshControl, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 
 import { DraftItem } from "../../components/drafts/draft-item";
 import { ParkForm } from "../../components/drafts/park-form";
 import { ArcadeButton } from "../../components/ui/button";
 import { AdminGateView, useAdminGate } from "../../components/ui/admin-gate";
+import { RefreshBar, usePullRefresh } from "../../components/ui/refresh";
 import { Screen } from "../../components/ui/screen";
 import { useDrafts } from "../../lib/hooks/drafts";
 
@@ -14,6 +15,7 @@ export default function Drafts() {
   const { url, shared } = useLocalSearchParams<{ url?: string; shared?: string }>();
   const gate = useAdminGate();
   const drafts = useDrafts(gate.ok);
+  const pull = usePullRefresh(drafts.refetch);
   const active = drafts.data?.some((d) => d.status === "queued" || d.status === "processing");
 
   if (!gate.ok) return <AdminGateView gate={gate} />;
@@ -25,7 +27,7 @@ export default function Drafts() {
         keyExtractor={(d) => d.id}
         renderItem={({ item }) => <DraftItem draft={item} />}
         contentContainerClassName="gap-4 p-4"
-        refreshControl={<RefreshControl refreshing={drafts.isRefetching} onRefresh={() => drafts.refetch()} />}
+        refreshControl={pull.control}
         ListHeaderComponent={
           <View className="gap-4 pb-2">
             <ParkForm prefill={url} nonce={shared} />
@@ -55,6 +57,7 @@ export default function Drafts() {
           )
         }
       />
+      <RefreshBar active={pull.refreshing} />
     </Screen>
   );
 }
