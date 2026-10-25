@@ -130,6 +130,48 @@ export async function parkUrl(
   return { ok: true, id: row.id, alreadyQueued: false };
 }
 
+/** Long enough for any recipe, short enough to stay well inside the model's prompt. */
+export const PASTE_MAX_CHARS = 12_000;
+const PASTE_MIN_CHARS = 40;
+
+/**
+ * Park pasted recipe text for the Worker — the way in for a recipe with no
+ * readable page (Instagram, a message from someone). `source_url` stays empty:
+ * there is nothing to fetch, and nothing to deduplicate against either.
+ */
+export async function parkText(
+  text: string,
+  userId: string,
+): Promise<ParkResult> {
+  const sourceText = text.trim();
+  if (sourceText.length < PASTE_MIN_CHARS) return { ok: false, error: copy.imports.pasteTooShort };
+  if (sourceText.length > PASTE_MAX_CHARS) {
+    return { ok: false, error: copy.imports.pasteTooLong(PASTE_MAX_CHARS) };
+  }
+
+  const [row] = await db
+    .insert(draft)
+    .values({
+      sourceUrl: "",
+      sourceText,
+      status: "queued",
+      createdBy: userId,
+      log: [
+        { at: new Date().toISOString(), level: "info", msg: copy.imports.log.parkedText(sourceText.length) },
+      ],
+    })
+    .returning({ id: draft.id });
+
+  return { ok: true, id: row.id, alreadyQueued: false };
+}
+
+/**
+ * What the Drafts screen shows where a link would be. A pasted Draft gets the
+ * start of its text, so the row says what it is before the Worker titles it.
+ */
+const sourceLabel = sql<string>`case when ${draft.sourceText} is null then ${draft.sourceUrl}
+  else ${copy.imports.pastedLabel("")} || left(regexp_replace(${draft.sourceText}, '\s+', ' ', 'g'), 60) end`;
+
 export type DraftForReview = DraftRow & {
   payload: RecipeFormValue;
   inferred: string[];
@@ -291,7 +333,7 @@ export async function listDrafts(): Promise<DraftRow[]> {
   const rows = await db
     .select({
       id: draft.id,
-      sourceUrl: draft.sourceUrl,
+      sourceUrl: sourceLabel,
       title: sql<string | null>`${draft.payload}->>'title'`,
       status: draft.status,
       stage: draft.stage,
@@ -451,25 +493,31 @@ export async function reclaimStale(): Promise<number> {
  * the cron that runs after a usage limit resets picks it up with nobody
  * pressing anything.
  *
+ * A `laptopOnly` Draft is left for a Worker with `onLaptop` set.
+ *
  * Returns null when the queue is empty, which is the Worker's cue to exit.
  */
-export async function claimNextDraft(): Promise<DraftRow | null> {
+export async function claimNextDraft(
+  onLaptop: boolean,
+): Promise<(DraftRow & { sourceText: string | null }) | null> {
   const result = await db.execute(sql`
     update draft
        set status = 'processing', claimed_at = now(), stage = 'fetching'
      where id = (select id
                    from draft
-                  where status = 'queued'
-                     or (status = 'limited' and queued_at <= now())
+                  where (status = 'queued'
+                         or (status = 'limited' and queued_at <= now()))
+                    and (${onLaptop} or not laptop_only)
                   order by created_at
                   limit 1
                     for update skip locked)
-    returning id, source_url, status, error, recipe_id, created_at, queued_at, claimed_at`);
+    returning id, source_url, source_text, status, error, recipe_id, created_at, queued_at, claimed_at`);
 
   const row = (result.rows ?? [])[0] as
     | {
         id: string;
         source_url: string;
+        source_text: string | null;
         status: string;
         error: string | null;
         recipe_id: string | null;
@@ -484,6 +532,7 @@ export async function claimNextDraft(): Promise<DraftRow | null> {
   return {
     id: row.id,
     sourceUrl: row.source_url,
+    sourceText: row.source_text,
     title: null,
     status: "processing",
     stage: "fetching",
@@ -563,6 +612,23 @@ export async function markLimited(id: string, retryAt: Date, msg: string): Promi
       stage: null,
       claimedAt: null,
       queuedAt: retryAt,
+      log: sql`${draft.log} || ${logLine("warn", msg)}`,
+    })
+    .where(eq(draft.id, id));
+}
+
+/**
+ * Back to the queue, for the laptop Worker only. Nothing is wrong with the
+ * link, so no error; the queue timeout keeps counting from when it was parked.
+ */
+export async function deferToLaptop(id: string, msg: string): Promise<void> {
+  await db
+    .update(draft)
+    .set({
+      status: "queued",
+      laptopOnly: true,
+      stage: null,
+      claimedAt: null,
       log: sql`${draft.log} || ${logLine("warn", msg)}`,
     })
     .where(eq(draft.id, id));

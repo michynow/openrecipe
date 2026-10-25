@@ -201,7 +201,7 @@ export async function generateRecipe(
 /** Provenance is ours to set, not the model's to echo back. */
 const withSource = (payload: RecipeFormValue, sourceUrl: string) => ({
   ...payload,
-  sourceUrl,
+  sourceUrl: sourceUrl || null,
   // Images are OR-43; whatever the model says about one is ignored.
   imageUrl: null,
 });

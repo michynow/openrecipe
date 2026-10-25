@@ -21,7 +21,8 @@ import { extractFromYoutube, youtubeVideoId } from "./youtube.ts";
  */
 
 /** "video": a YouTube title, description and maybe transcript (youtube.ts). */
-export type ExtractPath = "json-ld" | "readable-text" | "video";
+/** "pasted": recipe text the Master pasted instead of a link. */
+export type ExtractPath = "json-ld" | "readable-text" | "video" | "pasted";
 
 /** One published ingredient, and the Section heading the page put it under (ADR-0008). */
 export type ExtractedIngredient = { text: string; section: string | null };
@@ -48,7 +49,9 @@ export type ExtractFailure =
   | "fetch-blocked"
   | "not-found"
   | "not-html"
-  | "no-recipe-found";
+  | "no-recipe-found"
+  /** YouTube's bot check, from the cloud. The laptop Worker can still get through. */
+  | "login-required";
 
 /** How the page fetch went, for the Draft's log. */
 export type FetchInfo = { status: number; bytes: number; ms: number };
@@ -545,9 +548,12 @@ export async function fetchPage(url: string): Promise<
 }
 
 /** Fetch and extract. The Worker's whole use of this module. */
-export async function extractRecipeFromUrl(url: string): Promise<ExtractResult> {
+export async function extractRecipeFromUrl(
+  url: string,
+  options: { laptopCanRetry?: boolean } = {},
+): Promise<ExtractResult> {
   const videoId = youtubeVideoId(url);
-  if (videoId) return extractFromYoutube(videoId);
+  if (videoId) return extractFromYoutube(videoId, options);
 
   const fetched = await fetchPage(url);
   if (!fetched.ok) return fetched;

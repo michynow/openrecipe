@@ -113,6 +113,14 @@ ${ingredientList(page)}
 
 Instructions, in order:
 ${page.instructions.map((line) => `- ${line}`).join("\n")}`
+      : page.path === "pasted"
+        ? `There is no page: this is recipe text pasted by hand — an Instagram caption,
+a message, a note — maybe with hashtags and chatter around it. Pull the recipe
+out. Anything you work out rather than read plainly — a serving count, a time,
+a quantity, a step the text only implies — goes in "inferred" by field name. If
+there is no recipe in it at all, return "ingredientLines": [] and "steps": [].
+
+${page.text ?? ""}`
       : page.path === "video"
         ? `This is a cooking video: its title, its description, and usually a
 transcript of what the cook says, made by speech recognition (no punctuation,
@@ -132,7 +140,7 @@ in "inferred" by field name.
 
 ${page.text ?? ""}`;
 
-  return `Source URL: ${sourceUrl}
+  return `Source URL: ${sourceUrl || "none (pasted text)"}
 
 ${source}
 

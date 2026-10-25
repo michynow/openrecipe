@@ -7,6 +7,7 @@ import {
   approveDraft,
   discardDraft,
   parkReimport,
+  parkText,
   parkUrl,
   retryDraft,
   type ParkResult,
@@ -25,8 +26,16 @@ import { requireAdmin } from "@/lib/session";
 
 export async function parkUrlAction(sourceUrl: string): Promise<ParkResult> {
   const user = await requireAdmin();
-  const result = await parkUrl(sourceUrl, user.id);
+  return parked(await parkUrl(sourceUrl, user.id));
+}
 
+/** The recipe's own text, pasted where no link would do (Instagram, a message). */
+export async function parkTextAction(sourceText: string): Promise<ParkResult> {
+  const user = await requireAdmin();
+  return parked(await parkText(sourceText, user.id));
+}
+
+function parked(result: ParkResult): ParkResult {
   if (result.ok) {
     revalidatePath("/drafts");
     // The dashboard counts what is waiting (OR-47).

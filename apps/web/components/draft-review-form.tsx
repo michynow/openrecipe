@@ -69,22 +69,25 @@ export function DraftReviewForm({
           <p className="text-sm">
             {reimport ? copy.imports.diffHint : copy.imports.reviewHint}
           </p>
-          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
-            <Icon name="link" className="size-4 shrink-0" />
-            <span className="shrink-0">{copy.imports.fromSource}</span>
-            {/*
-              rel: this is a link somebody pasted, opened from a page that knows
-              the reader is signed in. noopener is the load-bearing half.
-            */}
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="min-w-0 break-all text-accent underline underline-offset-4"
-            >
-              {sourceUrl}
-            </a>
-          </p>
+          {/* A pasted Draft has no page to point back to. */}
+          {sourceUrl && (
+            <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+              <Icon name="link" className="size-4 shrink-0" />
+              <span className="shrink-0">{copy.imports.fromSource}</span>
+              {/*
+                rel: this is a link somebody pasted, opened from a page that knows
+                the reader is signed in. noopener is the load-bearing half.
+              */}
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-w-0 break-all text-accent underline underline-offset-4"
+              >
+                {sourceUrl}
+              </a>
+            </p>
+          )}
           {/*
             The chip's meaning, said once where it can be read. Its title
             tooltip is no help on a phone, which is where review happens.

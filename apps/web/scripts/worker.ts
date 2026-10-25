@@ -1,6 +1,7 @@
 import {
   appendLog,
   claimNextDraft,
+  deferToLaptop,
   expireStaleQueued,
   markFailed,
   markLimited,
@@ -12,7 +13,7 @@ import { copy } from "@openrecipe/core/copy";
 import { db } from "../lib/db/index.ts";
 import { formatClock } from "@openrecipe/core/format";
 import { tag } from "../lib/db/schema.ts";
-import { extractRecipeFromUrl, type ExtractFailure } from "../lib/import/extract.ts";
+import { extractRecipeFromUrl, type ExtractFailure, type ExtractResult } from "../lib/import/extract.ts";
 import { generateRecipe } from "../lib/import/generate.ts";
 import { storeImageFromUrl } from "../lib/import/image.ts";
 import { buildPayload } from "../lib/import/payload.ts";
@@ -39,6 +40,7 @@ const FAILURE_COPY: Record<ExtractFailure | "needs-a-model" | "invalid", string>
   "not-found": copy.imports.failures.notFound,
   "not-html": copy.imports.failures.notHtml,
   "no-recipe-found": copy.imports.failedFallback,
+  "login-required": copy.imports.failures.blocked,
   "needs-a-model": copy.imports.failures.needsModel,
   invalid: copy.imports.failures.invalid,
 };
@@ -49,7 +51,8 @@ const L = copy.imports.log;
  * Where this run is, for the log: a GitHub Actions run links to itself, so
  * "what happened" is one click from the Drafts screen.
  */
-const WHERE = process.env.GITHUB_ACTIONS
+const ON_LAPTOP = !process.env.GITHUB_ACTIONS;
+const WHERE = !ON_LAPTOP
   ? `GitHub Actions, ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
   : "laptop";
 
@@ -62,12 +65,21 @@ const seconds = (since: number) => Math.round((Date.now() - since) / 1000);
 async function importDraft(
   id: string,
   sourceUrl: string,
+  sourceText: string | null,
   tags: TagOption[],
 ): Promise<{ summary: string; stop?: boolean }> {
   await appendLog(id, "info", L.claimed(WHERE));
-  await appendLog(id, "info", L.fetching(sourceUrl));
+  if (!sourceText) await appendLog(id, "info", L.fetching(sourceUrl));
 
-  const extracted = await extractRecipeFromUrl(sourceUrl);
+  // Pasted text is already what a fetch would have produced: nothing to fetch.
+  const extracted: ExtractResult = sourceText
+    ? { ok: true, page: pastedPage(sourceText) }
+    : await extractRecipeFromUrl(sourceUrl, { laptopCanRetry: !ON_LAPTOP });
+
+  if (!extracted.ok && extracted.reason === "login-required") {
+    await deferToLaptop(id, L.laptopOnly);
+    return { summary: "left for the laptop (YouTube LOGIN_REQUIRED)" };
+  }
 
   if (!extracted.ok) {
     await appendLog(
@@ -84,11 +96,14 @@ async function importDraft(
     const { status, bytes, ms } = extracted.fetched;
     await appendLog(id, "info", L.fetched(status, Math.round(bytes / 1024), ms));
   }
-  await appendLog(
-    id,
-    "info",
-    page.path === "json-ld" ? L.jsonLd(page.ingredients.length) : L.readableText(page.text?.length ?? 0),
-  );
+  // A pasted Draft's log already says how much text it holds.
+  if (page.path !== "pasted") {
+    await appendLog(
+      id,
+      "info",
+      page.path === "json-ld" ? L.jsonLd(page.ingredients.length) : L.readableText(page.text?.length ?? 0),
+    );
+  }
 
   /**
    * The model runs on both paths, not only when structured data is missing: a
@@ -161,6 +176,19 @@ async function importDraft(
   return { summary: `failed (model ${generated.reason}, then ${built.reason})` };
 }
 
+const pastedPage = (text: string) => ({
+  path: "pasted" as const,
+  title: null,
+  imageUrl: null,
+  ingredients: [],
+  instructions: [],
+  servings: null,
+  totalMinutes: null,
+  kcalPerServing: null,
+  author: null,
+  text,
+});
+
 async function main(): Promise<void> {
   const expired = await expireStaleQueued();
   if (expired > 0) console.log(`expired ${expired} draft(s) that waited too long`);
@@ -180,14 +208,14 @@ async function main(): Promise<void> {
   let handled = 0;
 
   for (;;) {
-    const draft = await claimNextDraft();
+    const draft = await claimNextDraft(ON_LAPTOP);
     if (!draft) break;
 
     handled += 1;
     console.log(`claimed ${draft.id} ${draft.sourceUrl}`);
 
     try {
-      const { summary, stop } = await importDraft(draft.id, draft.sourceUrl, tags);
+      const { summary, stop } = await importDraft(draft.id, draft.sourceUrl, draft.sourceText, tags);
       console.log(`  ${summary}`);
       /**
        * A usage limit is the subscription's, not the page's: every Draft after

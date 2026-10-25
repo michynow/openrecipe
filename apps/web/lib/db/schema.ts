@@ -349,7 +349,15 @@ export const draft = pgTable(
   "draft",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    /** Empty for a pasted-text Draft, which has no page — see `sourceText`. */
     sourceUrl: text("source_url").notNull(),
+
+    /**
+     * The recipe itself, pasted instead of a link (an Instagram caption, a
+     * message). The Worker reads this instead of fetching anything. Null for a
+     * link.
+     */
+    sourceText: text("source_text"),
 
     /** One of DRAFT_STATUSES. See lib/drafts.ts for what may follow what. */
     status: text("status").notNull().default("queued"),
@@ -429,6 +437,13 @@ export const draft = pgTable(
 
     /** When it reached a terminal status. Null while it is still moving. */
     processedAt: timestamp("processed_at", { withTimezone: true }),
+
+    /**
+     * Only the laptop Worker may claim this. Set when YouTube answered the
+     * cloud Worker with LOGIN_REQUIRED: from a home connection the player API
+     * still answers, and with it comes the transcript the cloud cannot get.
+     */
+    laptopOnly: boolean("laptop_only").notNull().default(false),
   },
   (table) => [
     /**

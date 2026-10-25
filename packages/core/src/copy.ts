@@ -216,6 +216,14 @@ export const copy = {
     parkAction: "Odłóż na później",
     parked: "Odłożone. Kuchnia już się za to zabiera — postęp widać poniżej.",
     alreadyParked: "Ten link już czeka w kolejce.",
+    /** Pasting the recipe itself — an Instagram caption, a message, a note. */
+    pasteToggle: "Nie masz linku? Wklej cały przepis",
+    pasteLabel: "Tekst przepisu",
+    pastePlaceholder: "Składniki, kroki, cokolwiek masz — np. opis spod rolki na Instagramie.",
+    pasteAction: "Przeanalizuj",
+    pasteTooShort: "To za mało tekstu na przepis.",
+    pasteTooLong: (max: number) => `Za długi tekst — maksymalnie ${max} znaków.`,
+    pastedLabel: (excerpt: string) => `Wklejony tekst: ${excerpt}`,
     alreadyImported: "Ten przepis już jest w bibliotece.",
     openExisting: "Otwórz go",
     orPasteLink: "Masz link? Wklej go zamiast wpisywać.",
@@ -302,6 +310,7 @@ export const copy = {
     log: {
       toggle: "Logi",
       parked: "Link dodany do kolejki.",
+      parkedText: (chars: number) => `Wklejony tekst (${chars} znaków) dodany do kolejki.`,
       requeued: "Ponownie w kolejce.",
       reimport: "Ponowny import przepisu — dodany do kolejki.",
       woke: "Kuchnia obudzona (GitHub Actions). Start zwykle w ciągu minuty.",
@@ -335,6 +344,8 @@ export const copy = {
       crashed: (message: string) => `Worker się wysypał: ${message}`,
       limited: (at: string) =>
         `Skończył się limit subskrypcji Claude. Szkic poczeka i kuchnia sama spróbuje ponownie po ${at}.`,
+      laptopOnly:
+        "YouTube nie wpuszcza serwera w chmurze. Szkic czeka na worker na laptopie — uruchom tam „pnpm worker”.",
     },
 
     /** The progress bar on a Draft that is queued or being worked on. */

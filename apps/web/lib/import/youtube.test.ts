@@ -56,3 +56,15 @@ test("LOGIN_REQUIRED falls back to the Data API description", async (t) => {
   assert.ok(result.ok && result.page.text?.includes("500 g mąki"));
   assert.ok(result.ok && result.page.author === "Kuchnia");
 });
+
+test("from the cloud, LOGIN_REQUIRED is left for the laptop instead", async (t) => {
+  const fetch = t.mock.method(globalThis, "fetch", async () =>
+    Response.json({ playabilityStatus: { status: "LOGIN_REQUIRED" } }),
+  );
+  t.after(() => delete process.env.YOUTUBE_API_KEY);
+  process.env.YOUTUBE_API_KEY = "test-key";
+  const result = await extractFromYoutube("dQw4w9WgXcQ", { laptopCanRetry: true });
+  assert.equal(result.ok, false);
+  assert.ok(!result.ok && result.reason === "login-required");
+  assert.equal(fetch.mock.callCount(), 1); // no Data API call
+});

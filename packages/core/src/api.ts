@@ -232,7 +232,7 @@ export type Api = {
   /** admin */
   "GET /api/v1/drafts": { body: never; res: DraftRow[] };
   /** admin */
-  "POST /api/v1/drafts": { body: { sourceUrl: string }; res: ParkResult };
+  "POST /api/v1/drafts": { body: { sourceUrl: string } | { sourceText: string }; res: ParkResult };
   /** admin. What the toast poller reads. */
   "GET /api/v1/drafts/pulse": { body: never; res: { drafts: DraftPulse[] } };
   /** admin. 404 unless `ready` and its payload still parses. */

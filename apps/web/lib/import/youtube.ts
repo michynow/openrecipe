@@ -16,8 +16,10 @@ import type { ExtractResult } from "./extract.ts";
  * YouTube changes this every year or so. When it breaks, the fix is a newer
  * clientVersion here, or yt-dlp.
  *
- * From a server IP YouTube may answer LOGIN_REQUIRED (its bot check). Then,
- * with YOUTUBE_API_KEY set, the official Data API supplies the title and the
+ * From a server IP YouTube may answer LOGIN_REQUIRED (its bot check). The
+ * cloud Worker then hands the link to the laptop (`laptopCanRetry`), whose home
+ * connection still gets the transcript. On the laptop itself, with
+ * YOUTUBE_API_KEY set, the official Data API supplies the title and the
  * description — but no transcript: downloading captions there needs the
  * owner's OAuth.
  */
@@ -131,7 +133,10 @@ async function playerFromDataApi(videoId: string, key: string): Promise<PlayerRe
   };
 }
 
-export async function extractFromYoutube(videoId: string): Promise<ExtractResult> {
+export async function extractFromYoutube(
+  videoId: string,
+  { laptopCanRetry = false }: { laptopCanRetry?: boolean } = {},
+): Promise<ExtractResult> {
   const started = Date.now();
   let player: PlayerResponse;
   try {
@@ -143,8 +148,11 @@ export async function extractFromYoutube(videoId: string): Promise<ExtractResult
     });
     if (!response.ok) return { ok: false, reason: "fetch-blocked", detail: `YouTube HTTP ${response.status}` };
     player = (await response.json()) as PlayerResponse;
-    const key = process.env.YOUTUBE_API_KEY?.trim();
-    if (player.playabilityStatus?.status === "LOGIN_REQUIRED" && key) player = await playerFromDataApi(videoId, key);
+    if (player.playabilityStatus?.status === "LOGIN_REQUIRED") {
+      if (laptopCanRetry) return { ok: false, reason: "login-required", detail: "YouTube: LOGIN_REQUIRED" };
+      const key = process.env.YOUTUBE_API_KEY?.trim();
+      if (key) player = await playerFromDataApi(videoId, key);
+    }
   } catch (error) {
     return { ok: false, reason: "fetch-blocked", detail: `YouTube: ${(error as Error).message}` };
   }
