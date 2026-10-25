@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { captionText, descriptionHasRecipe, pickCaptionTrack, youtubeVideoId } from "./youtube.ts";
+import { captionText, descriptionHasRecipe, extractFromYoutube, pickCaptionTrack, youtubeVideoId } from "./youtube.ts";
 
 test("finds the video id in every link shape YouTube shares", () => {
   const id = "dQw4w9WgXcQ";
@@ -37,4 +37,20 @@ test("caption XML becomes one line of plain text", () => {
   const xml = `<?xml version="1.0"?><timedtext format="3"><body>
 <p t="0">[Muzyka]</p><p t="10"><s>Dodaj</s><s> dwa</s></p><p t="20">jajka &amp; mąkę</p></body></timedtext>`;
   assert.equal(captionText(xml), "Dodaj dwa jajka & mąkę");
+});
+
+test("LOGIN_REQUIRED falls back to the Data API description", async (t) => {
+  t.mock.method(globalThis, "fetch", async (url: string) =>
+    Response.json(
+      url.includes("googleapis.com")
+        ? { items: [{ snippet: { title: "Pierogi", description: "500 g mąki\n2 jajka\n1 łyżka soli", channelTitle: "Kuchnia" } }] }
+        : { playabilityStatus: { status: "LOGIN_REQUIRED", reason: "Sign in to confirm you're not a bot" } },
+    ),
+  );
+  t.after(() => delete process.env.YOUTUBE_API_KEY);
+  process.env.YOUTUBE_API_KEY = "test-key";
+  const result = await extractFromYoutube("dQw4w9WgXcQ");
+  assert.equal(result.ok, true);
+  assert.ok(result.ok && result.page.text?.includes("500 g mąki"));
+  assert.ok(result.ok && result.page.author === "Kuchnia");
 });

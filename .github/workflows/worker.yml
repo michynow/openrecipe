@@ -53,3 +53,5 @@ jobs:
           RAW_CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Service-account JSON for the "Draft finished" push (optional).
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          # YouTube Data API v3 key, for when YouTube answers LOGIN_REQUIRED (optional).
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}

@@ -15,10 +15,16 @@ import type { ExtractResult } from "./extract.ts";
  * ponytail: the ANDROID client is what works without a key or a PO token today;
  * YouTube changes this every year or so. When it breaks, the fix is a newer
  * clientVersion here, or yt-dlp.
+ *
+ * From a server IP YouTube may answer LOGIN_REQUIRED (its bot check). Then,
+ * with YOUTUBE_API_KEY set, the official Data API supplies the title and the
+ * description — but no transcript: downloading captions there needs the
+ * owner's OAuth.
  */
 
 const PLAYER_URL = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false";
 const CLIENT = { clientName: "ANDROID", clientVersion: "20.10.38" };
+const DATA_API_URL = "https://www.googleapis.com/youtube/v3/videos";
 const TIMEOUT_MS = 20_000;
 const MAX_CHARS = 12_000;
 
@@ -85,6 +91,35 @@ type PlayerResponse = {
   captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: CaptionTrack[] } };
 };
 
+type DataApiResponse = {
+  items?: {
+    snippet?: {
+      title?: string;
+      description?: string;
+      channelTitle?: string;
+      thumbnails?: Record<string, { url: string; width?: number }>;
+    };
+  }[];
+};
+
+/** The same video from the official Data API, shaped like a captionless player response. */
+async function playerFromDataApi(videoId: string, key: string): Promise<PlayerResponse> {
+  const url = `${DATA_API_URL}?part=snippet&id=${videoId}&key=${encodeURIComponent(key)}`;
+  const response = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+  if (!response.ok) throw new Error(`Data API HTTP ${response.status}`);
+  const snippet = ((await response.json()) as DataApiResponse).items?.[0]?.snippet;
+  if (!snippet) return { playabilityStatus: { status: "ERROR", reason: "Data API: no such video" } };
+  return {
+    playabilityStatus: { status: "OK" },
+    videoDetails: {
+      title: snippet.title,
+      shortDescription: snippet.description,
+      author: snippet.channelTitle,
+      thumbnail: { thumbnails: Object.values(snippet.thumbnails ?? {}) },
+    },
+  };
+}
+
 export async function extractFromYoutube(videoId: string): Promise<ExtractResult> {
   const started = Date.now();
   let player: PlayerResponse;
@@ -97,6 +132,8 @@ export async function extractFromYoutube(videoId: string): Promise<ExtractResult
     });
     if (!response.ok) return { ok: false, reason: "fetch-blocked", detail: `YouTube HTTP ${response.status}` };
     player = (await response.json()) as PlayerResponse;
+    const key = process.env.YOUTUBE_API_KEY?.trim();
+    if (player.playabilityStatus?.status === "LOGIN_REQUIRED" && key) player = await playerFromDataApi(videoId, key);
   } catch (error) {
     return { ok: false, reason: "fetch-blocked", detail: `YouTube: ${(error as Error).message}` };
   }
