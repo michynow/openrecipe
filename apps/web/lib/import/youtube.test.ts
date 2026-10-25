@@ -21,6 +21,8 @@ test("a description with an ingredient list counts as a recipe; chapters do not"
   assert.equal(descriptionHasRecipe("Składniki:\n500 g mąki\n2 jajka\n- 1 łyżka cukru"), true);
   assert.equal(descriptionHasRecipe("0:00 Wstęp\n0:22 Mięso\n6:30 Bułka\n8:00 Podanie"), false);
   assert.equal(descriptionHasRecipe("Zapraszam na nowy odcinek! Subskrybuj 🙂\n2024"), false);
+  assert.equal(descriptionHasRecipe("Składniki:\n-łopatka wieprzowa\n-papryka, czosnek\n-sos bbq"), true);
+  assert.equal(descriptionHasRecipe("Składniki:\n-łopatka\n\nSubskrybuj!"), false);
 });
 
 test("own Polish captions beat auto ones, auto ones beat foreign manual ones", () => {

@@ -46,12 +46,23 @@ export function youtubeVideoId(url: string): string | null {
   return id && /^[\w-]{11}$/.test(id) ? id : null;
 }
 
-/** Several lines that start with a quantity — not a chapter timestamp like "0:22". */
+/**
+ * Several lines that start with a quantity — not a chapter timestamp like
+ * "0:22" — or an ingredient heading over at least three lines, since plenty of
+ * cooks list what goes in without saying how much ("-łopatka wieprzowa").
+ */
 export function descriptionHasRecipe(description: string): boolean {
-  const quantified = description
-    .split("\n")
-    .filter((line) => /^\s*(?:[-•*▪️✅]\s*)?[\d½⅓⅔¼¾]/u.test(line) && !/^\s*\d+:\d\d/.test(line));
-  return quantified.length >= 3;
+  const lines = description.split("\n");
+  const quantified = lines.filter(
+    (line) => /^\s*(?:[-•*▪️✅]\s*)?[\d½⅓⅔¼¾]/u.test(line) && !/^\s*\d+:\d\d/.test(line),
+  );
+  if (quantified.length >= 3) return true;
+
+  const heading = lines.findIndex((line) => /^\s*(składniki|ingredients)\b/iu.test(line));
+  if (heading === -1) return false;
+  const after = lines.slice(heading + 1);
+  const listed = after.findIndex((line) => !line.trim());
+  return (listed === -1 ? after.length : listed) >= 3;
 }
 
 type CaptionTrack = { baseUrl: string; languageCode: string; kind?: string };

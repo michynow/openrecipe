@@ -137,6 +137,14 @@ test("findRecipeNode ignores non-Recipe nodes around it", () => {
   assert.equal(findRecipeNode([{ "@type": "Recipe", name: "x" }])?.name, "x");
 });
 
+test("a camelCase …StickySidebar wrapper is content, not a sidebar", () => {
+  const recipe = "Kurki podsmaż na maśle, wyłóż na twaróg z koperkiem. ".repeat(20);
+  const html = `<body><div class="theiaStickySidebar"><p>${recipe}</p><div class="comments">Super przepis!</div></div></body>`;
+  const text = readableText(html);
+  assert.ok(text.includes("Kurki podsmaż"));
+  assert.ok(!text.includes("Super przepis"));
+});
+
 test("readableText caps its output", () => {
   const long = `<body><main><p>${"słowo ".repeat(5000)}</p></main></body>`;
   assert.equal(readableText(long, 100).length, 100);

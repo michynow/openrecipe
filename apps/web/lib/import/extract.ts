@@ -402,10 +402,12 @@ const CHROME = [
 /**
  * Class and id fragments that mark a block as not-the-recipe. Deliberately
  * short and English-plus-Polish: matched as substrings, so `related-recipes`
- * and `recipe-related` both go.
+ * and `recipe-related` both go. Except "sidebar", which must start a word:
+ * rozkoszny.pl wraps its whole content column in `theiaStickySidebar` (a
+ * sticky-column plugin), and removing that left no text at all.
  */
 const NOISE =
-  /(comment|koment|advert|\bads?\b|banner|share|social|newsletter|subscri|related|polecane|popularne|sidebar|menu|breadcrumb|cookie|rodo|footer|nagłówek|reklama)/i;
+  /(comment|koment|advert|\bads?\b|banner|share|social|newsletter|subscri|related|polecane|popularne|(?<![a-z])sidebar|menu|breadcrumb|cookie|rodo|footer|nagłówek|reklama)/i;
 
 /**
  * The page's prose, with the furniture removed.
