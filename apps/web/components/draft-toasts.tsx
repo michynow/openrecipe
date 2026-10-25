@@ -16,7 +16,7 @@ const BUSY_MS = 4000;
 /** Otherwise: just enough to notice a link parked from another device. */
 const IDLE_MS = 30_000;
 /** A toast nobody touches goes away on its own. */
-const TOAST_MS = 15_000;
+const TOAST_MS = 3000;
 
 /**
  * MC Kiełbas pops up when the Worker finishes a Draft, on whatever screen you
@@ -87,7 +87,7 @@ export function DraftToasts() {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex flex-col items-stretch gap-3 sm:left-auto sm:w-96"
+      className="pointer-events-none fixed inset-x-4 top-4 z-50 flex flex-col items-stretch gap-3 sm:bottom-4 sm:left-auto sm:top-auto sm:w-96"
     >
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onDismiss={dismiss} />

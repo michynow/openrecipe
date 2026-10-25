@@ -14,8 +14,7 @@ export type ToastInput = {
 };
 type Toast = ToastInput & { id: number };
 
-const DEFAULT_MS = 6000;
-const ACTION_MS = 8000; // the web's undo window
+const DEFAULT_MS = 3000;
 
 /** Module-level store, so a toast can be raised outside React (after a mutation). One at a time; the rest queue. */
 let queue: Toast[] = [];
@@ -45,7 +44,7 @@ export function ToastHost() {
   const insets = useSafeAreaInsets();
 
   const id = current?.id;
-  const ms = current?.durationMs ?? (current?.action ? ACTION_MS : DEFAULT_MS);
+  const ms = current?.durationMs ?? DEFAULT_MS;
   useEffect(() => {
     if (id === undefined) return;
     const timer = setTimeout(() => dismiss(id), ms);
@@ -58,7 +57,7 @@ export function ToastHost() {
   return (
     <View
       pointerEvents="box-none"
-      style={{ bottom: insets.bottom + 72 }}
+      style={{ top: insets.top + 8 }}
       className="absolute inset-x-4"
     >
       <View

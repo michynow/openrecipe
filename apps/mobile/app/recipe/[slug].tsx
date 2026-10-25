@@ -180,6 +180,7 @@ function AdminActions({ recipe }: { recipe: RecipeDetail }) {
               router.back();
               showToast({
                 message: copy.common.deleted,
+                durationMs: 8000, // the web's undo window
                 action: {
                   label: copy.common.undo,
                   // Fails quietly once the server's grace window has closed.
