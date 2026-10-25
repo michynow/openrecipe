@@ -1,6 +1,7 @@
 import type { RecipeDetail } from "@openrecipe/core/api";
 import { copy } from "@openrecipe/core/copy";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ArcadeButton } from "../ui/button";
 import { Icon, IngredientSprite } from "../ui/pixel";
@@ -18,6 +19,7 @@ export function SubstitutesSheet({
   measure: string;
   onClose: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal
       visible={line !== null}
@@ -27,7 +29,10 @@ export function SubstitutesSheet({
     >
       <Pressable className="flex-1 bg-ink/60" onPress={onClose} accessibilityLabel={copy.common.close} />
       {line && (
-        <View className="max-h-[80%] gap-4 rounded-t-3xl border-t-4 border-ink bg-surface p-5">
+        <View
+          className="max-h-[80%] gap-4 rounded-t-3xl border-t-4 border-ink bg-surface p-5"
+          style={{ paddingBottom: 20 + insets.bottom }} // clear the Android navigation bar
+        >
           <Text className="font-display text-2xl uppercase text-text">{copy.recipe.substitutes}</Text>
           <ScrollView contentContainerClassName="gap-3">
             <Text className="text-sm font-extrabold uppercase text-muted">{copy.recipe.insteadOf}</Text>

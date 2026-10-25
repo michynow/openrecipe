@@ -14,6 +14,7 @@ import {
 } from "@openrecipe/core/sections";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ArcadeButton } from "../ui/button";
 import { IngredientSprite } from "../ui/pixel";
@@ -168,10 +169,14 @@ function SectionPicker({
   onPick: (section: string | null) => void;
   onClose: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable className="flex-1 bg-ink/60" onPress={onClose} accessibilityLabel={copy.common.close} />
-      <View className="gap-3 rounded-t-3xl border-t-4 border-ink bg-surface p-5">
+      <View
+        className="gap-3 rounded-t-3xl border-t-4 border-ink bg-surface p-5"
+        style={{ paddingBottom: 20 + insets.bottom }} // clear the Android navigation bar
+      >
         <Text className="font-display text-2xl uppercase text-text">{copy.editor.moveToSection}</Text>
         {[null, ...names].map((name) => (
           <ArcadeButton key={name ?? ""} tone="surface" label={name ?? copy.editor.noSection} onPress={() => onPick(name)} />
