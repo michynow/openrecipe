@@ -17,10 +17,11 @@ export const useDrafts = (enabled: boolean) =>
       q.state.data?.some((d) => d.status === "queued" || d.status === "processing") ? 5000 : false,
   });
 
+/** A link, or the recipe's own text pasted instead of one. */
 export function useParkUrl() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (sourceUrl: string) => api("POST /api/v1/drafts", { body: { sourceUrl } }),
+    mutationFn: (body: { sourceUrl: string } | { sourceText: string }) => api("POST /api/v1/drafts", { body }),
     onSuccess: () => {
       void askForPush();
       return invalidateList(qc);
