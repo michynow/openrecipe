@@ -40,9 +40,11 @@ export async function SiteHeader() {
         the nav takes one full-width row beneath (scrolling sideways rather than
         wrapping if it ever outgrows it), then search. Everything fits on one row from sm
         up. Measured at 375px, where a single row overflowed by ~60px and pushed
-        the add button off screen.
+        the add button off screen. From xl, never wraps: with every admin link
+        the row is ~20px too wide at 24px gaps, so the gaps tighten and search
+        gives up the rest.
       */}
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 sm:gap-x-6 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 sm:gap-x-6 sm:px-6 xl:flex-nowrap xl:gap-x-4">
         <Link
           href="/"
           className="order-1 font-display text-2xl uppercase tracking-tight text-ink [text-shadow:2px_2px_0_var(--color-accent)]"
@@ -56,7 +58,7 @@ export async function SiteHeader() {
         {isAdmin && (
           <Link
             href="/recipes/new"
-            className="order-2 rounded-input bg-accent px-3 py-2 text-sm font-medium text-accent-ink sm:order-4"
+            className="order-2 shrink-0 whitespace-nowrap rounded-input bg-accent px-3 py-2 text-sm font-medium text-accent-ink sm:order-4"
           >
             <span className="sm:hidden">{copy.nav.addShort}</span>
             <span className="hidden sm:inline">{copy.nav.add}</span>
@@ -69,11 +71,11 @@ export async function SiteHeader() {
           ml-auto moves here, so search and the add button sit together on the
           right and the nav stays next to the wordmark.
         */}
-        <div className="order-4 w-full sm:order-3 sm:ml-auto sm:w-56">
+        <div className="order-4 w-full min-w-0 sm:order-3 sm:ml-auto sm:w-56">
           <SearchAutocomplete />
         </div>
 
-        <nav className="order-3 -mx-2 flex w-full items-center overflow-x-auto text-sm sm:order-2 sm:mx-0 sm:w-auto sm:flex-wrap sm:gap-1 sm:overflow-visible">
+        <nav className="order-3 -mx-2 flex w-full items-center overflow-x-auto text-sm sm:order-2 sm:mx-0 sm:w-auto sm:flex-wrap sm:gap-1 sm:overflow-visible xl:shrink-0 xl:flex-nowrap">
           {links.map((link) => (
             <Link
               key={link.href}
