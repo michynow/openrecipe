@@ -22,10 +22,15 @@ export async function newerVersion(): Promise<string | null> {
 /** The browser downloads the APK; installing it over this one keeps every setting (same signing key). */
 export const openApk = () => Linking.openURL(APK_URL).catch(() => {});
 
-const EVERY_MS = 6 * 60 * 60 * 1000;
+/**
+ * Android keeps the app alive for days, so this is the real delay before a new
+ * release is offered: at 6 h a release went unnoticed all afternoon. GitHub
+ * allows 60 unauthenticated calls an hour per IP.
+ */
+const EVERY_MS = 30 * 60 * 1000;
 let lastCheck = 0;
 
-/** On launch and on return to the app, at most every few hours: a toast with the download, once per check. */
+/** On launch and on return to the app, at most every half hour: a toast with the download, once per check. */
 export async function checkForUpdate(): Promise<void> {
   if (Date.now() - lastCheck < EVERY_MS) return;
   lastCheck = Date.now();
