@@ -2,6 +2,7 @@ import {
   appendLog,
   claimNextDraft,
   deferToLaptop,
+  hasLaptopWork,
   expireStaleQueued,
   markFailed,
   markLimited,
@@ -24,6 +25,8 @@ import type { TagOption } from "../lib/import/prompt.ts";
  * ADR-0002. The database is the only thing it and the app share.
  *
  *   pnpm worker
+ *
+ *   pnpm worker --if-laptop-work   (launchd, every 15 min: see docs/laptop-worker.md)
  *
  * Drains the queue and exits. Safe to run on a whim, safe to run twice at once:
  * claiming is a conditional UPDATE with `for update skip locked`, so a second
@@ -190,6 +193,8 @@ const pastedPage = (text: string) => ({
 });
 
 async function main(): Promise<void> {
+  if (process.argv.includes("--if-laptop-work") && !(await hasLaptopWork())) return;
+
   const expired = await expireStaleQueued();
   if (expired > 0) console.log(`expired ${expired} draft(s) that waited too long`);
 

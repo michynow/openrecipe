@@ -545,6 +545,16 @@ export async function claimNextDraft(
   };
 }
 
+/** Whether a Draft is waiting that only the laptop Worker may take. */
+export async function hasLaptopWork(): Promise<boolean> {
+  const [row] = await db
+    .select({ id: draft.id })
+    .from(draft)
+    .where(and(eq(draft.status, "queued"), eq(draft.laptopOnly, true)))
+    .limit(1);
+  return row !== undefined;
+}
+
 /** The Worker moved on to the next step. Feeds the Drafts screen's progress bar. */
 export async function setStage(id: string, stage: DraftStage): Promise<void> {
   await db.update(draft).set({ stage }).where(eq(draft.id, id));
